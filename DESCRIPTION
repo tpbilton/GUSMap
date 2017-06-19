@@ -1,0 +1,12 @@
+Package: GusMap
+Title: Analysis of Genotyping-by-sequencing (GBS) data
+Version: 0.0.1
+Date: 2017-06-19
+Authors@R: person("Timothy P.", "Bilton", role = c("aut", "cre"), email = "tbilton@maths.otago.ac.nz")
+Maintainer: Timothy P. Bilton <tbilton@maths.otago.ac.nz>
+Description: Statistical method for performing linkage mapping using low coverage sequencing data.
+Depends: R (>= 3.3.0), boot
+License: GPL-2
+Encoding: UTF-8
+LazyData: true
+
