@@ -192,7 +192,7 @@ genoToOtherFormats <- function(genon,depth,config,formats,filename,direct,thres=
       }
       
       if(crimap){ #### Output file for crimap
-        newfile <- paste0(trim_fn(direct,"/chr1_",filename),".gen")
+        newfile <- paste0(trim_fn(paste0(direct,"/chr1_",filename)),".gen")
         cat("1\n",nSnps,"\n",paste0("M",1:nSnps,collapse=" "),"\n1\n",nInd+2,"\n",sep="",file=newfile)
         # Add Father
         cat(paste(nInd+1,0,0,0),"\n",
