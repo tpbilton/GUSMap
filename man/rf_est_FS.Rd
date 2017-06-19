@@ -5,7 +5,7 @@
 To come
 }
 \usage{
-  rf_est_FS <- function(init_r=NULL, genon, depth, OPGP, sexSpec=F, trace=F, scaled=F, hessian=F, noFam=1, ...){
+  rf_est_FS <- function(init_r=NULL, genon, depth, OPGP, sexSpec=F, trace=F, scaled=F, hessian=F, noFam=1, ...)
 }
 \arguments{
   \item{init_r}{starting values for the recombination fractions.}

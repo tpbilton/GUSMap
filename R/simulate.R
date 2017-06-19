@@ -7,20 +7,22 @@
 ## Function for simulating sequencing data for a single full-sib family
 simFS <- function(rVec_f, rVec_m=rVec_f, config, nInd, nSnps, meanDepth, thres=NULL, NoDS=1,
                   formats=list(gusmap=T,onemap=F,lepmap=F,joinmap=F,crimap=F), rd_dist="Neg_Binom",
-                  filename=NULL, seed1=1, seed2=1){
+                  filename=NULL, direct=NULL, seed1=1, seed2=1){
   
   ## perform some checks for data input
-  if( !is.numeric(rVec_f) | !is.numeric(rVec_m) | rVec_f < 0 | rVec_m < 0 | rVec_f > 0.5 | rVec_m > 0.5 )
+  if( !is.numeric(rVec_f) || !is.numeric(rVec_m) || rVec_f < 0 || rVec_m < 0 ||
+      rVec_f > 0.5 || rVec_m > 0.5 )
     stop("Recombination factions are required to be an numeric number between 0 and 0.5")
-  if(nInd < 1 | nSnps < 1 | nInd == round(nInd) | nSnps == round(nSnps) )
+  if(!is.numeric(nInd) || !is.numeric(nSnps) || nInd < 1 || nSnps < 1 ||
+     nInd != round(nInd) || nSnps != round(nSnps) || is.infinite(nInd) | is.infinite(nSnps))
     stop("Number of individuals or number of SNPs are not positive integer")
-  if( !is.numeric(config) | !is.vector(config) | length(config != nSnps) )
+  if( !is.numeric(config) || !is.vector(config) || length(config) != nSnps )
     stop("Segregation information needs to be a numeric vector equal to the number of nSnps")
-  if( meanDepth <= 0.01 | !is.infinite(meanDepth))
+  if( meanDepth <= 0.01 || is.infinite(meanDepth) || !is.numeric(meanDepth))
     stop("The mean of the read depth distribution is not a finitie positive number.")
-  if( !is.numeric(NoDS) | NoDS > 0 | NoDS == round(NoDS) | !is.finite(NoDS))
+  if( !is.numeric(NoDS) || NoDS < 1 || NoDS != round(NoDS) || is.infinite(NoDS))
     stop("Imput for the number of data sets needs to be a finite positive number")
-  if( (!is.numeric(thres) & !is.null(thres)) | !is.finite(thres))
+  if( (!is.numeric(thres) & !is.null(thres)) || is.infinite(thres))
     stop("The read depth threshold value is not a finite numeric number")
   
   ## Create list of the recombination fraction and 1 minus the recombination fraction
@@ -82,19 +84,21 @@ simFS <- function(rVec_f, rVec_m=rVec_f, config, nInd, nSnps, meanDepth, thres=N
       
     ## Write data to file
     if(NoDS != 1)
-      genoToOtherFormats(SEQgeno,depth,config,formats=formats,filename=paste0(filename,sim),thres=thres,sim=sim)
+      genoToOtherFormats(SEQgeno,depth,config,formats=formats,filename=paste0(filename,sim),direct=direct,thres=thres,sim=sim)
     
   }
   ## Write simulation parameters to a file
   if(NoDS > 1)
-    dput(list(nInd=nInd,nSnps=nSnps,NoDS=NoDS,rVec_f=rVec_f,rVec_m=rVec_m,config=config,OPGP=OPGP,meanDepth=meanDepth,rd_dist=rd_dist),paste0(filename,"_info.txt"))
+    dput(list(nInd=nInd,nSnps=nSnps,NoDS=NoDS,rVec_f=rVec_f,rVec_m=rVec_m,
+              config=config,OPGP=OPGP,meanDepth=meanDepth,rd_dist=rd_dist),
+         paste0(trim_fn(paste0(direct,"/",filename)),"_info.txt"))
   ## return simulated data and parameter vlues ued to generate the data
   else
     return(invisible(list(genon=SEQgeno,depth=depth,trueGeno=geno,rVec_f=rVec_f,rVec_m=rVec_m,nInd=nInd,nSnps=nSnps,config=config,OPGP=OPGP,meanDepth=meanDepth,rd_dist=rd_dist)))
 }
 
 ### Function for writing simulated sequencing data to other software formats
-genoToOtherFormats <- function(genon,depth,config,formats,filename,thres=NULL,sim=sim){
+genoToOtherFormats <- function(genon,depth,config,formats,filename,direct,thres=NULL,sim=sim){
   
   ## specify which formats to use
   gusmap <- isTRUE(formats$gusmap)
@@ -104,9 +108,10 @@ genoToOtherFormats <- function(genon,depth,config,formats,filename,thres=NULL,si
   crimap <- isTRUE(formats$crimap)
   
   ## Write data to gusmap format
+  newfile <- paste0(trim_fn(direct),"/",trim_fn(filename))
   if(gusmap){
-    write.table(SEQgeno,paste0(filename,"_genon_SEQ.txt"),row.names=F,col.names=F)
-    write.table(depth,paste0(filename,"_depth_SEQ.txt"),row.names=F,col.names=F)
+    write.table(genon,paste0(newfile,"_genon_SEQ.txt"),row.names=F,col.names=F)
+    write.table(depth,paste0(newfile,"_depth_SEQ.txt"),row.names=F,col.names=F)
   }
   
   ## write data to other formats is required
@@ -142,7 +147,7 @@ genoToOtherFormats <- function(genon,depth,config,formats,filename,thres=NULL,si
       ## Write out the onemap file
       cat(nInd,' ',nSnps,'\n',
           sapply(1:nSnps,function(x) paste('*M',x,' ',mType[config[x]],'\t',paste(onemapData[,x],collapse=","),'\n',sep="")),
-          sep="",file=paste0(filename,'_OneMap.txt'))
+          sep="",file=paste0(newfile,'_OneMap.txt'))
       
     }
     
@@ -182,12 +187,12 @@ genoToOtherFormats <- function(genon,depth,config,formats,filename,thres=NULL,si
         # write to output
         LPout <- cbind(rep("FS",(nInd+2)),1:(nInd+2),c(0,0,rep(1,nInd)),c(0,0,rep(2,nInd)),c(1,2,rep(0,nInd)),rep(0,nInd+2),
                        rbind(parGenon,newGenon))
-        write.table(x=LPout,file=paste0(filename,"_LepMap.txt"),
+        write.table(x=LPout,file=paste0(newfile,"_LepMap.txt"),
                     sep="\t",col.names=F,row.names=F,quote=F)
       }
       
       if(crimap){ #### Output file for crimap
-        newfile <- paste0("chr1_",filename,".gen")
+        newfile <- paste0(trim_fn(direct,"/chr1_",filename),".gen")
         cat("1\n",nSnps,"\n",paste0("M",1:nSnps,collapse=" "),"\n1\n",nInd+2,"\n",sep="",file=newfile)
         # Add Father
         cat(paste(nInd+1,0,0,0),"\n",
@@ -234,7 +239,7 @@ genoToOtherFormats <- function(genon,depth,config,formats,filename,thres=NULL,si
         }
       }
 
-      newfile <- paste0(filename,'_JoinMap.loc')
+      newfile <- paste0(newfile,'_JoinMap.loc')
       ##form the first 4 lines of the file
       cat('name = in.loc\n','popt = CP\n','nloc = ',nSnps-length(usnps),'\n','nind = ',nInd,'\n\n',
           file=newfile,sep="")
@@ -247,7 +252,7 @@ genoToOtherFormats <- function(genon,depth,config,formats,filename,thres=NULL,si
   return(invisible())
 }
 
-
-
+## Function for trimming away white spaces and forward slashes for input path and file names
+trim_fn <- function(x) return( gsub("^\\/|\\/$", "", trimws(x)) )
 
 
