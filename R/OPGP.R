@@ -48,13 +48,13 @@ parHapToOPGP <- function(parHap, major="A", minor="B"){
   return (apply(parHap,2,function(x){
     if(sum(x==major)==2){
       return((x[1]==minor)+(x[3]==minor)*2+1)
-    } else if (sum(x==major)==4){
-      return(0)
+    } else if (x[1]==x[2] & x[3]==x[4]){
+      return(9)
     } else if (all(x[3:4]==major)){
       return((x[1]==minor)+5)
     } else if (all(x[1:2]==major)){
       return((x[3]==minor)+7)
-    }
+    } 
   }) 
 )}
 
