@@ -27,6 +27,8 @@ simFS <- function(rVec_f, rVec_m=rVec_f, config, nInd, nSnps, meanDepth, thres=N
   if( !is.numeric(seed1) || !is.numeric(seed2) )
     stop("Seed values for the randomziation need to be numeric value")
   
+  writeFiles <- any(c(isTRUE(formats$gusmap),isTRUE(formats$onemap),isTRUE(formats$lepmap),isTRUE(formats$crimap),isTRUE(formats$joinmap)))
+  
   ## Create list of the recombination fraction and 1 minus the recombination fraction
   ## for each SNP
   rVec_f <- sapply(rep(rVec_f,nSnps-1), function(r) c(r,1-r),simplify=F)
@@ -85,12 +87,12 @@ simFS <- function(rVec_f, rVec_m=rVec_f, config, nInd, nSnps, meanDepth, thres=N
     SEQgeno[,which(apply(parHap,2,function(x) all(x=="A")))] <- NaN
       
     ## Write data to file
-    if(NoDS != 1)
+    if(writeFiles)
       genoToOtherFormats(SEQgeno,depth,config,formats=formats,filename=paste0(filename,sim),direct=direct,thres=thres,sim=sim)
     
   }
   ## Write simulation parameters to a file
-  if(any(isTRUE(c(formats$gusmap,formats$onemap,formats$lepmap,formats$crimap,formats$joinmap))))
+  if(writeFiles)
     dput(list(nInd=nInd,nSnps=nSnps,NoDS=NoDS,rVec_f=rVec_f,rVec_m=rVec_m,
               config=config,OPGP=OPGP,meanDepth=meanDepth,rd_dist=rd_dist),
          paste0(trim_fn(paste0(direct,"/",filename)),"_info.txt"))
