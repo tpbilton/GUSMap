@@ -14,16 +14,18 @@ simFS <- function(rVec_f, rVec_m=rVec_f, config, nInd, nSnps, meanDepth, thres=N
       rVec_f > 0.5 || rVec_m > 0.5 )
     stop("Recombination factions are required to be an numeric number between 0 and 0.5")
   if(!is.numeric(nInd) || !is.numeric(nSnps) || nInd < 1 || nSnps < 1 ||
-     nInd != round(nInd) || nSnps != round(nSnps) || is.infinite(nInd) | is.infinite(nSnps))
+     nInd != round(nInd) || nSnps != round(nSnps) || !is.finite(nInd) || !is.finite(nSnps))
     stop("Number of individuals or number of SNPs are not positive integer")
-  if( !is.numeric(config) || !is.vector(config) || length(config) != nSnps )
-    stop("Segregation information needs to be a numeric vector equal to the number of nSnps")
-  if( meanDepth <= 0.01 || is.infinite(meanDepth) || !is.numeric(meanDepth))
+  if( !is.numeric(config) || !is.vector(config) || length(config) != nSnps || any(!(config == round(config))) )
+    stop("Segregation information needs to be a inteter vector equal to the number of nSnps")
+  if( !is.numeric(meanDepth) || meanDepth <= 0 || !is.finite(meanDepth) )
     stop("The mean of the read depth distribution is not a finitie positive number.")
-  if( !is.numeric(NoDS) || NoDS < 1 || NoDS != round(NoDS) || is.infinite(NoDS))
+  if( !is.numeric(NoDS) || NoDS < 1 || NoDS != round(NoDS) || !is.finite(NoDS))
     stop("Imput for the number of data sets needs to be a finite positive number")
-  if( (!is.numeric(thres) & !is.null(thres)) || is.infinite(thres))
+  if( !is.null(thres) & !is.numeric(thres) )
     stop("The read depth threshold value is not a finite numeric number")
+  if( !is.numeric(seed1) || !is.numeric(seed2) )
+    stop("Seed values for the randomziation need to be numeric value")
   
   ## Create list of the recombination fraction and 1 minus the recombination fraction
   ## for each SNP
@@ -88,11 +90,11 @@ simFS <- function(rVec_f, rVec_m=rVec_f, config, nInd, nSnps, meanDepth, thres=N
     
   }
   ## Write simulation parameters to a file
-  if(NoDS > 1)
+  if(any(isTRUE(c(formats$gusmap,formats$onemap,formats$lepmap,formats$crimap,formats$joinmap))))
     dput(list(nInd=nInd,nSnps=nSnps,NoDS=NoDS,rVec_f=rVec_f,rVec_m=rVec_m,
               config=config,OPGP=OPGP,meanDepth=meanDepth,rd_dist=rd_dist),
          paste0(trim_fn(paste0(direct,"/",filename)),"_info.txt"))
-  ## return simulated data and parameter vlues ued to generate the data
+  ## return simulated data and parameter values ued to generate the data
   else
     return(invisible(list(genon=SEQgeno,depth=depth,trueGeno=geno,rVec_f=rVec_f,rVec_m=rVec_m,nInd=nInd,nSnps=nSnps,config=config,OPGP=OPGP,meanDepth=meanDepth,rd_dist=rd_dist)))
 }

@@ -10,10 +10,18 @@ rf_est_FS <- function(init_r=NULL, genon, depth, OPGP, sexSpec=F, trace=F, noFam
   
   ## Do some checks
   if(!is.list(genon) | !is.list(depth) | !is.list(OPGP))
-    stop("Arguments for the genon, depth and OPGP objects are required to be lists objects")
+    stop("Arguments for genon, depth and OPGP are required to be lists objects")
+  if( !is.numeric(noFam) || noFam < 1 || noFam != round(noFam) || !is.finite(noFam))
+    stop("The number of families needs to be a finite positive number")
   if(noFam != length(genon) | noFam != length(depth) | noFam != length(OPGP) )
-    stop("The number of genon and depth matrices given do not match the number of families specified")
-  
+    stop("The number of genon and depth matrices or OPGP vectors do not match the number of families specified")
+  if( !is.null(init_r) & !is.numeric(init_r) )
+    stop("Starting values for the recombination fraction needs to be a numeric vector or integer or a NULL object")
+  if( !is.logical(trace) || is.na(trace) )
+    trace = FALSE
+  if( !is.logical(sexSpec) || is.na(sexSpec) )
+    sexSpec = FALSE
+
   # Arguments for the optim function
   optim.arg <- list(...)
   if(length(optim.arg) == 0)
@@ -21,7 +29,7 @@ rf_est_FS <- function(init_r=NULL, genon, depth, OPGP, sexSpec=F, trace=F, noFam
   
   ## Convert the geno data into alternative form
   genon <- lapply(genon,function(x){
-    if(any(!(x %in%  0:2 | is.na(x))) | !is.matrix(x))
+    if(!is.matrix(x) || !is.numeric(x) || any(!(x %in%  0:2 | is.na(x))))
       return(NULL)
     else{
       x <- abs(2-x+1)
@@ -32,10 +40,10 @@ rf_est_FS <- function(init_r=NULL, genon, depth, OPGP, sexSpec=F, trace=F, noFam
   ## Check the genon and depth matrices
   if(any(unlist(lapply(genon,is.null))))
     stop("At least one genon matrix is missing or invalid")
-  if(any(unlist(lapply(depth,function(x) !is.numeric(x) | any(x<0 | is.infinite(x)) | any(!(x == round(x)))))))
-    stop("At least one genon matrix is missing or invalid depth value")
-  if(any(unlist(lapply(OPGP, function(x) !is.vector(x) | any(!(x %in% 1:9))))))
-    stop("Invalid OPGP vector.")
+  if(any(unlist(lapply(depth,function(x) !is.numeric(x) || any( x<0 | !is.finite(x)) || any(!(x == round(x)))))))
+    stop("At least one depth matrix is missing or invalid")
+  if(any(unlist(lapply(OPGP, function(x) !is.numeric(x) || !is.vector(x) || any(!(x %in% 1:9)) ))))
+    stop("At least OPGP vector is missing or invalid")
      
   nInd <- lapply(genon,nrow)  # number of individuals
   nSnps <- ncol(genon[[1]]) # number of SNPs
@@ -97,12 +105,15 @@ rf_est_FS <- function(init_r=NULL, genon, depth, OPGP, sexSpec=F, trace=F, noFam
 ## The r.f.'s are sex-specific and constrained to the range [0,1]
 rf_est_FS_UP <- function(genon, depth, config, trace=F, ...){
   
-  if( !is.matrix(genon) || any(!(genon %in% 0:2 | is.na(genon))))
-    stop("Invald genon matrix. It must have entries of 0, 1, 2 or NA")
-  if( !is.numeric(depth) || any(depth<0 || is.infinite(depth)) | any(!(depth == round(depth))))
-    stop("At least one genon matrix is missing or invalid depth value")
-  if(!is.numeric(config) | !is.vector(config) | any(!(config %in% 1:4)))
-    stop("Invalid config vector")
+  ## Check imputs
+  if( !is.matrix(genon) || !is.numeric(genon) || any(!(genon %in% 0:2 | is.na(genon))) )
+    stop("Invalid genon matrix. It must be numeric and have entries of 0, 1, 2 or NA")
+  if( !is.matrix(depth) || !is.numeric(depth) || any(depth<0 || !is.finite(depth)) || any(!(depth == round(depth))) )
+    stop("Invalid depth matrix. It must be numeric with entries that are finite positive integers")
+  if( !is.vector(config) || !is.numeric(config) || any(!(config %in% 1:4)) )
+    stop("Invalid config vector. It must be a numeric vector with entries 1, 2, 3 or 4.")
+  if( !is.logical(trace) || is.na(trace) )
+    trace = FALSE
   
   ## Convert the geno data into alternative form to allow indexing of lists
   genon <- abs(2-genon+1)
