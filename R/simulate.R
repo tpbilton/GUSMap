@@ -6,7 +6,7 @@
 
 ## Function for simulating sequencing data for a single full-sib family
 simFS <- function(rVec_f, rVec_m=rVec_f, config, nInd, nSnps, meanDepth, thres=NULL, NoDS=1,
-                  formats=list(gusmap=T,onemap=F,lepmap=F,joinmap=F,crimap=F), rd_dist="Neg_Binom",
+                  formats=list(gusmap=F,onemap=F,lepmap=F,joinmap=F,crimap=F), rd_dist="Neg_Binom",
                   filename=NULL, direct=NULL, seed1=1, seed2=1){
   
   ## perform some checks for data input
@@ -28,6 +28,14 @@ simFS <- function(rVec_f, rVec_m=rVec_f, config, nInd, nSnps, meanDepth, thres=N
     stop("Seed values for the randomziation need to be numeric value")
   
   writeFiles <- any(c(isTRUE(formats$gusmap),isTRUE(formats$onemap),isTRUE(formats$lepmap),isTRUE(formats$crimap),isTRUE(formats$joinmap)))
+  
+  ## If to write files: check that file directory is in correct format
+  if(writeFiles){
+    if(!is.character(filename) || length(filename)!=1)
+      stop("Name to write data sets to need to be a string of ")
+    if(!is.character(direct) || length(direct)!=1)
+      stop("Name to write data sets to need to be a string of ")
+  }
   
   ## Create list of the recombination fraction and 1 minus the recombination fraction
   ## for each SNP

@@ -1,12 +1,13 @@
 Package: GusMap
-Title: Analysis of Genotyping-by-sequencing (GBS) data
-Version: 0.0.1
-Date: 2017-06-19
+Version: 0.1
+Date: 2017-07-31
+Title: Genotyping with uncertainty and sequening data for linkage mapping
 Authors@R: person("Timothy P.", "Bilton", role = c("aut", "cre"), email = "tbilton@maths.otago.ac.nz")
+Author: Timothy P. Bilton [aut, cre]
 Maintainer: Timothy P. Bilton <tbilton@maths.otago.ac.nz>
-Description: Statistical method for performing linkage mapping using low coverage sequencing data.
-Depends: R (>= 3.3.0), boot
-License: GPL-2
-Encoding: UTF-8
+Depends: R (>= 3.0.0), boot
+Description: Package for performing linkage mapping using outcrossed full-sib family populations that have been sequenced using next generation multiplexing sequencing methods.
+License: GPL-3
 LazyData: true
+NeedsCompilation: yes
 

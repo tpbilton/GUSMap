@@ -6,7 +6,8 @@
 
 
 ## Function for computing the recombination fraction when the parental phase is known
-rf_est_FS <- function(init_r=NULL, genon, depth, OPGP, sexSpec=F, trace=F, noFam=1, ...){
+rf_est_FS <- function(init_r=NULL, genon, depth, OPGP,
+                      sexSpec=F, trace=F, noFam=1, ...){
   
   ## Do some checks
   if(!is.list(genon) | !is.list(depth) | !is.list(OPGP))
@@ -46,7 +47,7 @@ rf_est_FS <- function(init_r=NULL, genon, depth, OPGP, sexSpec=F, trace=F, noFam
     stop("At least OPGP vector is missing or invalid")
      
   nInd <- lapply(genon,nrow)  # number of individuals
-  nSnps <- ncol(genon[[1]]) # number of SNPs
+  nSnps <- ncol(genon[[1]])   # number of SNPs
   
   ## check inputs are of required type for C functions
   if(!is.numeric(init_r)|is.integer(init_r))
@@ -79,7 +80,7 @@ rf_est_FS <- function(init_r=NULL, genon, depth, OPGP, sexSpec=F, trace=F, noFam
   else{
     # Determine the initial values
     if((length(init_r)==1) & (is.numeric(init_r))) init_r <- rep(init_r,nSnps-1)
-    else if((length(init_r) != nSnps) & (!is.numeric(init_r))) init_r <- rep(0.1,nSnps-1)
+    else if((length(init_r) != nSnps) | (!is.numeric(init_r))) init_r <- rep(0.1,nSnps-1)
     
     ## Find MLE
     optim.MLE <- optim(logit2(init_r),ll_fs_mp_scaled,method="BFGS",control=optim.arg,
