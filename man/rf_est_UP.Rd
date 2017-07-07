@@ -17,7 +17,7 @@ rf_est_FS_UP <- function(genon, depth, config, trace=F, \ldots)
 \details{
 The \code{genon} and \code{depth} matrices must have the rows representing the individuals and columns representing the SNPs. For entries of the \code{genon} matrix, 2=major homozygous, 1=heterozygous, 0=minor homozygous and NA missing genotype while the entries for \code{depth} matrix must be a finite non-negative integer number.  The value for the \code{config} vector are 1=informative, 2=paternally segregating, 3=maternally segregating and 4=uniformative.
 
-The main difference of this function from \link{\code{rf_est_FS}} is that the recombination fractions are constrainted to the interval [0,1] and are foced to be sex-specific. Primiarly, this function is included to infer phase and is used by the function \link{\code{infer_OPGP_FS}} although it can be used to estimate 2 point recombination fraction estimates between partially segregating loci.
+The main difference of this function from \code{\link{rf_est_FS}} is that the recombination fractions are constrainted to the interval [0,1] and are foced to be sex-specific. Primiarly, this function is included to infer phase and is used by the function \code{\link{infer_OPGP_FS}} although it can be used to estimate 2 point recombination fraction estimates between partially segregating loci.
 }
 \value{
 The function returns a list with elements
