@@ -13,8 +13,9 @@ Version: \tab 0.1\cr
 Date: \tab 2017-07-31\cr
 License: \tab GPL 3\cr
 }
+}
 \author{
-Timothy P. Bilton
+Timothy P. Bilton,
 Maintainer: Timothy P. Bilton <tbilton@maths.otago.ac.nz>
 }
 \references{
