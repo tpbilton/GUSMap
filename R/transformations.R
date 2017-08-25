@@ -3,6 +3,8 @@
 ### Date: 18/01/2017
 ### Edited: 23/03/2017
 
+## Functions requred for transforming the recombination fraction parameters on the interval [0,0.5]
+## to the interval [-inf,inf]
 logit2 <- function(p) log(2*p/(1-2*p))
 
 inv.logit2 <- function(logit_p) {
@@ -12,3 +14,8 @@ inv.logit2 <- function(logit_p) {
     p[which(p.na)] <- 0.5
   return(p)
 }
+
+## Functions requred for transforming the recombination fraction parameters on the interval [0,1]
+## to the interval [-inf,inf]
+logit <- function(p) qlogis(p)
+inv.logit <- function(logit_p) plogis(logit_p)

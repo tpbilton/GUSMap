@@ -1,7 +1,7 @@
 #### R script contains functions for performing Monte Carlo simulations
 ### Author: Timothy Bilton
 ### Date: 20/02/17
-### Edited: 04/05/17
+### Edited: 25/08/17
 
 
 ## Function for simulating sequencing data for a single full-sib family
@@ -12,12 +12,12 @@ simFS <- function(rVec_f, rVec_m=rVec_f, config, nInd, nSnps, meanDepth, thres=N
   ## perform some checks for data input
   if( !is.numeric(rVec_f) || !is.numeric(rVec_m) || rVec_f < 0 || rVec_m < 0 ||
       rVec_f > 0.5 || rVec_m > 0.5 )
-    stop("Recombination factions are required to be an numeric number between 0 and 0.5")
+    stop("Recombination factions are required to be a numeric number between 0 and 0.5")
   if(!is.numeric(nInd) || !is.numeric(nSnps) || nInd < 1 || nSnps < 1 ||
      nInd != round(nInd) || nSnps != round(nSnps) || !is.finite(nInd) || !is.finite(nSnps))
-    stop("Number of individuals or number of SNPs are not positive integer")
+    stop("Number of individuals or number of SNPs are not a positive integer")
   if( !is.numeric(config) || !is.vector(config) || length(config) != nSnps || any(!(config == round(config))) )
-    stop("Segregation information needs to be a inteter vector equal to the number of nSnps")
+    stop("Segregation information needs to be an integer vector equal to the number of SNPs")
   if( !is.numeric(meanDepth) || meanDepth <= 0 || !is.finite(meanDepth) )
     stop("The mean of the read depth distribution is not a finitie positive number.")
   if( !is.numeric(NoDS) || NoDS < 1 || NoDS != round(NoDS) || !is.finite(NoDS))
@@ -25,22 +25,22 @@ simFS <- function(rVec_f, rVec_m=rVec_f, config, nInd, nSnps, meanDepth, thres=N
   if( !is.null(thres) & !is.numeric(thres) )
     stop("The read depth threshold value is not a finite numeric number")
   if( !is.numeric(seed1) || !is.numeric(seed2) )
-    stop("Seed values for the randomziation need to be numeric value")
+    stop("Seed values for the randomziation need to be numeric values")
   
   writeFiles <- any(c(isTRUE(formats$gusmap),isTRUE(formats$onemap),isTRUE(formats$lepmap),isTRUE(formats$crimap),isTRUE(formats$joinmap)))
   
   ## If to write files: check that file directory is in correct format
   if(writeFiles){
     if(!is.character(filename) || length(filename)!=1)
-      stop("Name to write data sets to need to be a string of ")
+      stop("Name to write data sets to need to be a string of length 1")
     if(!is.character(direct) || length(direct)!=1)
-      stop("Name to write data sets to need to be a string of ")
+      stop("Name to write data sets to need to be a string of length 1")
   }
   
   ## Create list of the recombination fraction and 1 minus the recombination fraction
   ## for each SNP
-  rVec_f <- sapply(rep(rVec_f,nSnps-1), function(r) c(r,1-r),simplify=F)
-  rVec_m <- sapply(rep(rVec_m,nSnps-1), function(r) c(r,1-r),simplify=F)
+  rVec_f <- sapply(rep(rVec_f,length.out=nSnps-1), function(r) c(r,1-r),simplify=F)
+  rVec_m <- sapply(rep(rVec_m,length.out=nSnps-1), function(r) c(r,1-r),simplify=F)
   
   ## simulate the parental haplotypes
   set.seed(seed1)
@@ -101,15 +101,20 @@ simFS <- function(rVec_f, rVec_m=rVec_f, config, nInd, nSnps, meanDepth, thres=N
   }
   ## Write simulation parameters to a file
   if(writeFiles)
-    dput(list(nInd=nInd,nSnps=nSnps,NoDS=NoDS,rVec_f=rVec_f,rVec_m=rVec_m,
+    dput(list(nInd=nInd,nSnps=nSnps,NoDS=NoDS,rVec_f=unlist(lapply(rVec_f,function(x) x[1])),
+              rVec_m=unlist(lapply(rVec_m,function(x) x[1])),
               config=config,OPGP=OPGP,meanDepth=meanDepth,rd_dist=rd_dist),
          paste0(trim_fn(paste0(direct,"/",filename)),"_info.txt"))
   ## return simulated data and parameter values ued to generate the data
   else
-    return(invisible(list(genon=SEQgeno,depth=depth,trueGeno=geno,rVec_f=rVec_f,rVec_m=rVec_m,nInd=nInd,nSnps=nSnps,config=config,OPGP=OPGP,meanDepth=meanDepth,rd_dist=rd_dist)))
+    return(invisible(list(genon=SEQgeno,depth=depth,trueGeno=geno,
+                          rVec_f=unlist(lapply(rVec_f,function(x) x[1])),
+                          rVec_m=unlist(lapply(rVec_m,function(x) x[1])),
+                          nInd=nInd,nSnps=nSnps,config=config,OPGP=OPGP,
+                          meanDepth=meanDepth,rd_dist=rd_dist)))
 }
 
-### Function for writing simulated sequencing data to other software formats
+### Function for writing simulated sequencing data to various software formats
 genoToOtherFormats <- function(genon,depth,config,formats,filename,direct,thres=NULL,sim=sim){
   
   ## specify which formats to use
@@ -251,14 +256,14 @@ genoToOtherFormats <- function(genon,depth,config,formats,filename,direct,thres=
         }
       }
 
-      newfile <- paste0(newfile,'_JoinMap.loc')
+      newfile2 <- paste0(newfile2,'_JoinMap.loc')
       ##form the first 4 lines of the file
       cat('name = in.loc\n','popt = CP\n','nloc = ',nSnps-length(usnps),'\n','nind = ',nInd,'\n\n',
-          file=newfile,sep="")
+          file=newfile2,sep="")
       
       cat(sapply((1:nSnps)[which(!(1:nSnps %in% usnps))], function(x) {
         paste0('M',x,'  ',switch(config[x],'<hkxhk>','<nnxnp>','<lmxll>'),'\n',paste(joinmapData[,x],collapse=" "),'\n')
-      }), file=newfile,sep="",append=T)
+      }), file=newfile2,sep="",append=T)
     }
   }
   return(invisible())

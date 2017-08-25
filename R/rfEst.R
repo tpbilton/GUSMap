@@ -92,7 +92,7 @@ rf_est_FS <- function(init_r=NULL, genon, depth, OPGP,
     print(optim.MLE)
   }
   # Check for convergence
-  if(optim.MLE$convergence != 0)
+  if(trace & optim.MLE$convergence != 0)
     warning(paste0('Optimization failed to converge properly with error ',optim.MLE$convergence,'\n smallest MLE estimate is: ', round(min(optim.MLE$par),6)))
   # Return the MLEs
   if(sexSpec)
@@ -174,7 +174,7 @@ rf_est_FS_UP <- function(genon, depth, config, trace=F, ...){
     }
     
     # Check for convergence
-    if(optim.MLE$convergence != 0)
+    if(trace & optim.MLE$convergence != 0)
       warning(paste0('Optimization failed to converge properly with error ',optim.MLE$convergence,'\n smallest MLE estimate is: ', round(min(optim.MLE$par),6)))
     
     # Return the MLEs

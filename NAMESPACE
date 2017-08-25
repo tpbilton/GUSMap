@@ -1,5 +1,3 @@
 useDynLib(GusMap)
 
-importFrom(boot, logit, inv.logit)
-
 exportPattern("^[^\\.]")

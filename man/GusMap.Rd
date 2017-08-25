@@ -1,7 +1,7 @@
 \name{GusMap-package}
-\alias{GusMap,GusMap-package}
+\alias{GusMap}
 \docType{package}
-\title{Genotyping with uncertainty and sequening data for linkage mapping}
+\title{Genotyping Uncertainty with Sequening data for linkage MAPping (GusMap)}
 \description{
 Package for performing linkage mapping using outcrossed full-sib family populations that have been sequenced using next generation multiplexing sequencing methods (see Bilton et al. (2017)).
 }
@@ -19,5 +19,6 @@ Timothy P. Bilton,
 Maintainer: Timothy P. Bilton <tbilton@maths.otago.ac.nz>
 }
 \references{
+Bilton, T.P., Schofield, M.R., Black, M.A., Chagne D., Wilcox P., Dodds K.G. (2017). Multilocus genetic linkage mapping in multiparental outcrossed populations using low coverage sequencing data. Unpublished manuscript.
 }
 \keyword{package}
