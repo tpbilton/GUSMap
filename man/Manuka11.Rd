@@ -33,26 +33,54 @@ Dodds K.G., McEwan J.C., Brauning R., Anderson R.M., van Stijn, T.C., Kristjanss
 ## To convert the data into the required format for GusMap:
 manuka <- Manuka11()
 
+## To access the RA directly
+RAname <- system.file("extdata", "Manuka11.txt.gz", package="GusMap")
+RAdata <- read.table(RAname, header=T)
+
+## Work out the segregation types
+config <- unlist(apply(manuka$genon[1:4,],2,function(x){
+  x_p = x[1:2]; x_m = x[3:4]
+  if(any(x_p==1,na.rm=T) & any(x_m==1,na.rm=T))
+    return(1)
+  else if(all(x_m==2,na.rm=T)|all(x_m==0, na.rm=T) & any(x_p==1, na.rm=T))
+    return(2)
+  else if(all(x_p==2,na.rm=T)|all(x_p==0, na.rm=T) & any(x_m==1,na.rm=T))
+    return(3)
+}))
+
 ## SNPs removed due to mis-ordering
-badSnps <- c(3:14,16,18:23,25:27,29,33:35,39:42,44,46:49,
+badSnps <- rep(FALSE, ncol(manuka$genon))
+badSnps[c(3:14,16,18:23,25:27,29,33:35,39:42,44,46:49,
   53,58:60,63,65:67,69:74,76,77,85,104,114:129,
   152,162,163,173:180,187:190,206:208,210,212,213,
   216,228,272,285,286,298,304,314,318,320,342,344,345,
   354,358,370,373,380,389,390,397,408,411,421,427,
   437,446,469,493,498:500,506,510,516,519,522,531,
   543,553,556,569,582,585,601,617,620,623,628,635,
-  636:643,647:650,669:680)
+  636:643,647:650,669:680)] <- TRUE
 
-## Work out the segregation types
-apply(genon[1:4,],2,function(x){
-if(all(x==2,na.rm=T)|all(x==0) & all(x==1))
-})
+## Make sure that the major is allele is coded as 2
+for(snp in 1:ncol(manuka$genon)){
+  x = manuka$genon[,snp]
+  if( (config[snp] %in% c(2,3)) & (sum(x==2,na.rm=T) <= sum(x==0,na.rm=T)))
+    manuka$genon[,snp] <- 2 - manuka$genon[,snp] - 2
+}
+
+## Set the errorus genotypes to missing
+RAdata2 <- t(RAdata[,-c(1:6)])
+badCalls <- apply(matrix(unlist(strsplit(RAdata2,split=",")),byrow=T, ncol=2), 1,
+                   function(x) min(as.numeric(x))==1 & (sum(as.numeric(x))>8))
+manuka$genon[-c(1:4),][which(badCalls)] <- NA
+manuka$depth[-c(1:4),][which(badCalls)] <- 0
 
 ## Compute the maps 
-OPGP_rd6 <- infer_OPGP_FS(genon[,-badSnps], depth[,-badSnps], temp.config,
-                          ndeps=rep(0.001,sum(temp.config==1)*2+sum(temp.config!=1)-2), reltol=1e-3)
+ind_rd6 <- which(colMeans(manuka$depth[-c(1:4),],na.rm=T ) < 6 & !badSnps) 
+OPGP_rd6 <- infer_OPGP_FS(manuka$genon[-c(1:4),ind_rd6], manuka$depth[-c(1:4),ind_rd6],
+                          config[ind_rd6], ndeps=rep(0.001,sum(config[ind_rd6]==1)*2+
+                          sum(config[ind_rd6]!=1)-2), reltol=1e-3)
 
-## To access the RA directly
-RAname <- system.file("extdata", "Manuka11.txt.gz", package="GusMap")
-RAdata <- read.table(RAname, header=T)
+rf_est <- rf_est_FS(init_r=0.01,genon=list(manuka$genon[-c(1:4),ind_rd6]),
+                                depth=list(manuka$depth[-c(1:4),ind_rd6]),
+                                OPGP=list(OPGP_rd6),
+                                reltol=1e-10)
 }

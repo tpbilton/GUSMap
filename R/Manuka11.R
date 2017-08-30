@@ -8,6 +8,8 @@ Manuka11 <- function(){
   gform <- "Tassel"
   ## Run KGD to obtain the genon, depth and seqID objects
   source("https://raw.github.com/AgResearch/KGD/master/GBS-Chip-Gmatrix.R", local=environment())
-  
-  return(list(genon=genon,depth=depth.orig,indNames=seqID,chrom=chrom,pos=pos))
+  toReturn <- list(genon=genon,depth=depth.orig,indNames=seqID,chrom=chrom,pos=pos)
+  ## Remove the objects created unnecessarily.
+  rm(list=c("allelecounts","alleles","chrom","depth","depth.orig","fcolo","genon","HWdis","pg","pos","RAcounts","sampdepth","l10LRT","maf","nind","nsnps","p","sampdepth.max","sampdepth.med","samples","seqID","SNP_Names","snpdepth"), envir = globalenv())
+  return(toReturn)
 }

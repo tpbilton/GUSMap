@@ -6,6 +6,14 @@ An R package for performing linkage mapping using low (or high) coverage sequenc
 
 ### Installation:
 
+The easiest way to install GusMap in R is using the devtools package.
+
+```
+install.packages(devtools)
+library(devtools)
+install_github("tpbilton/GusMap")
+```
+
 Note: Some of the functions are coded in C and therefore an appropriate C complier is needed for the package to work. For windows OS, Rtools (https://cran.r-project.org/bin/windows/Rtools/) provides a complier. 
 
 ### References:
