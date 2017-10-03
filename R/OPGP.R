@@ -15,7 +15,7 @@ infer_OPGP_FS <- function(genon, depth, config, ...){
   MLEs <- rf_est_FS_UP(genon, depth, config, ...)
   
   parHap <- matrix("A",nrow=4,ncol=nSnps)
-  ## Determine whether the phase between adjacent paternal (or maternal) segregating SNPs is in coupling
+  ## Determine whether the phase between adjacent paternal (or maternal) informative SNPs is in coupling
   coupling_pat <- MLEs[[1]] < 0.5
   coupling_mat <- MLEs[[2]] < 0.5
   

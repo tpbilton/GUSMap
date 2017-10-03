@@ -25,7 +25,7 @@ Function outputs a list containing the following elements:
 }
 \author{Timothy P. Bilton}
 \references{
-Bilton, T.P., Schofield, M.R., Black, M.A., Chagne D., Wilcox P., Dodds K.G. (2017). Multilocus genetic linkage mapping in multiparental outcrossed populations using low coverage sequencing data. Unpublished manuscript.
+Bilton, T.P., Schofield, M.R., Black, M.A., Chagne D., Wilcox P., Dodds K.G. (2017). More accurate genetic maps using low coverage sequencing data in multiparental outcrossed populations. Unpublished manuscript.
 
 Dodds K.G., McEwan J.C., Brauning R., Anderson R.M., van Stijn, T.C., Kristjansson, T., Clarke, S.M. (2015). Construction of relatedness matrices using genotyping-by-sequencing data. \emph{BMC Genomics}. 16:1047.
 }

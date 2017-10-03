@@ -36,7 +36,7 @@ Else, if sex-specific recombination fractions are desired, the list contains,
 }
 }
 \references{
-Bilton, T.P., Schofield, M.R., Black, M.A., Chagne D., Wilcox P., Dodds K.G. (2017). Multilocus genetic linkage mapping in multiparental outcrossed populations using low coverage sequencing data. Unpublished manuscript.
+Bilton, T.P., Schofield, M.R., Black, M.A., Chagne D., Wilcox P., Dodds K.G. (2017). More accurate genetic maps using low coverage sequencing data in multiparental outcrossed populations. Unpublished manuscript.
 }
 \author{Timothy P. Bilton}
 \seealso{

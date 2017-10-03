@@ -10,7 +10,7 @@ Simulate genotypes and sequencing depth for the progeny of a full-sib family and
 }
 \arguments{
   \item{rVec_f, rVec_m}{Numeric vector of true paternal and maternal recombinaiton fractions (in the interval [0,0.5]). If only a single number is given, then recombination between adjacent loci are equal.}
-  \item{config}{Integer vector of the segregation type for each marker. 1=doubly informative, 2=paternal segregating, 3=maternal segregating and 4=uniformative.}
+  \item{config}{Integer vector of the segregation type for each marker. 1=both-informative, 2=paternal-informative, 3=maternal-informative and 4=uniformative.}
   \item{nInd}{Positive integer value. The number of individuals.}
   \item{nSnps}{Positive integer value. The number of SNPs (or loci).}
   \item{meanDepth}{Positive numeric value. The mean depth of the read depth distribution.}
