@@ -1,15 +1,15 @@
-\name{GusMap-package}
-\alias{GusMap}
+\name{GUSMap-package}
+\alias{GUSMap}
 \docType{package}
-\title{Genotyping Uncertainty with Sequening data for linkage MAPping (GusMap)}
+\title{Genotyping Uncertainty with Sequening data for linkage MAPping (GUSMap)}
 \description{
 Package for constructing genetic maps using outcrossed full-sib family populations that have been sequenced using next generation multiplexing sequencing methods (see Bilton et al. (2017)).
 }
 \details{
 \tabular{ll}{
-Package: \tab GusMap\cr
+Package: \tab GUSMap\cr
 Type: \tab Package\cr
-Version: \tab 0.1\cr
+Version: \tab 0.1.0\cr
 Date: \tab 2017-08-31\cr
 License: \tab GPL 3\cr
 }

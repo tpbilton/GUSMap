@@ -209,17 +209,17 @@ genoToOtherFormats <- function(genon,depth,config,formats,filename,direct,thres=
       }
       
       if(crimap){ #### Output file for crimap
-        newfile <- paste0(trim_fn(paste0(direct,"/chr1_",filename)),".gen")
-        cat("1\n",nSnps,"\n",paste0("M",1:nSnps,collapse=" "),"\n1\n",nInd+2,"\n",sep="",file=newfile)
+        newfile2 <- paste0(trim_fn(paste0(direct,"/chr1_",filename)),".gen")
+        cat("1\n",nSnps,"\n",paste0("M",1:nSnps,collapse=" "),"\n1\n",nInd+2,"\n",sep="",file=newfile2)
         # Add Father
         cat(paste(nInd+1,0,0,0),"\n",
-            paste(parGenon[2,],collapse=" "),"\n",sep="",file=newfile,append=T)
+            paste(parGenon[2,],collapse=" "),"\n",sep="",file=newfile2,append=T)
         # Add Mother
         cat(paste(nInd+2,0,0,1),"\n",
-            paste(parGenon[1,],collapse=" "),"\n",sep="",file=newfile,append=T)
+            paste(parGenon[1,],collapse=" "),"\n",sep="",file=newfile2,append=T)
         # add offspring
         cat(paste0(paste(1:nInd,nInd+1,nInd+2,3,"\n"),sapply(1:nInd,function(x) paste(paste(newGenon[x,],collapse=" "),"\n")),sep=""),
-            sep="", append=T,file=newfile)
+            sep="", append=T,file=newfile2)
       }
     }
     
@@ -256,14 +256,13 @@ genoToOtherFormats <- function(genon,depth,config,formats,filename,direct,thres=
         }
       }
 
-      newfile2 <- paste0(newfile2,'_JoinMap.loc')
       ##form the first 4 lines of the file
       cat('name = in.loc\n','popt = CP\n','nloc = ',nSnps-length(usnps),'\n','nind = ',nInd,'\n\n',
-          file=newfile2,sep="")
+          file=paste0(newfile,'_JoinMap.loc'),sep="")
       
       cat(sapply((1:nSnps)[which(!(1:nSnps %in% usnps))], function(x) {
         paste0('M',x,'  ',switch(config[x],'<hkxhk>','<nnxnp>','<lmxll>'),'\n',paste(joinmapData[,x],collapse=" "),'\n')
-      }), file=newfile2,sep="",append=T)
+      }), file=paste0(newfile,'_JoinMap.loc'),sep="",append=T)
     }
   }
   return(invisible())
