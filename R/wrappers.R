@@ -7,11 +7,15 @@
 #### Likelihood function is written in C in the file 'likelihoods.c'
 
 ## r.f.'s are equal
-ll_fs_mp_scaled <- function(logit2_r,genon,depth,OPGP,nInd,nSnps,noFam){
-  r <- inv.logit2(logit2_r)  
+ll_fs_mp_scaled <- function(logit2_r,genon,depth,OPGP,nInd,nSnps,noFam, seqErr=F, allelicErr){
+  r <- inv.logit2(logit2_r[1:(nSnps-1)])
+  if(seqErr)
+    epsilon = as.numeric(inv.logit(logit2_r[nSnps]))
+  if(allelicErr)
+    delta = as.numeric(inv.logit(logit2_r[length(logit2_r)]))
   llval = 0
   for(fam in 1:noFam)
-    llval = llval + .Call("ll_fs_scaled_c",r,genon[[fam]],depth[[fam]],OPGP[[fam]],nInd[[fam]],nSnps)
+    llval = llval + .Call("ll_fs_scaled_c",r,epsilon,delta,genon[[fam]],depth[[fam]],OPGP[[fam]],nInd[[fam]],nSnps)
   return(llval)
 }
 

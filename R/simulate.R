@@ -5,7 +5,7 @@
 
 
 ## Function for simulating sequencing data for a single full-sib family
-simFS <- function(rVec_f, rVec_m=rVec_f, config, nInd, nSnps, meanDepth, thres=NULL, NoDS=1,
+simFS <- function(rVec_f, rVec_m=rVec_f, delta=0, epsilon=0, config, nInd, nSnps, meanDepth, thres=NULL, NoDS=1,
                   formats=list(gusmap=F,onemap=F,lepmap=F,joinmap=F,crimap=F), rd_dist="Neg_Binom",
                   filename=NULL, direct=NULL, seed1=1, seed2=1){
   
@@ -13,6 +13,9 @@ simFS <- function(rVec_f, rVec_m=rVec_f, config, nInd, nSnps, meanDepth, thres=N
   if( !is.numeric(rVec_f) || !is.numeric(rVec_m) || rVec_f < 0 || rVec_m < 0 ||
       rVec_f > 0.5 || rVec_m > 0.5 )
     stop("Recombination factions are required to be a numeric number between 0 and 0.5")
+  if( !is.numeric(delta) || !is.numeric(epsilon) || length(delta) != 1 || length(epsilon) != 1 ||
+      delta < 0 || epsilon < 0 || delta > 1 || epsilon > 1 )
+    stop("Error parameters, delta or/and epsilon, are not numeric number between 0 and 1")
   if(!is.numeric(nInd) || !is.numeric(nSnps) || nInd < 1 || nSnps < 1 ||
      nInd != round(nInd) || nSnps != round(nSnps) || !is.finite(nInd) || !is.finite(nSnps))
     stop("Number of individuals or number of SNPs are not a positive integer")
@@ -69,24 +72,40 @@ simFS <- function(rVec_f, rVec_m=rVec_f, config, nInd, nSnps, meanDepth, thres=N
       }
       mIndx <- cbind(mIndx,c(newmIndx_f,newmIndx_m))
     }
-    
-    # Determine the true genotype calls
-    geno <- rbind(sapply(1:nSnps,function(x) parHap[mIndx[1:nInd,x]+1,x]),sapply(1:nSnps,function(x) parHap[mIndx[1:nInd+nInd,x]+3,x]))
-    geno <- sapply(1:nSnps,function(y) {
-      tempGeno <- geno[,y]
+    ## Determine the true Genotypes
+    trueGeno <- rbind(sapply(1:nSnps, function(x) parHap[mIndx[1:nInd,x] + 1, x]), sapply(1:nSnps, function(x) parHap[mIndx[1:nInd + nInd, x] + 3, x]))
+    trueGeno <- sapply(1:nSnps,function(y) {
+      tempGeno <- trueGeno[,y]
       sapply(1:nInd, function(x) paste(sort(c(tempGeno[x],tempGeno[x+nInd])),collapse=""))
     })
-    geno <- (geno=="AA")*2 + (geno=="AB")*1
+    trueGeno <- (trueGeno=="AA")*2 + (trueGeno=="AB")*1
+    
+    ## Simulate the allelic drop out (due to missing cut-sites) at rate delta
+    mIndx[which(sample(c(TRUE,FALSE),size=length(mIndx),prob=c(delta,1-delta), replace=T))] <- NA
+    
+    # Determine the genotype calls
+    geno <- rbind(sapply(1:nSnps,function(x) parHap[mIndx[1:nInd,x]+1,x]),sapply(1:nSnps,function(x) parHap[mIndx[1:nInd+nInd,x]+3,x]))
+    genoTemp <- sapply(1:nSnps,function(y) {
+      tempGeno <- geno[,y]
+      sapply(1:nInd, function(x) paste(rep(sort(c(tempGeno[x],tempGeno[x+nInd])),length.out=2),collapse=""))
+    })
+    geno <- (genoTemp=="AA")*2 + (genoTemp=="AB")*1
+    geno[which(genoTemp == "NANA")] <- NA
     
     ### Now generate the sequencing data
     # 1: Simulate Depths
+    depth <- matrix(0,nrow=nInd, ncol=nSnps)
     if(rd_dist=="NegBinom")
-      depth <- matrix(rnbinom(nInd*nSnps,mu=meanDepth,size=2),ncol=nSnps,nrow=nInd) 
+      depth[which(!is.na(geno))] <- rnbinom(sum(!is.na(geno)),mu=meanDepth,size=2) 
     else   
-      depth <- matrix(rpois(nInd*nSnps,meanDepth),ncol=nSnps,nrow=nInd) 
-    # 2: simulate sequencing genotypes
-    aCounts <- matrix(rbinom(nInd*nSnps,depth,geno/2),ncol=nSnps)
-    SEQgeno <- aCounts/depth
+      depth[which(!is.na(geno))] <- rpois(sum(!is.na(geno)),meanDepth)
+    # 2: simulate sequencing genotypes (with sequencing error rate of epsilon)
+    genoTemp <- geno
+    genoTemp[which(is.na(genoTemp))] <- 0
+    aCounts <- matrix(rbinom(nInd*nSnps,depth,genoTemp/2),ncol=nSnps)
+    bCounts <- depth - aCounts
+    aCountsFinal <- matrix(rbinom(nInd*nSnps,aCounts,prob=1-epsilon),ncol=nSnps) + matrix(rbinom(nInd*nSnps,bCounts,prob=epsilon),ncol=nSnps)
+    SEQgeno <- aCountsFinal/depth
     SEQgeno[which(SEQgeno^2-SEQgeno<0)] <- 0.5
     SEQgeno <- 2* SEQgeno  ## GBS genotype call
     
@@ -96,7 +115,7 @@ simFS <- function(rVec_f, rVec_m=rVec_f, config, nInd, nSnps, meanDepth, thres=N
       
     ## Write data to file
     if(writeFiles)
-      genoToOtherFormats(SEQgeno,depth,config,formats=formats,filename=paste0(filename,sim),direct=direct,thres=thres,sim=sim)
+      genoToOtherFormats(SEQgeno,aCountsFinal,depth-aCountsFinal,config,formats=formats,filename=paste0(filename,sim),direct=direct,thres=thres,sim=sim)
     
   }
   ## Write simulation parameters to a file
@@ -107,15 +126,15 @@ simFS <- function(rVec_f, rVec_m=rVec_f, config, nInd, nSnps, meanDepth, thres=N
          paste0(trim_fn(paste0(direct,"/",filename)),"_info.txt"))
   ## return simulated data and parameter values ued to generate the data
   else
-    return(invisible(list(genon=SEQgeno,depth=depth,trueGeno=geno,
+    return(invisible(list(genon=SEQgeno,depth_Ref=aCountsFinal,depth_Alt=depth-aCountsFinal,trueGeno=trueGeno,
                           rVec_f=unlist(lapply(rVec_f,function(x) x[1])),
                           rVec_m=unlist(lapply(rVec_m,function(x) x[1])),
                           nInd=nInd,nSnps=nSnps,config=config,OPGP=OPGP,
-                          meanDepth=meanDepth,rd_dist=rd_dist)))
+                          meanDepth=meanDepth,rd_dist=rd_dist, delta=delta, epsilon=epsilon)))
 }
 
 ### Function for writing simulated sequencing data to various software formats
-genoToOtherFormats <- function(genon,depth,config,formats,filename,direct,thres=NULL,sim=sim){
+genoToOtherFormats <- function(genon,depthRef,depthAlt,config,formats,filename,direct,thres=NULL,sim=sim){
   
   ## specify which formats to use
   gusmap <- isTRUE(formats$gusmap)
@@ -124,11 +143,14 @@ genoToOtherFormats <- function(genon,depth,config,formats,filename,direct,thres=
   joinmap <- isTRUE(formats$joinmap)
   crimap <- isTRUE(formats$crimap)
   
+  depth <- depthRef + depthAlt
+  
   ## Write data to gusmap format
   newfile <- paste0(trim_fn(direct),"/",trim_fn(filename))
   if(gusmap){
     write.table(genon,paste0(newfile,"_genon_SEQ.txt"),row.names=F,col.names=F)
-    write.table(depth,paste0(newfile,"_depth_SEQ.txt"),row.names=F,col.names=F)
+    write.table(depthRef,paste0(newfile,"_depth_Ref_SEQ.txt"),row.names=F,col.names=F)
+    write.table(depthRef,paste0(newfile,"_depth_Alt_SEQ.txt"),row.names=F,col.names=F)
   }
   
   ## write data to other formats is required

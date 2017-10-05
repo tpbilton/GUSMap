@@ -5,7 +5,7 @@
 
 // Function for extracting entries of the emission probability matrix
 // when the OPGPs are known
-double Qentry(int OPGP,int g,int d,int elem){
+double Qentry(int OPGP,int g,int d,int elem, double epsilon, double delta){
   // Check first whether the genotype is missing. If so, return 1
   if (g == 4)
     return 1;
@@ -302,14 +302,16 @@ double Tmat_ss(int s1, int s2, double r_f, double r_m){
 // Not sex-specific (assumed equal) 
 // r.f constrainted to range [0,1/2].
 // OPGP's (or phase) are assumed to be known
-SEXP ll_fs_c(SEXP r, SEXP genon, SEXP depth, SEXP OPGP, SEXP nInd, SEXP nSnps){
+SEXP ll_fs_c(SEXP r, SEXP epsilon, SEXP delta, SEXP genon, SEXP depth, SEXP OPGP, SEXP nInd, SEXP nSnps){
   // Initialize variables
   int row, col, ind, snp, nInd_c, nSnps_c;
-  double *pll, *pr, *pgenon, *pdepth, *pOPGP;
+  double *pll, *pr, *pgenon, *pdepth, *pOPGP, delta_c, epsilon_c;
   double alpha[4], alphaTemp[4], tempMat[4][4], csum, tsum;
   // Load R input variables into C
   nInd_c = INTEGER(nInd)[0];
   nSnps_c = INTEGER(nSnps)[0];
+  delta_c = REAL(delta)[0];
+  epsilon_c = REAL(epsilon)[0];
   // Define the pointers to the other input R variables
   pOPGP = REAL(OPGP);
   pgenon = REAL(genon);
@@ -326,7 +328,7 @@ SEXP ll_fs_c(SEXP r, SEXP genon, SEXP depth, SEXP OPGP, SEXP nInd, SEXP nSnps){
     // Compute alpha0
     csum = 0;
     for(col = 0; col < 4; col++){
-      alpha[col] = Qentry(pOPGP[0], pgenon[ind], pdepth[ind], col+1);
+      alpha[col] = Qentry(pOPGP[0], pgenon[ind], pdepth[ind], col+1, epsilon_c, delta_c);
       csum = csum + alpha[col];
     }
     llval = llval + log(csum);
@@ -335,7 +337,7 @@ SEXP ll_fs_c(SEXP r, SEXP genon, SEXP depth, SEXP OPGP, SEXP nInd, SEXP nSnps){
       // multiple the transition matrix and the emission matrix together 
       for(row = 0; row < 4; row++){
         for(col = 0; col < 4; col++){
-          tempMat[row][col] = Tmat(row, col, pr[snp-1]) * Qentry(pOPGP[snp], pgenon[ind + nInd_c*snp], pdepth[ind + nInd_c*snp], col+1);
+          tempMat[row][col] = Tmat(row, col, pr[snp-1]) * Qentry(pOPGP[snp], pgenon[ind + nInd_c*snp], pdepth[ind + nInd_c*snp], col+1, epsilon_c, delta_c);
         }
       }
       // Multiply alpha by the temp matrix
