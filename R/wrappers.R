@@ -7,26 +7,53 @@
 #### Likelihood function is written in C in the file 'likelihoods.c'
 
 ## r.f.'s are equal
-ll_fs_mp_scaled <- function(logit2_r,genon,depth,OPGP,nInd,nSnps,noFam, seqErr=F, allelicErr){
-  r <- inv.logit2(logit2_r[1:(nSnps-1)])
+ll_fs_mp_scaled_err <- function(para,depth_Ref,depth_Alt,bcoef_mat,Kab,OPGP,nInd,nSnps,noFam,seqErr,allelicErr){
+  ## untransform the parameters
+  r <- inv.logit2(para[1:(nSnps-1)])
   if(seqErr)
-    epsilon = as.numeric(inv.logit(logit2_r[nSnps]))
+    ep = inv.logit(para[nSnps])
+  else
+    ep = 0
   if(allelicErr)
-    delta = as.numeric(inv.logit(logit2_r[length(logit2_r)]))
+    delta = as.numeric(inv.logit(para[length(para)]))
+  else
+    delta = 0
+  ## define likelihood
   llval = 0
+  # define the density values for the emission probs
+  Kaa <- Kbb <- vector(mode = "list", length=noFam)
+  for(fam in 1:noFam){
+    Kaa[[fam]] <- bcoef_mat[[fam]]*(1-ep)^depth_Ref[[fam]]*ep^depth_Alt[[fam]]
+    Kbb[[fam]] <- bcoef_mat[[fam]]*(1-ep)^depth_Alt[[fam]]*ep^depth_Ref[[fam]]
+  }
   for(fam in 1:noFam)
-    llval = llval + .Call("ll_fs_scaled_c",r,epsilon,delta,genon[[fam]],depth[[fam]],OPGP[[fam]],nInd[[fam]],nSnps)
+    llval = llval + .Call("ll_fs_scaled_err_c",r,delta,Kaa[[fam]],Kab[[fam]],Kbb[[fam]],OPGP[[fam]],nInd[[fam]],nSnps)
   return(llval)
 }
 
 ## r.f.'s are sex-specific
-ll_fs_ss_mp_scaled <- function(logit_r,genon,depth,OPGP,nInd,nSnps,ps,ms,npar,noFam){
+ll_fs_ss_mp_scaled_err <- function(para,depth_Ref,depth_Alt,bcoef_mat,Kab,OPGP,nInd,nSnps,ps,ms,npar,noFam,seqErr,allelicErr){
   r <- matrix(0,ncol=2,nrow=nSnps-1)
-  r[ps,1] <- inv.logit2(logit_r[1:npar[1]])
-  r[ms,2] <- inv.logit2(logit_r[npar[1]+1:npar[2]])
+  r[ps,1] <- inv.logit2(para[1:npar[1]])
+  r[ms,2] <- inv.logit2(para[npar[1]+1:npar[2]])
+  if(seqErr)
+    ep = inv.logit(para[nSnps])
+  else
+    ep = 0
+  if(allelicErr)
+    delta = as.numeric(inv.logit(para[length(para)]))
+  else
+    delta = 0
+  ## define likelihood
   llval = 0
+  # define the density values for the emission probs
+  Kaa <- Kbb <- vector(mode = "list", length=noFam)
+  for(fam in 1:noFam){
+    Kaa[[fam]] <- bcoef_mat[[fam]]*(1-ep)^depth_Ref[[fam]]*ep^depth_Alt[[fam]]
+    Kbb[[fam]] <- bcoef_mat[[fam]]*(1-ep)^depth_Alt[[fam]]*ep^depth_Ref[[fam]]
+  }
   for(fam in 1:noFam)
-    llval = llval + .Call("ll_fs_ss_scaled_c",r,genon[[fam]],depth[[fam]],OPGP[[fam]],nInd[[fam]],nSnps)
+    llval = llval + .Call("ll_fs_ss_scaled_err_c",r,delta,Kaa[[fam]],Kab[[fam]],Kbb[[fam]],OPGP[[fam]],nInd[[fam]],nSnps)
   return(llval)
 }
 

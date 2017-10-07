@@ -150,7 +150,7 @@ genoToOtherFormats <- function(genon,depthRef,depthAlt,config,formats,filename,d
   if(gusmap){
     write.table(genon,paste0(newfile,"_genon_SEQ.txt"),row.names=F,col.names=F)
     write.table(depthRef,paste0(newfile,"_depth_Ref_SEQ.txt"),row.names=F,col.names=F)
-    write.table(depthRef,paste0(newfile,"_depth_Alt_SEQ.txt"),row.names=F,col.names=F)
+    write.table(depthAlt,paste0(newfile,"_depth_Alt_SEQ.txt"),row.names=F,col.names=F)
   }
   
   ## write data to other formats is required
