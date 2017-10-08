@@ -4,7 +4,7 @@
 
 Manuka11 <- function(){
   ## Set the parameters required for KGD
-  genofile <- system.file("extdata", "Manuka11.txt.gz", package="GusMap")
+  genofile <- system.file("extdata", "Manuka11.txt.gz", package="GUSMap")
   gform <- "Tassel"
   ## Run KGD to obtain the genon, depth and seqID objects
   source("https://raw.github.com/AgResearch/KGD/master/GBS-Chip-Gmatrix.R", local=environment())
