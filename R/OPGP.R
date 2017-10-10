@@ -5,14 +5,16 @@
 
 
 ## Function for deteriming the parental phase of a full-sib family
-infer_OPGP_FS <- function(genon, depth, config, ...){
+infer_OPGP_FS <- function(depth_Ref, depth_Alt, config, epsilon=NULL, delta=NULL, ...){
   
-  if(!is.matrix(genon) || !is.matrix(depth))
-    stop("genon or depth inputs are not matrix objects")
-  nSnps <- ncol(genon); nInd <- nrow(genon)
+  if(!is.matrix(depth_Ref) || !is.matrix(depth_Alt))
+    stop("The read counts inputs are not matrix objects")
+  if( (!is.null(epsilon) & !is.numeric(epsilon)) || (!is.null(delta) & !is.numeric(delta)) )
+    stop("Starting values for the error parameters needs to be a single numeric value in the interval (0,1) or a NULL object")
+  nSnps <- ncol(depth_Ref); nInd <- nrow(depth_Ref)
   
   ## solve the likelihood for when phase is not known
-  MLEs <- rf_est_FS_UP(genon, depth, config, ...)
+  MLEs <- rf_est_FS_UP(depth_Ref, depth_Alt, config, epsilon=epsilon, delta=delta, ...)
   
   parHap <- matrix("A",nrow=4,ncol=nSnps)
   ## Determine whether the phase between adjacent paternal (or maternal) informative SNPs is in coupling

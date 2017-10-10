@@ -58,9 +58,22 @@ ll_fs_ss_mp_scaled_err <- function(para,depth_Ref,depth_Alt,bcoef_mat,Kab,OPGP,n
 }
 
 ## r.f.'s are sex-specific and constrained to the range [0,1] (for unphased data)
-ll_fs_up_ss_scaled <- function(logit_r,genon,depth,config,nInd,nSnps,ps,ms,npar){
+ll_fs_up_ss_scaled_err <- function(para,depth_Ref,depth_Alt,bcoef_mat,Kab,config,nInd,nSnps,ps,ms,npar,seqErr,allelicErr){
   r <- matrix(0,ncol=2,nrow=nSnps-1)
-  r[ps,1] <- inv.logit(logit_r[1:npar[1]])
-  r[ms,2] <- inv.logit(logit_r[npar[1]+1:npar[2]])
-  .Call("ll_fs_up_ss_scaled_c",r,genon,depth,config,nInd,nSnps)
+  r[ps,1] <- inv.logit(para[1:npar[1]])
+  r[ms,2] <- inv.logit(para[npar[1]+1:npar[2]])
+  if(seqErr)
+    ep = inv.logit(para[nSnps])
+  else
+    ep = 0
+  if(allelicErr)
+    delta = as.numeric(inv.logit(para[length(para)]))
+  else
+    delta = 0
+  ## define likelihood
+  llval = 0
+  # define the density values for the emission probs
+  Kaa <- bcoef_mat*(1-ep)^depth_Ref*ep^depth_Alt
+  Kbb <- bcoef_mat*(1-ep)^depth_Alt*ep^depth_Ref
+  .Call("ll_fs_up_ss_scaled_err_c",r,0,Kaa,Kab,Kbb,config,nInd,nSnps)
 }

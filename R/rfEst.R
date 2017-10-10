@@ -6,7 +6,7 @@
 
 
 ## Function for computing the recombination fraction when the parental phase is known
-rf_est_FS <- function(init_r=NULL, ep=NULL, delta=NULL, depth_Ref, depth_Alt, OPGP,
+rf_est_FS <- function(init_r=NULL, epsilon=NULL, delta=NULL, depth_Ref, depth_Alt, OPGP,
                       sexSpec=F, trace=F, noFam=1, ...){
   
   ## Do some checks
@@ -15,11 +15,12 @@ rf_est_FS <- function(init_r=NULL, ep=NULL, delta=NULL, depth_Ref, depth_Alt, OP
   if( !is.numeric(noFam) || noFam < 1 || noFam != round(noFam) || !is.finite(noFam))
     stop("The number of families needs to be a finite positive number")
   if(noFam != length(depth_Ref) | noFam != length(depth_Alt) | noFam != length(OPGP) )
-    stop("The number of genon and depth matrices or OPGP vectors do not match the number of families specified")
+    stop("The number of read count matrices or OPGP vectors do not match the number of families specified")
   if( !is.null(init_r) & !is.numeric(init_r) )
     stop("Starting values for the recombination fraction needs to be a numeric vector or integer or a NULL object")
-  if( (!is.null(ep) & !is.numeric(ep)) || (!is.null(delta) & !is.numeric(delta)) )
-    stop("Starting values for the error parameters needs to be a single numeric value or a NULL object")
+  if( (!is.null(epsilon) & !is.numeric(epsilon)) || (!is.null(delta) & !is.numeric(delta)) ||
+     (!is.null(epsilon) && (epsilon <= 0 | epsilon >= 1)) || (!is.null(delta) && (delta <= 0 | delta >= 1 )) )
+    stop("Starting values for the error parameters needs to be a single numeric value in the interval (0,1) or a NULL object")
   if( !is.logical(trace) || is.na(trace) )
     trace = FALSE
   if( !is.logical(sexSpec) || is.na(sexSpec) )
@@ -74,10 +75,10 @@ rf_est_FS <- function(init_r=NULL, ep=NULL, delta=NULL, depth_Ref, depth_Alt, OP
     else
       para <- init_r
     # sequencing error
-    if(length(ep) != 1 & !is.null(ep))
+    if(length(epsilon) != 1 & !is.null(epsilon))
       para <- c(para,logit(0.01))
-    else if(!is.null(ep))
-      para <- c(para,logit(ep))
+    else if(!is.null(epsilon))
+      para <- c(para,logit(epsilon))
     # allelic drop out error
     if(length(delta) != 1 & !is.null(delta))
       para <- c(para,logit(0.01))
@@ -85,13 +86,13 @@ rf_est_FS <- function(init_r=NULL, ep=NULL, delta=NULL, depth_Ref, depth_Alt, OP
       para <- c(para,logit(delta))
   
     ## Are we estimating the error parameters?
-    seqErr=!is.null(ep);allelicErr=!is.null(delta)
+    seqErr=!is.null(epsilon);allelicErr=!is.null(delta)
     
     ## Find MLE
     optim.MLE <- optim(para,ll_fs_ss_mp_scaled_err,method="BFGS",control=optim.arg,
                        depth_Ref=depth_Ref,depth_Alt=depth_Alt,bcoef_mat=bcoef_mat,Kab=Kab,
                        nInd=nInd,nSnps=nSnps,OPGP=OPGP,ps=ps,ms=ms,npar=npar,noFam=noFam,
-                       seqErr=!is.null(ep),allelicErr=!is.null(delta))
+                       seqErr=!is.null(epsilon),allelicErr=!is.null(delta))
   }
   else{
     # Determine the initial values
@@ -102,10 +103,10 @@ rf_est_FS <- function(init_r=NULL, ep=NULL, delta=NULL, depth_Ref, depth_Alt, OP
     else
       para <- init_r
     # sequencing error
-    if(length(ep) != 1 & !is.null(ep))
+    if(length(epsilon) != 1 & !is.null(epsilon))
       para <- c(para,logit(0.01))
-    else if(!is.null(ep))
-      para <- c(para,logit(ep))
+    else if(!is.null(epsilon))
+      para <- c(para,logit(epsilon))
     # allelic drop out error
     if(length(delta) != 1 & !is.null(delta))
       para <- c(para,logit(0.01))
@@ -113,7 +114,7 @@ rf_est_FS <- function(init_r=NULL, ep=NULL, delta=NULL, depth_Ref, depth_Alt, OP
       para <- c(para,logit(delta))
     
     ## Are we estimating the error parameters?
-    seqErr=!is.null(ep);allelicErr=!is.null(delta)
+    seqErr=!is.null(epsilon);allelicErr=!is.null(delta)
     
     ## Find MLE
     optim.MLE <- optim(para,ll_fs_mp_scaled_err,method="BFGS",control=optim.arg,
@@ -132,12 +133,12 @@ rf_est_FS <- function(init_r=NULL, ep=NULL, delta=NULL, depth_Ref, depth_Alt, OP
   # Return the MLEs
   if(sexSpec)
     return(list(rf_p=inv.logit2(optim.MLE$par[1:npar[1]]),rf_m=inv.logit2(optim.MLE$par[npar[1]+1:npar[2]]),
-                ep=ifelse(seqErr,inv.logit(optim.MLE$par[npar+1]),0),
+                epsilon=ifelse(seqErr,inv.logit(optim.MLE$par[npar+1]),0),
                 delta=ifelse(allelicErr,inv.logit(optim.MLE$par[length(optim.MLE$par)]),0),
                 loglik=optim.MLE$value))
   else
     return(list(rf=inv.logit2(optim.MLE$par[1:(nSnps-1)]), 
-                ep=ifelse(seqErr,inv.logit(optim.MLE$par[nSnps]),0),
+                epsilon=ifelse(seqErr,inv.logit(optim.MLE$par[nSnps]),0),
                 delta=ifelse(allelicErr,inv.logit(optim.MLE$par[length(optim.MLE$par)]),0), 
                 loglik=optim.MLE$value))
 }
@@ -145,24 +146,20 @@ rf_est_FS <- function(init_r=NULL, ep=NULL, delta=NULL, depth_Ref, depth_Alt, OP
 
 ## recombination estimates for case where the phase is unkonwn.
 ## The r.f.'s are sex-specific and constrained to the range [0,1]
-rf_est_FS_UP <- function(genon, depth, config, trace=F, ...){
+rf_est_FS_UP <- function(depth_Ref, depth_Alt, config, epsilon, delta, trace=F, ...){
   
   ## Check imputs
-  if( !is.matrix(genon) || !is.numeric(genon) || any(!(genon %in% 0:2 | is.na(genon))) )
-    stop("Invalid genon matrix. It must be numeric and have entries of 0, 1, 2 or NA")
-  if( !is.matrix(depth) || !is.numeric(depth) || any(depth<0 || !is.finite(depth)) || any(!(depth == round(depth))) )
-    stop("Invalid depth matrix. It must be numeric with entries that are finite positive integers")
+  if( any( depth_Ref<0 | !is.finite(depth_Ref)) || any(!(depth_Ref == round(depth_Ref))))
+    stop("The read count matrix for the reference allele is invalid")
+  if( any( depth_Alt<0 | !is.finite(depth_Alt)) || any(!(depth_Alt == round(depth_Alt))))
+    stop("The read count matrix for the alternate allele is invalid")
   if( !is.vector(config) || !is.numeric(config) || any(!(config %in% 1:4)) )
     stop("Invalid config vector. It must be a numeric vector with entries 1, 2, 3 or 4.")
   if( !is.logical(trace) || is.na(trace) )
     trace = FALSE
   
-  ## Convert the geno data into alternative form to allow indexing of lists
-  genon <- abs(2-genon+1)
-  genon[which(is.na(genon))] <- 4
-  
-  nInd <- nrow(genon)  # number of individuals
-  nSnps <- ncol(genon)  # number of SNPs
+  nInd <- nrow(depth_Ref)  # number of individuals
+  nSnps <- ncol(depth_Ref)  # number of SNPs
   
   # Arguments for the optim function
   optim.arg <- list(...)
@@ -170,22 +167,41 @@ rf_est_FS_UP <- function(genon, depth, config, trace=F, ...){
     optim.arg <- list(maxit = 1000, reltol=1e-10)
   
   ## check inputs are of required type for C functions
-  if(is.integer(genon))
-    genon <- genon + 0
-  if(is.integer(depth))
-    depth <- depth + 0
   if(is.integer(config))
     config <- as.numeric(config)
+  if( (!is.numeric(delta)|is.integer(delta)) & !is.null(delta))
+    delta <- as.numeric(delta)
   
   # Work out the indices of the r.f. parameters of each sex
   ps <- which(config %in% c(1,2))[-1] - 1
   ms <- which(config %in% c(1,3))[-1] - 1
   npar <- c(length(ps),length(ms))
   
+  ## Compute the K matrix for heterozygous genotypes
+  bcoef_mat <- choose(depth_Ref+depth_Alt,depth_Ref)
+  Kab <- bcoef_mat*(1/2)^(depth_Ref+depth_Alt)
+  
+  ## Are we estimating the error parameters?
+  seqErr=!is.null(epsilon);allelicErr=!is.null(delta)
+  
+  para <- logit(rep(0.5,sum(npar)))
+  # sequencing error
+  if(length(epsilon) != 1 & !is.null(epsilon))
+    para <- c(para,logit(0.01))
+  else if(!is.null(epsilon))
+    para <- c(para,logit(epsilon))
+  # allelic drop out error
+  if(length(delta) != 1 & !is.null(delta))
+    para <- c(para,logit(0.01))
+  else if(!is.null(delta))
+    para <- c(para,logit(delta))
+  
   if(nSnps > 2){
     ## Find MLE
-    optim.MLE <- optim(logit(rep(0.5,sum(npar))),ll_fs_up_ss_scaled,method="BFGS",control=optim.arg,
-                         genon=genon,depth=depth,nInd=nInd,nSnps=nSnps,config=config,ps=ps,ms=ms,npar=npar)
+    optim.MLE <- optim(para,ll_fs_up_ss_scaled_err,method="BFGS",control=optim.arg,
+                         depth_Ref=depth_Ref,depth_Alt=depth_Alt,bcoef_mat=bcoef_mat,Kab=Kab,
+                       nInd=nInd,nSnps=nSnps,config=config,ps=ps,ms=ms,npar=npar,
+                       seqErr=seqErr,allelicErr=allelicErr)
     # Print out the output from the optim procedure (if specified)
     if(trace){
       print(optim.MLE)
@@ -201,13 +217,17 @@ rf_est_FS_UP <- function(genon, depth, config, trace=F, ...){
   else if(nSnps == 2){
     ## If both SNPs are informative, need to use the Nelder-Mead to distinguish between the two sexes.
     if(all(config == 1)){
-      optim.MLE <- optim(logit(rep(0.5,sum(npar))),ll_fs_up_ss_scaled,method="Nelder-Mead",control=optim.arg,
-                         genon=genon,depth=depth,nInd=nInd,nSnps=nSnps,config=config,ps=ps,ms=ms,npar=npar)
+      optim.MLE <- optim(para,ll_fs_up_ss_scaled_err,method="Nelder-Mead",control=optim.arg,
+                         depth_Ref=depth_Ref,depth_Alt=depth_Alt,bcoef_mat=bcoef_mat,Kab=Kab,
+                         nInd=nInd,nSnps=nSnps,config=config,ps=ps,ms=ms,npar=npar,
+                         seqErr=seqErr,allelicErr=allelicErr)
     }
     ## Otherwise, proceed as normal
     else{
-      optim.MLE <- optim(logit(rep(0.5,sum(npar))),ll_fs_up_ss_scaled,method="BFGS",control=optim.arg,
-                         genon=genon,depth=depth,nInd=nInd,nSnps=nSnps,config=config,ps=ps,ms=ms,npar=npar)
+      optim.MLE <- optim(para,ll_fs_up_ss_scaled_err,method="BFGS",control=optim.arg,
+                         depth_Ref=depth_Ref,depth_Alt=depth_Alt,bcoef_mat=bcoef_mat,Kab=Kab,
+                         nInd=nInd,nSnps=nSnps,config=config,ps=ps,ms=ms,npar=npar,
+                         seqErr=seqErr,allelicErr=allelicErr)
     }
     # Print out the output from the optim procedure (if specified)
     if(trace){
