@@ -5,58 +5,84 @@
 
 // Function for extracting entries of the emission probability matrix
 // when the OPGPs are known
-double Qentry(int OPGP,double Kaa,double Kab, double Kbb,int elem, double delta){
+double Qentry(int OPGP,double Kaa,double Kab, double Kbb,int elem){
   switch(OPGP){
   case 1:
     if(elem == 1)
       return Kbb;
     else if ((elem == 2)|(elem == 3))  
-      return delta*(Kaa + Kbb) + (1-2*delta)*Kab;
+      return Kab;
     else if (elem == 4)
       return Kaa;
   case 2:
     if(elem == 3)
       return Kbb;
     else if ((elem == 1)|(elem == 4))
-      return delta*(Kaa + Kbb) + (1-2*delta)*Kab;
+      return Kab;
     else if (elem == 2)
       return Kaa;
   case 3:
     if(elem == 2) 
       return Kbb;
     else if ((elem == 1)|(elem == 4))
-      return delta*(Kaa + Kbb) + (1-2*delta)*Kab;
+      return Kab;
     else if (elem == 3)
       return Kaa;
   case 4:
     if(elem == 4) 
       return Kbb;
     else if ((elem == 2)|(elem == 3))
-      return delta*(Kaa + Kbb) + (1-2*delta)*Kab;
+      return Kab;
     else if (elem == 1)
       return Kaa;
   case 5:
     if ((elem == 1)|(elem == 2))
-      return delta*(Kaa + Kbb) + (1-2*delta)*Kab;
+      return Kab;
     else if ((elem == 3)|(elem == 4))
       return Kaa;
   case 6:
     if ((elem == 1)|(elem == 2))
       return Kaa;
     else if ((elem == 3)|(elem == 4))
-      return delta*(Kaa + Kbb) + (1-2*delta)*Kab;
+      return Kab;
   case 7:
-    if ((elem == 1)|(elem == 3))
-      return delta*(Kaa + Kbb) + (1-2*delta)*Kab;
-    else if ((elem == 2)|(elem == 4))
-      return Kaa;
+    if ((elem == 1)|(elem == 2))
+      return Kbb;
+    else if ((elem == 3)|(elem == 4))
+      return Kab;
   case 8:
+    if ((elem == 1)|(elem == 2))
+      return Kab;
+    else if ((elem == 3)|(elem == 4))
+      return Kbb;
+  case 9:
+    if ((elem == 1)|(elem == 3))
+      return Kab;
+    else if ((elem == 2)|(elem == 4))
+      return Kaa;
+  case 10:
     if ((elem == 1)|(elem == 3))
       return Kaa;
     else if ((elem == 2)|(elem == 4))
-      return delta*(Kaa + Kbb) + (1-2*delta)*Kab;
-  case 9:
-    return 1;
+      return Kab;
+  case 11:
+    if ((elem == 1)|(elem == 3))
+      return Kbb;
+    else if ((elem == 2)|(elem == 4))
+      return Kab;
+  case 12:
+    if ((elem == 1)|(elem == 3))
+      return Kab;
+    else if ((elem == 2)|(elem == 4))
+      return Kbb;
+  case 13:
+    return Kaa;
+  case 14:
+    return Kab;
+  case 15:
+    return Kab;
+  case 16:
+    return Kbb;
   } // end of Switch
   return -1;
 }
@@ -64,29 +90,38 @@ double Qentry(int OPGP,double Kaa,double Kab, double Kbb,int elem, double delta)
 
 // Function for extracting entries of the emission probability matrix
 // when the OPGP are considered the baseline (and so phase is unknown and the r.f's are sex-specific)
-double Qentry_up(int config,double Kaa,double Kab, double Kbb,int elem, double delta){
+double Qentry_up(int config,double Kaa,double Kab, double Kbb,int elem){
   switch(config){
   case 1:
     if(elem == 1)
       return Kbb;
     else if ((elem == 2)|(elem == 3))  
-      return delta*(Kaa + Kbb) + (1-2*delta)*Kab;
+      return Kab;
     else if (elem == 4)
       return Kaa;
   case 2:
     if ((elem == 1)|(elem == 2))
-      return delta*(Kaa + Kbb) + (1-2*delta)*Kab;
+      return Kab;
     else if ((elem == 3)|(elem == 4))
       return Kaa;
   case 3:
+    if ((elem == 1)|(elem == 2))
+      return Kbb;
+    else if ((elem == 3)|(elem == 4))
+      return Kab;
+  case 4:
     if ((elem == 1)|(elem == 3))
-      return delta*(Kaa + Kbb) + (1-2*delta)*Kab;
+      return Kab;
     else if ((elem == 2)|(elem == 4))
       return Kaa;
+  case 5:
+    if ((elem == 1)|(elem == 3))
+      return Kbb;
+    else if ((elem == 2)|(elem == 4))
+      return Kab;
   } // end of Switch
   return -1;
 }
-
 
 
 // Function for returning a specified enetry of the transition matrix for a given recombination fraction value
@@ -135,15 +170,14 @@ double Tmat_ss(int s1, int s2, double r_f, double r_m){
 // r.f constrainted to range [0,1/2].
 // OPGP's (or phase) are assumed to be known
 // Include error parameters
-SEXP ll_fs_scaled_err_c(SEXP r, SEXP delta, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nInd, SEXP nSnps){
+SEXP ll_fs_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nInd, SEXP nSnps){
   // Initialize variables
   int s1, s2, ind, snp, nInd_c, nSnps_c;
   double *pll, *pr, *pKaa, *pKab, *pKbb, *pOPGP;
-  double alphaTilde[4], alphaDot[4], sum, w_logcumsum, w_new, delta_c;
+  double alphaTilde[4], alphaDot[4], sum, w_logcumsum, w_new;
   // Load R input variables into C
   nInd_c = INTEGER(nInd)[0];
   nSnps_c = INTEGER(nSnps)[0];
-  delta_c = REAL(delta)[0];
   // Define the pointers to the other input R variables
   pOPGP = REAL(OPGP);
   pKaa = REAL(Kaa);
@@ -162,7 +196,7 @@ SEXP ll_fs_scaled_err_c(SEXP r, SEXP delta, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP O
     sum = 0;
     for(s1 = 0; s1 < 4; s1++){
       //Rprintf("Q value :%.6f at snp %i in ind %i\n", Qentry(pOPGP[0], pKaa[ind], pKab[ind], pKbb[ind], s1+1, delta_c), 0, ind);
-      alphaDot[s1] = 0.25 * Qentry(pOPGP[0], pKaa[ind], pKab[ind], pKbb[ind], s1+1, delta_c);
+      alphaDot[s1] = 0.25 * Qentry(pOPGP[0], pKaa[ind], pKab[ind], pKbb[ind], s1+1);
       sum = sum + alphaDot[s1];
     }
     // Scale forward probabilities
@@ -184,7 +218,7 @@ SEXP ll_fs_scaled_err_c(SEXP r, SEXP delta, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP O
           sum = sum + Tmat(s1, s2, pr[snp-1]) * alphaTilde[s1];
         }
         //Rprintf("Q value :%.6f at snp %i in ind %i\n", Qentry(pOPGP[snp], pKaa[ind + nInd_c*snp], pKab[ind + nInd_c*snp], pKbb[ind + nInd_c*snp], s2+1, delta_c), snp, ind);
-        alphaDot[s2] = Qentry(pOPGP[snp], pKaa[ind + nInd_c*snp], pKab[ind + nInd_c*snp], pKbb[ind + nInd_c*snp], s2+1, delta_c) * sum;
+        alphaDot[s2] = Qentry(pOPGP[snp], pKaa[ind + nInd_c*snp], pKab[ind + nInd_c*snp], pKbb[ind + nInd_c*snp], s2+1) * sum;
       }
       // Compute the weight for snp \ell
       w_new = 0;
@@ -211,15 +245,14 @@ SEXP ll_fs_scaled_err_c(SEXP r, SEXP delta, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP O
 // sex-specific
 // r.f constrainted to range [0,1/2].
 // OPGP's (or phase) are assumed to be known
-SEXP ll_fs_ss_scaled_err_c(SEXP r, SEXP delta, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nInd, SEXP nSnps){
+SEXP ll_fs_ss_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nInd, SEXP nSnps){
   // Initialize variables
   int s1, s2, ind, snp, nInd_c, nSnps_c;
   double *pll, *pr, *pKaa, *pKab, *pKbb, *pOPGP;
-  double alphaTilde[4], alphaDot[4], sum, w_logcumsum, w_new, delta_c;
+  double alphaTilde[4], alphaDot[4], sum, w_logcumsum, w_new;
   // Load R input variables into C
   nInd_c = INTEGER(nInd)[0];
   nSnps_c = INTEGER(nSnps)[0];
-  delta_c = REAL(delta)[0];
   // Define the pointers to the other input R variables
   pOPGP = REAL(OPGP);
   pKaa = REAL(Kaa);
@@ -237,7 +270,7 @@ SEXP ll_fs_ss_scaled_err_c(SEXP r, SEXP delta, SEXP Kaa, SEXP Kab, SEXP Kbb, SEX
     // Compute forward probabilities at snp 1
     sum = 0;
     for(s1 = 0; s1 < 4; s1++){
-      alphaDot[s1] = 0.25 * Qentry(pOPGP[0], pKaa[ind], pKab[ind], pKbb[ind], s1+1, delta_c);
+      alphaDot[s1] = 0.25 * Qentry(pOPGP[0], pKaa[ind], pKab[ind], pKbb[ind], s1+1);
       sum = sum + alphaDot[s1];
     }
     // Scale forward probabilities
@@ -258,7 +291,7 @@ SEXP ll_fs_ss_scaled_err_c(SEXP r, SEXP delta, SEXP Kaa, SEXP Kab, SEXP Kbb, SEX
         for(s1 = 0; s1 < 4; s1++){
           sum = sum + Tmat_ss(s1, s2, pr[snp-1], pr[snp-1+nSnps_c-1]) * alphaTilde[s1];
         }
-        alphaDot[s2] = Qentry(pOPGP[snp], pKaa[ind + nInd_c*snp], pKab[ind + nInd_c*snp], pKbb[ind + nInd_c*snp], s2+1, delta_c) * sum;
+        alphaDot[s2] = Qentry(pOPGP[snp], pKaa[ind + nInd_c*snp], pKab[ind + nInd_c*snp], pKbb[ind + nInd_c*snp], s2+1) * sum;
       }
       // Compute the weight for snp \ell
       w_new = 0;
@@ -286,15 +319,14 @@ SEXP ll_fs_ss_scaled_err_c(SEXP r, SEXP delta, SEXP Kaa, SEXP Kab, SEXP Kbb, SEX
 // sex-specific
 // r.f constrainted to range [0,1].
 // OPGP's (or phase) are not known
-SEXP ll_fs_up_ss_scaled_err_c(SEXP r, SEXP delta, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP config, SEXP nInd, SEXP nSnps){
+SEXP ll_fs_up_ss_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP config, SEXP nInd, SEXP nSnps){
   // Initialize variables
   int s1, s2, ind, snp, nInd_c, nSnps_c;
   double *pll, *pr, *pKaa, *pKab, *pKbb, *pconfig;
-  double alphaTilde[4], alphaDot[4], sum, w_logcumsum, w_new, delta_c;
+  double alphaTilde[4], alphaDot[4], sum, w_logcumsum, w_new;
   // Load R input variables into C
   nInd_c = INTEGER(nInd)[0];
   nSnps_c = INTEGER(nSnps)[0];
-  delta_c = REAL(delta)[0];
   // Define the pointers to the other input R variables
   pconfig = REAL(config);
   pKaa = REAL(Kaa);
@@ -313,7 +345,7 @@ SEXP ll_fs_up_ss_scaled_err_c(SEXP r, SEXP delta, SEXP Kaa, SEXP Kab, SEXP Kbb, 
     sum = 0;
     for(s1 = 0; s1 < 4; s1++){
       //Rprintf("Q value :%.6f at snp %i in ind %i\n", Qentry_up(pconfig[0], pKaa[ind], pKab[ind], pKbb[ind], s1+1, delta_c), 0, ind);
-      alphaDot[s1] = 0.25 * Qentry_up(pconfig[0], pKaa[ind], pKab[ind], pKbb[ind], s1+1, delta_c);
+      alphaDot[s1] = 0.25 * Qentry_up(pconfig[0], pKaa[ind], pKab[ind], pKbb[ind], s1+1);
       sum = sum + alphaDot[s1];
     }
     // Scale forward probabilities
@@ -335,7 +367,7 @@ SEXP ll_fs_up_ss_scaled_err_c(SEXP r, SEXP delta, SEXP Kaa, SEXP Kab, SEXP Kbb, 
           sum = sum + Tmat_ss(s1, s2, pr[snp-1], pr[snp-1+nSnps_c-1]) * alphaTilde[s1];
         }
         //Rprintf("Q value :%.6f at snp %i in ind %i\n", Qentry_up(pconfig[0], pKaa[ind + nInd_c*snp], pKab[ind + nInd_c*snp], pKbb[ind + nInd_c*snp], s2+1, delta_c), snp, ind);
-        alphaDot[s2] = Qentry_up(pconfig[snp], pKaa[ind + nInd_c*snp], pKab[ind + nInd_c*snp], pKbb[ind + nInd_c*snp], s2+1, delta_c) * sum;
+        alphaDot[s2] = Qentry_up(pconfig[snp], pKaa[ind + nInd_c*snp], pKab[ind + nInd_c*snp], pKbb[ind + nInd_c*snp], s2+1) * sum;
       }
       // Compute the weight for snp \ell
       w_new = 0;
@@ -357,35 +389,3 @@ SEXP ll_fs_up_ss_scaled_err_c(SEXP r, SEXP delta, SEXP Kaa, SEXP Kab, SEXP Kbb, 
   UNPROTECT(1);
   return ll;
 }
-
-
-
-/// Test to see how much precision we can get in C from R
-
-SEXP print_dec(SEXP value){
-  double *value_doub, value_c_doub, *pll ;
-  long double *value_long_doub, value_c_long_doub;
-  float *value_float, value_c_float;
-  value_c_float = REAL(value)[0];
-  value_c_doub = REAL(value)[0];
-  value_c_long_doub = 0.0000000000000000000012345678901234567890123456789;
-  value_doub = REAL(value);
-  value_long_doub = REAL(value);
-  
-  Rprintf("For float %.*f\n" , 60, value_c_float);
-  Rprintf("For double %.*f\n" , 60, value_c_doub);
-  Rprintf("For long double %.*f\n" , 60, value_c_long_doub);
-  Rprintf("For double with pointer %.*f\n" , 60, value_doub[0]);
-  Rprintf("For long double with pointer %.*f\n" , 60, value_long_doub[0]);
-  
-  SEXP ll;
-  PROTECT(ll = allocVector(REALSXP, 1));
-  pll = REAL(ll);
-  pll[0] = 1;
-  UNPROTECT(1);
-  return ll;
-}
-
-
-
-

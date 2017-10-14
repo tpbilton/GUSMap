@@ -5,25 +5,27 @@
 
 
 ## Function for deteriming the parental phase of a full-sib family
-infer_OPGP_FS <- function(depth_Ref, depth_Alt, config, epsilon=NULL, delta=NULL, ...){
+infer_OPGP_FS <- function(depth_Ref, depth_Alt, config, epsilon=NULL, ...){
   
   if(!is.matrix(depth_Ref) || !is.matrix(depth_Alt))
     stop("The read counts inputs are not matrix objects")
-  if( (!is.null(epsilon) & !is.numeric(epsilon)) || (!is.null(delta) & !is.numeric(delta)) )
-    stop("Starting values for the error parameters needs to be a single numeric value in the interval (0,1) or a NULL object")
+  if( (!is.null(epsilon) & !is.numeric(epsilon)) )
+    stop("Starting values for the error parameter needs to be a single numeric value in the interval (0,1) or a NULL object")
   nSnps <- ncol(depth_Ref); nInd <- nrow(depth_Ref)
   
   ## solve the likelihood for when phase is not known
-  MLEs <- rf_est_FS_UP(depth_Ref, depth_Alt, config, epsilon=epsilon, delta=delta, ...)
+  MLEs <- rf_est_FS_UP(depth_Ref, depth_Alt, config, epsilon=epsilon, ...)
   
   parHap <- matrix("A",nrow=4,ncol=nSnps)
+  parHap[cbind(c(rep(3,sum(config %in% c(3,7,9))),rep(4,sum(config %in% c(3,7,9)))),which(config %in% c(3,7,9)))] <- "B"
+  parHap[cbind(c(rep(1,sum(config %in% c(5,8,9))),rep(2,sum(config %in% c(5,8,9)))),which(config %in% c(5,8,9)))] <- "B"
   ## Determine whether the phase between adjacent paternal (or maternal) informative SNPs is in coupling
   coupling_pat <- MLEs[[1]] < 0.5
   coupling_mat <- MLEs[[2]] < 0.5
   
   # Work out the indices of the r.f. parameters of each sex
-  ps_snps <- which(config %in% c(1,2))
-  ms_snps <- which(config %in% c(1,3))
+  ps_snps <- which(config %in% c(1,2,3))
+  ms_snps <- which(config %in% c(1,4,5))
   npar <- c(length(ps_snps)-1,length(ms_snps)-1)
   
   s_pat <- numeric(npar[[1]]+1)
@@ -48,14 +50,24 @@ infer_OPGP_FS <- function(depth_Ref, depth_Alt, config, epsilon=NULL, delta=NULL
 ## Function for converting parental haplotypes to OPGPs
 parHapToOPGP <- function(parHap, major="A", minor="B"){
   return (apply(parHap,2,function(x){
-    if(sum(x==major)==2){
+    if (all(x==major)){
+      return(13) 
+    } else if (x[1]==x[2] & x[3]==x[4] & x[1]==major & x[3]==minor){
+      return(14)
+    } else if (x[1]==x[2] & x[3]==x[4] & x[3]==major & x[1]==minor){
+      return(15)
+    } else if (all(x==minor)){
+      return(16)
+    } else if(sum(x==major)==2){
       return((x[1]==minor)+(x[3]==minor)*2+1)
-    } else if (x[1]==x[2] & x[3]==x[4]){
-      return(9)
     } else if (all(x[3:4]==major)){
       return((x[1]==minor)+5)
     } else if (all(x[1:2]==major)){
-      return((x[3]==minor)+7)
+      return((x[3]==minor)+9)
+    } else if (all(x[3:4]==minor)){
+      return((x[1]==minor)+7)
+    } else if (all(x[1:2]==minor)){
+      return((x[3]==minor)+11)
     } 
   }) 
 )}
