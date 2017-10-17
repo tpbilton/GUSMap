@@ -318,7 +318,7 @@ genoToOtherFormats <- function(genon,depth_Ref,depth_Alt,config,formats,filename
           file=paste0(newfile,'_JoinMap.loc'),sep="")
       
       cat(sapply((1:nSnps)[which(!(1:nSnps %in% usnps))], function(x) {
-        paste0('M',x,'  ',switch(config[x],'<hkxhk>','<nnxnp>','<lmxll>'),'\n',paste(joinmapData[,x],collapse=" "),'\n')
+        paste0('M',x,'  ',switch(config[x],'<hkxhk>','<nnxnp>','<nnxnp>','<lmxll>','<lmxll>'),'\n',paste(joinmapData[,x],collapse=" "),'\n')
       }), file=paste0(newfile,'_JoinMap.loc'),sep="",append=T)
     }
   }
