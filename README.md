@@ -2,7 +2,7 @@
 
 Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap).
 
-An R package for performing linkage mapping using low (or high) coverage sequencing data with requiring filtering with respect to read depth. This release accompanies the publication by Bilton et al. (2017).
+An R package for constructing genetic linkage maps using low (or high) coverage sequencing data with requiring filtering with respect to read depth. This release accompanies the publication by Bilton et al. (2017).
 
 ### Installation:
 
@@ -18,13 +18,13 @@ Note: Some of the functions are coded in C and therefore an appropriate C compli
 
 ### Data Format:
 
-The format of the data required are:
+The key data required to use this package are:
 
-- Genon Matrix: Rows are the individuals and columns are the SNPs. Entries of the matrix must be an integer value between 0 and 2 corresponding to the number of reference alleles called and NA for missing genotypes.
-- Depth Matrix: Rows are the individuals and columns are the SNPs. Entries must be a positive integer value. 
-- Config Vector: This vector gives the segregation type for each SNP and the length of the vector must each the number of SNPs. Enteries are 1 for both-informative SNP, 2 for paternal-informative SNP, 3 for maternal-informative SNP and 4 for a uniformative SNP. 
+- Matrix of allele counts for the reference allele. The rows are the individuals and columns are the SNPs. Entries must be a positive integer value.
+- Matrix of allele counts for the alternate allele. The rows are the individuals and columns are the SNPs. Entries must be a positive integer value.
+- Config Vector: This vector gives the segregation type for each SNP and the length of the vector must equal the number of SNPs. Enteries are 1 for both-informative SNP (ABxAB), 2 for paternal-informative SNP (ABxAA), 2 for paternal-informative SNP (ABxBB), 4 for a maternal-informative SNP (AAxAB), and 5 for a maternal-informative SNP (BBxAB). 
 
 ### References:
 
-Bilton, T.P., Schofield, M.R., Black, M.A., Chagne D., Wilcox P., Dodds K.G. (2017). Comstructing accurate genetic maps using low coverage sequencing data in multiparental outcrossed populations. Unpublished manuscript.
+Bilton, T.P., Schofield, M.R., Black, M.A., Chagne D., Wilcox P., Dodds K.G. (2017). Accounting for errors in low coverage sequencing data when constructing genetic maps using multiparental outcrossed populations. Unpublished manuscript.
 

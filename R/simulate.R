@@ -7,18 +7,18 @@
 ## Function for simulating sequencing data for a single full-sib family
 simFS <- function(rVec_f, rVec_m=rVec_f, epsilon=0, config, nInd, meanDepth, thres=NULL, NoDS=1,
                   formats=list(gusmap=F,onemap=F,lepmap=F,joinmap=F,crimap=F), rd_dist="Neg_Binom",
-                  filename=NULL, direct=NULL, seed1=1, seed2=1){
+                  filename="sim", direct="./", seed1=1, seed2=1){
   
   ## perform some checks for data input
-  if( !is.numeric(rVec_f) || !is.numeric(rVec_m) || rVec_f < 0 || rVec_m < 0 ||
-      rVec_f > 0.5 || rVec_m > 0.5 )
+  if( !is.numeric(rVec_f) || !is.numeric(rVec_m) || any(rVec_f < 0) || any(rVec_m < 0) ||
+      any(rVec_f > 0.5) || any(rVec_m > 0.5) )
     stop("Recombination factions are required to be a numeric number between 0 and 0.5")
-  if( !is.numeric(epsilon) || length(epsilon) != 1 || epsilon <= 0 || epsilon >= 1 )
-    stop("Error parameters, delta or/and epsilon, are not numeric number between 0 and 1")
+  if( !is.numeric(epsilon) || length(epsilon) != 1 || epsilon < 0 || epsilon > 1 )
+    stop("Sequencing error parameter is not single numeric number between 0 and 1")
   if(!is.numeric(nInd) || nInd < 1 || nInd != round(nInd) || !is.finite(nInd) )
     stop("Number of individuals or number of SNPs are not a positive integer")
   if( !is.numeric(config) || !is.vector(config) || any(!(config == round(config))) || any(config < 1) || any(config > 9) )
-    stop("Segregation information needs to be an integer vector equal to the number of SNPswith entires from 1 to 5")
+    stop("Segregation information needs to be an integer vector equal to the number of SNPswith entires from 1 to 9")
   if( !is.numeric(meanDepth) || meanDepth <= 0 || !is.finite(meanDepth) )
     stop("The mean of the read depth distribution is not a finitie positive number.")
   if( !is.numeric(NoDS) || NoDS < 1 || NoDS != round(NoDS) || !is.finite(NoDS))

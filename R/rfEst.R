@@ -6,7 +6,7 @@
 
 
 ## Function for computing the recombination fraction when the parental phase is known
-rf_est_FS <- function(init_r=NULL, epsilon=NULL, depth_Ref, depth_Alt, OPGP,
+rf_est_FS <- function(init_r=0.01, epsilon=0.001, depth_Ref, depth_Alt, OPGP,
                       sexSpec=F, trace=F, noFam=1, ...){
   
   ## Do some checks
@@ -28,7 +28,7 @@ rf_est_FS <- function(init_r=NULL, epsilon=NULL, depth_Ref, depth_Alt, OPGP,
   # Arguments for the optim function
   optim.arg <- list(...)
   if(length(optim.arg) == 0)
-    optim.arg <- list(maxit = 1000, reltol=1e-10)
+    optim.arg <- list(maxit = 1000, reltol=1e-15)
   
   ## Check the read count matrices
   if(any(unlist(lapply(depth_Ref,function(x) !is.numeric(x) || any( x<0 | !is.finite(x)) || any(!(x == round(x)))))))

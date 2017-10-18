@@ -8,9 +8,9 @@ README
 FEATURES
 
   o Phase inference on a set of ordered SNPs for a full-sib family.
-  o Recombation fraction estimation for an order set of SNPs using sequencing data without requiring the need to filter with respect to read depth for multiple full-sib families.
+  o Recombination fraction estimation for an order set of SNPs using sequencing data without requiring the need to filter with respect to read depth for multiple full-sib families.
   o Simulation of sequencing data for a full-sib family and functions to convert data into various other software formats. 
 
 REFERENCES
 
-  o Bilton, T.P., Schofield, M.R., Black, M.A., Chagne D., Wilcox P., Dodds K.G. (2017). More accurate genetic maps using low coverage sequencing data in multiparental outcrossed populations . Unpublished manuscript.
+  o Bilton, T.P., Schofield, M.R., Black, M.A., Chagne D., Wilcox P., Dodds K.G. (2017). Accounting for errors in low coverage sequencing data when constructing genetic maps using multiparental outcrossed populations. Unpublished manuscript.
