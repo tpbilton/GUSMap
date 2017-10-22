@@ -24,7 +24,7 @@ Note: There can be issues at times in finding the maximum likelihood estimate (M
 \value{Function returns a vector of the inferred OPGP values}
 \author{Timothy P. Bilton}
 \references{
-Bilton, T.P., Schofield, M.R., Black, M.A., Chagne D., Wilcox P., Dodds K.G. (2017). Accounting for errors in low coverage sequencing data when constructing genetic maps using multiparental outcrossed populations. Unpublished Manuscript.
+Bilton, T.P., Schofield, M.R., Black, M.A., Chagne D., Wilcox P., Dodds K.G. (2017). Accounting for errors in low coverage sequencing data when constructing genetic maps using biparental outcrossed populations. Unpublished Manuscript.
 }
 \examples{
 ## simulate full-sib family

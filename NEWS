@@ -1,8 +1,8 @@
-Changes in version 0.1.0
+Release of version 0.1.0
 
 README 
 
-  o This is the first release of GusMap. This verison accompanies the publication by Bilton et al. (2017).
+  o This is the first release of GUSMap. This verison accompanies the publication by Bilton et al. (2017).
   o As this verison is only an early verison of the package, there are only a few features at present (See FEATURES). More features are intended to be added on as the package is developed. In particular, the ability to group SNPs and order the SNPs within in groups is to be included at a later stage. Suggestions for particular improvements are welcome.
 
 FEATURES
@@ -13,4 +13,4 @@ FEATURES
 
 REFERENCES
 
-  o Bilton, T.P., Schofield, M.R., Black, M.A., Chagne D., Wilcox P., Dodds K.G. (2017). Accounting for errors in low coverage sequencing data when constructing genetic maps using multiparental outcrossed populations. Unpublished manuscript.
+  o Bilton, T.P., Schofield, M.R., Black, M.A., Chagne D., Wilcox P., Dodds K.G. (2017). Accounting for errors in low coverage sequencing data when constructing genetic maps using biparental outcrossed populations. Unpublished manuscript.

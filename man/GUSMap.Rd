@@ -19,6 +19,6 @@ Timothy P. Bilton,
 Maintainer: Timothy P. Bilton <tbilton@maths.otago.ac.nz>
 }
 \references{
-Bilton, T.P., Schofield, M.R., Black, M.A., Chagne D., Wilcox P., Dodds K.G. (2017). Accounting for errors in low coverage sequencing data when constructing genetic maps using multiparental outcrossed populations. Unpublished Manuscript
+Bilton, T.P., Schofield, M.R., Black, M.A., Chagne D., Wilcox P., Dodds K.G. (2017). Accounting for errors in low coverage sequencing data when constructing genetic maps using biparental outcrossed populations. Unpublished Manuscript
 }
 \keyword{package}
