@@ -56,38 +56,81 @@ rf_est_FS <- function(init_r=0.01, epsilon=0.001, depth_Ref, depth_Alt, OPGP,
     Kab[[fam]] <- bcoef_mat[[fam]]*(1/2)^(depth_Ref[[fam]]+depth_Alt[[fam]])
   }
   
-  ## If we want to estimate sex-specific r.f.'s
-  if(sexSpec){
+  ## If multi-point
+  if(nSnps > 2){
+    ## If we want to estimate sex-specific r.f.'s
+    if(sexSpec){
+      
+      # Work out the indices of the r.f. parameters of each sex
+      ps <- sort(unique(unlist(lapply(OPGP,function(x) which(x %in% 1:8)))))[-1] - 1
+      ms <- sort(unique(unlist(lapply(OPGP,function(x) which(x %in% c(1:4,9:12))))))[-1] - 1
+      npar <- c(length(ps),length(ms))
+      
+      # Determine the initial values
+      if(length(init_r)==1) 
+        para <- logit2(rep(init_r,sum(npar)))
+      else if(length(init_r) != sum(npar)) 
+        para <- logit2(rep(0.1,sum(npar)))
+      else
+        para <- init_r
+      # sequencing error
+      if(length(epsilon) != 1 & !is.null(epsilon))
+        para <- c(para,logit(0.001))
+      else if(!is.null(epsilon))
+        para <- c(para,logit(epsilon))
     
-    # Work out the indices of the r.f. parameters of each sex
-    ps <- sort(unique(unlist(lapply(OPGP,function(x) which(x %in% 1:8)))))[-1] - 1
-    ms <- sort(unique(unlist(lapply(OPGP,function(x) which(x %in% c(1:4,9:12))))))[-1] - 1
-    npar <- c(length(ps),length(ms))
+      ## Are we estimating the error parameters?
+      seqErr=!is.null(epsilon)
+      
+      ## Find MLE
+      optim.MLE <- optim(para,ll_fs_ss_mp_scaled_err,method="BFGS",control=optim.arg,
+                         depth_Ref=depth_Ref,depth_Alt=depth_Alt,bcoef_mat=bcoef_mat,Kab=Kab,
+                         nInd=nInd,nSnps=nSnps,OPGP=OPGP,ps=ps,ms=ms,npar=npar,noFam=noFam,
+                         seqErr=!is.null(epsilon))
+    }
+    else{
+      # Determine the initial values
+      if(length(init_r)==1) 
+        para <- logit2(rep(init_r,nSnps-1))
+      else if(length(init_r) != nSnps-1) 
+        para <- logit2(rep(0.1,nSnps-1))
+      else
+        para <- init_r
+      # sequencing error
+      if(length(epsilon) != 1 & !is.null(epsilon))
+        para <- c(para,logit(0.001))
+      else if(!is.null(epsilon))
+        para <- c(para,logit(epsilon))
+      
+      ## Are we estimating the error parameters?
+      seqErr=!is.null(epsilon)
+      
+      ## Find MLE
+      optim.MLE <- optim(para,ll_fs_mp_scaled_err,method="BFGS",control=optim.arg,
+                         depth_Ref=depth_Ref,depth_Alt=depth_Alt,bcoef_mat=bcoef_mat,Kab=Kab,
+                         nInd=nInd,nSnps=nSnps,OPGP=OPGP,noFam=noFam,
+                         seqErr=seqErr)
+    }
     
-    # Determine the initial values
-    if(length(init_r)==1) 
-      para <- logit2(rep(init_r,sum(npar)))
-    else if(length(init_r) != sum(npar)) 
-      para <- logit2(rep(0.1,sum(npar)))
+    # Print out the output from the optim procedure (if specified)
+    if(trace){
+      print(optim.MLE)
+    }
+    # Check for convergence
+    if(trace & optim.MLE$convergence != 0)
+      warning(paste0('Optimization failed to converge properly with error ',optim.MLE$convergence,'\n smallest MLE estimate is: ', round(min(optim.MLE$par),6)))
+    # Return the MLEs
+    if(sexSpec)
+      return(list(rf_p=inv.logit2(optim.MLE$par[1:npar[1]]),rf_m=inv.logit2(optim.MLE$par[npar[1]+1:npar[2]]),
+                  epsilon=ifelse(seqErr,inv.logit(optim.MLE$par[sum(npar)+1]),0),
+                  loglik=optim.MLE$value))
     else
-      para <- init_r
-    # sequencing error
-    if(length(epsilon) != 1 & !is.null(epsilon))
-      para <- c(para,logit(0.001))
-    else if(!is.null(epsilon))
-      para <- c(para,logit(epsilon))
-  
-    ## Are we estimating the error parameters?
-    seqErr=!is.null(epsilon)
-    
-    ## Find MLE
-    optim.MLE <- optim(para,ll_fs_ss_mp_scaled_err,method="BFGS",control=optim.arg,
-                       depth_Ref=depth_Ref,depth_Alt=depth_Alt,bcoef_mat=bcoef_mat,Kab=Kab,
-                       nInd=nInd,nSnps=nSnps,OPGP=OPGP,ps=ps,ms=ms,npar=npar,noFam=noFam,
-                       seqErr=!is.null(epsilon))
+      return(list(rf=inv.logit2(optim.MLE$par[1:(nSnps-1)]), 
+                  epsilon=ifelse(seqErr,inv.logit(optim.MLE$par[nSnps]),0),
+                  loglik=optim.MLE$value))
   }
-  else{
-    # Determine the initial values
+  else if (nSnps==2){
+    
     if(length(init_r)==1) 
       para <- logit2(rep(init_r,nSnps-1))
     else if(length(init_r) != nSnps-1) 
@@ -108,24 +151,18 @@ rf_est_FS <- function(init_r=0.01, epsilon=0.001, depth_Ref, depth_Alt, OPGP,
                        depth_Ref=depth_Ref,depth_Alt=depth_Alt,bcoef_mat=bcoef_mat,Kab=Kab,
                        nInd=nInd,nSnps=nSnps,OPGP=OPGP,noFam=noFam,
                        seqErr=seqErr)
+    
+    ## Compute the log score
+    LOD <-  optim.MLE$value - ll_fs_mp_scaled_err( ifelse(seqErr,c(1000,optim.MLE$par[2]), 1000),
+                                                   depth_Ref=depth_Ref,depth_Alt=depth_Alt,bcoef_mat=bcoef_mat,Kab=Kab,
+                                                   nInd=nInd,nSnps=nSnps,OPGP=OPGP,noFam=noFam,
+                                                   seqErr=seqErr)
+    
+    return(list(rf=inv.logit2(optim.MLE$par[1]), 
+                epsilon=0,
+                loglik=optim.MLE$value,LOD=LOD))
   }
-
-  # Print out the output from the optim procedure (if specified)
-  if(trace){
-    print(optim.MLE)
-  }
-  # Check for convergence
-  if(trace & optim.MLE$convergence != 0)
-    warning(paste0('Optimization failed to converge properly with error ',optim.MLE$convergence,'\n smallest MLE estimate is: ', round(min(optim.MLE$par),6)))
-  # Return the MLEs
-  if(sexSpec)
-    return(list(rf_p=inv.logit2(optim.MLE$par[1:npar[1]]),rf_m=inv.logit2(optim.MLE$par[npar[1]+1:npar[2]]),
-                epsilon=ifelse(seqErr,inv.logit(optim.MLE$par[sum(npar)+1]),0),
-                loglik=optim.MLE$value))
-  else
-    return(list(rf=inv.logit2(optim.MLE$par[1:(nSnps-1)]), 
-                epsilon=ifelse(seqErr,inv.logit(optim.MLE$par[nSnps]),0),
-                loglik=optim.MLE$value))
+  
 }
 
 

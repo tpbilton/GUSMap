@@ -21,7 +21,7 @@ RAtoCount <- function(genofile, gform){
   ## Process the individuals info
   ghead <- scan(genofile, what = "", nlines = 1, sep = "\t")
   nInd <- length(ghead) - switch(gform, uneak = 6, Tassel = 2)
-  indID <- switch(gform, uneak = ghead[2:(nind + 1)], Tassel = ghead[-(1:2)])
+  indID <- switch(gform, uneak = ghead[2:(nInd + 1)], Tassel = ghead[-(1:2)])
   
   ## Read in the data
   # If reference based
