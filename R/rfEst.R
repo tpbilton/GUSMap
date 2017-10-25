@@ -153,10 +153,10 @@ rf_est_FS <- function(init_r=0.01, epsilon=0.001, depth_Ref, depth_Alt, OPGP,
                        seqErr=seqErr)
     
     ## Compute the log score
-    LOD <-  optim.MLE$value - ll_fs_mp_scaled_err( ifelse(seqErr,c(1000,optim.MLE$par[2]), 1000),
+    LOD <-  -(optim.MLE$value - ll_fs_mp_scaled_err( ifelse(seqErr,c(1000,optim.MLE$par[2]), 1000),
                                                    depth_Ref=depth_Ref,depth_Alt=depth_Alt,bcoef_mat=bcoef_mat,Kab=Kab,
                                                    nInd=nInd,nSnps=nSnps,OPGP=OPGP,noFam=noFam,
-                                                   seqErr=seqErr)
+                                                   seqErr=seqErr))
     
     return(list(rf=inv.logit2(optim.MLE$par[1]), 
                 epsilon=0,
