@@ -189,13 +189,13 @@ SEXP ll_fs_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nI
   PROTECT(ll = allocVector(REALSXP, 1));
   pll = REAL(ll);
   double llval = 0;
-
+  
   // Now compute the likelihood
   for(ind = 0; ind < nInd_c; ind++){
     // Compute forward probabilities at snp 1
     sum = 0;
     for(s1 = 0; s1 < 4; s1++){
-      //Rprintf("Q value :%.6f at snp %i in ind %i\n", Qentry(pOPGP[0], pKaa[ind], pKab[ind], pKbb[ind], s1+1, delta_c), 0, ind);
+      //Rprintf("Q value :%.6f at snp %i in ind %i\n", Qentry(pOPGP[0], pKaa[ind], pKab[ind], pKbb[ind], s1+1), 0, ind);
       alphaDot[s1] = 0.25 * Qentry(pOPGP[0], pKaa[ind], pKab[ind], pKbb[ind], s1+1);
       sum = sum + alphaDot[s1];
     }
@@ -204,11 +204,11 @@ SEXP ll_fs_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nI
       alphaTilde[s1] = alphaDot[s1]/sum;
     }
     //Rprintf("New weight :%.6f at snp %i\n", sum, 1);
-
+    
     // add contribution to likelihood
     w_logcumsum = log(sum);
     llval = llval + w_logcumsum;
-
+    
     // iterate over the remaining SNPs
     for(snp = 1; snp < nSnps_c; snp++){
       // compute the next forward probabilities for snp \ell
@@ -217,7 +217,7 @@ SEXP ll_fs_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nI
         for(s1 = 0; s1 < 4; s1++){
           sum = sum + Tmat(s1, s2, pr[snp-1]) * alphaTilde[s1];
         }
-        //Rprintf("Q value :%.6f at snp %i in ind %i\n", Qentry(pOPGP[snp], pKaa[ind + nInd_c*snp], pKab[ind + nInd_c*snp], pKbb[ind + nInd_c*snp], s2+1, delta_c), snp, ind);
+        //Rprintf("Q value :%.6f at snp %i in ind %i\n", Qentry(pOPGP[snp], pKaa[ind + nInd_c*snp], pKab[ind + nInd_c*snp], pKbb[ind + nInd_c*snp], s2+1), snp, ind);
         alphaDot[s2] = Qentry(pOPGP[snp], pKaa[ind + nInd_c*snp], pKab[ind + nInd_c*snp], pKbb[ind + nInd_c*snp], s2+1) * sum;
       }
       // Compute the weight for snp \ell
@@ -227,6 +227,7 @@ SEXP ll_fs_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nI
       }
       // Add contribution to the likelihood
       llval = llval + log(w_new) + w_logcumsum;
+      // Rprintf("lik value: %lf\n", llval);
       w_logcumsum = w_logcumsum + log(w_new);
       // Scale the forward probability vector
       for(s2 = 0; s2 < 4; s2++){
@@ -282,7 +283,7 @@ SEXP ll_fs_ss_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP
     // add contribution to likelihood
     w_logcumsum = log(sum);
     llval = llval + w_logcumsum;
-
+    
     // iterate over the remaining SNPs
     for(snp = 1; snp < nSnps_c; snp++){
       // compute the next forward probabilities for snp \ell
