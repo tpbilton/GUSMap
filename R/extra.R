@@ -1,7 +1,7 @@
 
 
 readRA <- function(genofile, gform, mum, dad, excSamp=NULL, nClust=3,
-                   MAFthres=0.01, MISSthres=0.5, SAMPthres=0.01, BINthres=0, DEPTHthres=0, pvalue=0.2){
+                   MAFthres=0.05, MISSthres=0.8, SAMPthres=0.01, BINthres=0, DEPTHthres=6, pvalue=0.05){
   
   if(!is.character(genofile) || length(genofile) != 1)
     stop("File name of RA data set is not a string of length one")
@@ -89,13 +89,13 @@ readRA <- function(genofile, gform, mum, dad, excSamp=NULL, nClust=3,
     if(sum(d_p)>DEPTHthres & sum(d_p)>DEPTHthres ){
       if(any(x_p==1,na.rm=T) & any(x_m==1,na.rm=T))
         return(1)
-      else if(all(x_m==2,na.rm=T) & any(x_p==1, na.rm=T))
+      else if(all(x_m==2,na.rm=T) & (any(x_p==1, na.rm=T) | all(x_p %in% c(0,2), na.rm=T)))
         return(2)
-      else if(all(x_m==0,na.rm=T) & any(x_p==1, na.rm=T))
+      else if(all(x_m==0,na.rm=T) & (any(x_p==1, na.rm=T) | all(x_p %in% c(0,2), na.rm=T)))
         return(3)
-      else if(all(x_p==2,na.rm=T) & any(x_m==1,na.rm=T))
+      else if(all(x_p==2,na.rm=T) & (any(x_m==1, na.rm=T) | all(x_m %in% c(0,2), na.rm=T)))
         return(4)
-      else if(all(x_p==0,na.rm=T) & any(x_m==1,na.rm=T))
+      else if(all(x_p==0,na.rm=T) & (any(x_m==1, na.rm=T) | all(x_m %in% c(0,2), na.rm=T)))
         return(5)
       else
         return(NA)
@@ -144,7 +144,53 @@ readRA <- function(genofile, gform, mum, dad, excSamp=NULL, nClust=3,
   MAF <- colMeans(genon, na.rm=T)/2
   MAF <- pmin(MAF,1-MAF)
   miss <- apply(genon,2, function(x) sum(is.na(x))/length(x))
-  indx <- (MAF > MAFthres) & (miss < MISSthres) & !is.na(config)
+  
+  ## Infer geotypes for over SNPs that have passed the MAF and MISS thresholds
+  propHeter <- sapply(1:nSnps, function(x) sum(genon[,x] == 1,na.rm=T)/sum(!is.na(genon[,x])))
+  toInfer <- (MAF > MAFthres) & (miss < MISSthres) & (propHeter < 0.9) & is.na(config)
+  
+  seg_Infer <- sapply(1:nSnps, function(x){
+    if(!toInfer[x])
+      return(NA)
+    else{
+      d = depth_Ref[,x] + depth_Alt[,x]
+      g = genon[,x]
+      K = sum(1/2^(d[which(d != 0)])*0.5)/sum(d != 0)
+      nAA = sum(g==2, na.rm=T)
+      nAB = sum(g==1, na.rm=T)
+      nBB = sum(g==0, na.rm=T)
+      ## check that there are sufficient data to perform the chisq test
+      if(sum(nAA+nAB+nBB)/length(g) <= (1-MISSthres))
+        return(NA)
+      ## compute chiseq test for both loci types
+      exp_prob_BI <- c(0.25 + K,0.5 - 2*K, 0.25 + K)
+      exp_prob_SI <- c(K, 0.5 - 2*K, 0.5 + K)
+      ctest_BI <- chisq.test(c(nBB,nAB,nAA), p = exp_prob_BI)
+      ctest_SI_1 <- chisq.test(c(nBB,nAB,nAA), p = exp_prob_SI)
+      ctest_SI_2 <- chisq.test(c(nBB,nAB,nAA), p = rev(exp_prob_SI))
+      ## do tests to see if we can infer type
+      if( ctest_BI$p.value > pvalue & ctest_SI_1$p.value < pvalue & ctest_SI_2$p.value < pvalue )
+        return(1)
+      else if ( ctest_BI$p.value < pvalue & ctest_SI_1$p.value > pvalue & ctest_SI_2$p.value < pvalue )
+        return(4)
+      else if ( ctest_BI$p.value < pvalue & ctest_SI_1$p.value < pvalue & ctest_SI_2$p.value > pvalue )
+        return(5)
+      else
+        return(NA)
+    }
+  },simplify = T)
+  
+  indx <- (MAF > MAFthres) & (miss < MISSthres) & ( !is.na(config) | !is.na(seg_Infer) )
+  
+  ## Determine the segregation of the groups
+  group <- list()
+  group$BI <- which(config[indx] == 1)
+  group$PI <- which(config[indx] %in% c(2,3))
+  group$MI <- which(config[indx] %in% c(4,5))
+  
+  group_infer <- list()
+  group_infer$BI <- which(seg_Infer[indx] == 1) 
+  group_infer$SI <- which(seg_Infer[indx] %in% c(4,5))
   
   # if(gform == "Tassel" & BINthres > 0){
   #   ## Extract single snp from each tag
@@ -176,19 +222,23 @@ readRA <- function(genofile, gform, mum, dad, excSamp=NULL, nClust=3,
   pos <- pos[indx]
   SNP_Names <- SNP_Names[indx]
   config <- config[indx]
+  config_infer <- seg_Infer[indx]
   nSnps <- sum(indx)
-
+  
+  cat("\n\nSummary:\n\n")
   cat("Number of SNPs remaining after filtering:",nSnps,"\n")
   cat("Number of progeny:", nInd,"\n")
+  cat("Number of SNPs with correct segregation type:", sum(!is.na(config)),"\n")
+  cat("Both-informative (BI):", length(group$BI),"\n")
+  cat("Maternal-informative (MI):", length(group$MI),"\n")
+  cat("Paternal-informative (PI):", length(group$PI),"\n")
+  cat("Number of SNPs with inferred segregation type:", sum(!is.na(config_infer)),"\n")
+  cat("Both-informative (BI):", length(group_infer$BI),"\n")
+  cat("Maternal/Paternal-informative (MI or PI):", length(group_infer$SI),"\n")
   
-  ## Determine the segregation of the groups
-  group <- list()
-  group$BI <- which(config == 1)
-  group$PI <- which(config %in% c(2,3))
-  group$MI <- which(config %in% c(4,5))
-  
-  obj <- list(genon=genon, depth_Ref=depth_Ref,depth_Alt=depth_Alt,chrom=chrom,pos=pos,indID=indID,SNP_Names=SNP_Names,config=config,
-              group=group, nInd=nInd, nSnps=nSnps)
+      
+  obj <- list(genon=genon, depth_Ref=depth_Ref,depth_Alt=depth_Alt,chrom=chrom,pos=pos,indID=indID,SNP_Names=SNP_Names,config=config, 
+              config_infer=config_infer, group=group, group_infer=group_infer, nInd=nInd, nSnps=nSnps)
   
   ## Add filtering at some stage
   obj$filtering <- NULL
@@ -200,19 +250,41 @@ readRA <- function(genofile, gform, mum, dad, excSamp=NULL, nClust=3,
   return(obj)
 }
 
-#dataG <- readRA(genofile,"Tassel",mum,dad)
-
 ## needed for foreach loop
 comb <- function(...){
   mapply('rbind',...,SIMPLIFY=FALSE)
 }
 
-rf_2pt <- function(obj, nClust){
+rf_2pt <- function(obj, nClust, inferSNPs = TRUE){
+  
+  if(length(c(unlist(obj$group), unlist(obj$group_infer))) == 0)
+    stop("There are no SNPs in the data set.")
   
   ## Cacluate the number of SNPs
-  nSnps_BI = length(obj$group$BI)
-  nSnps_PI = length(obj$group$PI)
-  nSnps_MI = length(obj$group$MI)
+  if(length(obj$group_infer$BI) > 0 & inferSNPs){
+    indx_BI <- c(obj$group$BI, obj$group_infer$BI)
+    nSnps_BI <- length(indx_BI)
+  }
+  else{
+    indx_BI <- c(obj$group$BI)
+    nSnps_BI <- length(indx_BI)
+  }
+  if(length(obj$group_infer$SI) > 0 & inferSNPs){
+    indx_MI <- c(obj$group$MI, obj$group_infer$SI)
+    nSnps_MI <- length(indx_MI)
+  }
+  else{
+    indx_MI <- c(obj$group$MI)
+    nSnps_MI <- length(indx_MI)
+  }
+  indx_PI <- c(obj$group$PI)
+  nSnps_PI = length(indx_PI)
+  
+  ## set up the config vector
+  config <-  obj$config
+  config[which(!is.na(obj$config_infer))] <- obj$config_infer[which(!is.na(obj$config_infer))]
+  if(any(is.na(config)))
+    stop("There are some missing segregation types in the data.")
   
   ## Set up the Clusters
   cl <- makeCluster(nClust)
@@ -223,11 +295,11 @@ rf_2pt <- function(obj, nClust){
   rf.PI <- foreach(snp1 = iter(seq(length.out=nSnps_PI)), .combine=comb) %dopar% {
     rf <- replicate(2,numeric(nSnps_PI),simplify=F)
     for(snp2 in seq_len(snp1-1)){
-      ind = obj$group$PI[c(snp1,snp2)]
+      ind = indx_PI[c(snp1,snp2)]
       rf.est1 <- rf_est_FS(depth_Ref=list(obj$depth_Ref[,ind]),depth_Alt=list(obj$depth_Alt[,ind]),
-                                    OPGP=list(c(5,5) + 2*(obj$config[ind]==3)), epsilon=NULL)
+                                    OPGP=list(c(5,5) + 2*(config[ind]==3)), epsilon=NULL)
       rf.est2 <- rf_est_FS(depth_Ref=list(obj$depth_Ref[,ind]),depth_Alt=list(obj$depth_Alt[,ind]),
-                                    OPGP=list(c(5,6) + 2*(obj$config[ind]==3)), epsilon=NULL)
+                                    OPGP=list(c(5,6) + 2*(config[ind]==3)), epsilon=NULL)
       rf.ind <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik)), rf.est1, rf.est2)
       rf[[1]][snp2] <- rf.ind$rf
       rf[[2]][snp2] <- rf.ind$LOD
@@ -243,11 +315,11 @@ rf_2pt <- function(obj, nClust){
   rf.MI <- foreach(snp1 = iter(seq(length.out=nSnps_MI)), .combine=comb) %dopar% {
     rf <- replicate(2,numeric(nSnps_MI),simplify=F)
     for(snp2 in seq_len(snp1-1)){
-      ind = obj$group$MI[c(snp1,snp2)]
+      ind = indx_MI[c(snp1,snp2)]
       rf.est1 <- rf_est_FS(depth_Ref=list(obj$depth_Ref[,ind]),depth_Alt=list(obj$depth_Alt[,ind]),
-                                    OPGP=list(c(9,9) + 2*(obj$config[ind]==5)), epsilon=NULL)
+                                    OPGP=list(c(9,9) + 2*(config[ind]==5)), epsilon=NULL)
       rf.est2 <- rf_est_FS(depth_Ref=list(obj$depth_Ref[,ind]),depth_Alt=list(obj$depth_Alt[,ind]),
-                                    OPGP=list(c(9,10) + 2*(obj$config[ind]==5)), epsilon=NULL)
+                                    OPGP=list(c(9,10) + 2*(config[ind]==5)), epsilon=NULL)
       rf.ind <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik)), rf.est1, rf.est2)
       rf[[1]][snp2] <- rf.ind$rf
       rf[[2]][snp2] <- rf.ind$LOD
@@ -263,7 +335,7 @@ rf_2pt <- function(obj, nClust){
   rf.BI <- foreach(snp1 = iter(seq(length.out=nSnps_BI)), .combine=comb) %dopar% {
     rf <- replicate(2,numeric(nSnps_BI),simplify=F)
     for(snp2 in seq_len(snp1-1)){
-      ind = obj$group$BI[c(snp1,snp2)]
+      ind = indx_BI[c(snp1,snp2)]
       temp1 <- rf_est_FS(0.1,depth_Ref=list(obj$depth_Ref[,ind]),depth_Alt=list(obj$depth_Alt[,ind]), OPGP=list(c(1,1)), epsilon=NULL)
       temp2 <- rf_est_FS(0.4,depth_Ref=list(obj$depth_Ref[,ind]),depth_Alt=list(obj$depth_Alt[,ind]), OPGP=list(c(1,1)), epsilon=NULL)
       rf.est1 <- switch(which.min(c(temp1$loglik,temp2$loglik)),temp1,temp2) 
@@ -289,11 +361,11 @@ rf_2pt <- function(obj, nClust){
   rf.PI.BI <- foreach(snp.ps = iter(seq(length.out=nSnps_PI)), .combine=comb) %dopar% {
     rf <- replicate(2,numeric(nSnps_BI),simplify=F)
     for(snp.bi in 1:nSnps_BI){
-      ind <- c(obj$group$PI[snp.ps],obj$group$BI[snp.bi])
+      ind <- c(indx_PI[snp.ps],indx_BI[snp.bi])
       rf.est1 <- rf_est_FS(depth_Ref=list(obj$depth_Ref[,ind]),depth_Alt=list(obj$depth_Alt[,ind]),
-                           OPGP=list(c(5,1) + 2*c(obj$config[ind[1]]==3,0)), epsilon=NULL )
+                           OPGP=list(c(5,1) + 2*c(config[ind[1]]==3,0)), epsilon=NULL )
       rf.est2 <- rf_est_FS(depth_Ref=list(obj$depth_Ref[,ind]),depth_Alt=list(obj$depth_Alt[,ind]),
-                                    OPGP=list(c(5,2) + 2*c(obj$config[ind[1]]==3,0)), epsilon=NULL )
+                                    OPGP=list(c(5,2) + 2*c(config[ind[1]]==3,0)), epsilon=NULL )
       rf.ind <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik)), rf.est1, rf.est2)
       rf[[1]][snp.bi] <- rf.ind$rf
       rf[[2]][snp.bi] <- rf.ind$LOD
@@ -306,27 +378,42 @@ rf_2pt <- function(obj, nClust){
   rf.MI.BI <- foreach(snp.ms = iter(seq(length.out=nSnps_MI)), .combine=comb) %dopar% {
     rf <- replicate(2,numeric(nSnps_BI),simplify=F)
     for(snp.bi in 1:nSnps_BI){
-      ind <- c(obj$group$MI[snp.ms],obj$group$BI[snp.bi])
+      ind <- c(indx_MI[snp.ms],indx_BI[snp.bi])
       rf.est1 <- rf_est_FS(depth_Ref=list(obj$depth_Ref[,ind]),depth_Alt=list(obj$depth_Alt[,ind]),
-                           OPGP=list(c(9,1) + 2*c(obj$config[ind[1]]==5,0)), epsilon=NULL)
+                           OPGP=list(c(9,1) + 2*c(config[ind[1]]==5,0)), epsilon=NULL)
       rf.est2 <- rf_est_FS(depth_Ref=list(obj$depth_Ref[,ind]),depth_Alt=list(obj$depth_Alt[,ind]),
-                           OPGP=list(c(9,3) + 2*c(obj$config[ind[1]]==5,0)), epsilon=NULL)
+                           OPGP=list(c(9,3) + 2*c(config[ind[1]]==5,0)), epsilon=NULL)
       rf.ind <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik)), rf.est1, rf.est2)
       rf[[1]][snp.bi] <- rf.ind$rf
       rf[[2]][snp.bi] <- rf.ind$LOD
     }
     return(rf)
   }
-  stopCluster(cl) 
   
   ## For the non-informative computations
-  rf.MI.PI <- replicate(2,matrix(NA,nrow=nSnps_MI,ncol=nSnps_PI), simplify=F)
+  ## Really done so that we can check that there is no miss identification of the group
+  print("Maternal information vs Paternal informative\n")
+  rf.MI.PI <- foreach(snp.ms = iter(seq(length.out=nSnps_MI)), .combine=comb) %dopar% {
+    rf <- replicate(2,numeric(nSnps_PI),simplify=F)
+    for(snp.pi in 1:nSnps_PI){
+      ind <- c(indx_MI[snp.ms],indx_PI[snp.pi])
+      rf.est1 <- rf_est_FS(depth_Ref=list(obj$depth_Ref[,ind]),depth_Alt=list(obj$depth_Alt[,ind]),
+                           OPGP=list(c(10,10) + 2*(config[ind] %in% c(3,5))), epsilon=NULL)
+      rf.est2 <- rf_est_FS(depth_Ref=list(obj$depth_Ref[,ind]),depth_Alt=list(obj$depth_Alt[,ind]),
+                           OPGP=list(c(10,11) + 2*(config[ind] %in% c(3,5))), epsilon=NULL)
+      rf.ind <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik)), rf.est1, rf.est2)
+      rf[[1]][snp.pi] <- rf.ind$rf
+      rf[[2]][snp.pi] <- rf.ind$LOD
+    }
+    return(rf)
+  }
+  stopCluster(cl) 
   
   ## Build the rf and LOD matrices
-  origOrder <- order(c(obj$group$BI,obj$group$PI,obj$group$MI))
+  origOrder <- order(c(indx_BI,indx_PI,indx_MI))
   rf.mat <- rbind(cbind(rf.BI[[1]],t(rf.PI.BI[[1]]),t(rf.MI.BI[[1]])),
-                         cbind(rf.PI.BI[[1]], rf.PI[[1]], t(rf.MI.PI[[1]])),
-                         cbind(rf.MI.BI[[1]], rf.MI.PI[[1]], rf.MI[[1]]))[origOrder,origOrder]
+                        cbind(rf.PI.BI[[1]], rf.PI[[1]], t(rf.MI.PI[[1]])),
+                        cbind(rf.MI.BI[[1]], rf.MI.PI[[1]], rf.MI[[1]]))[origOrder,origOrder]
   LOD.mat <- rbind(cbind(rf.BI[[2]],t(rf.PI.BI[[2]]),t(rf.MI.BI[[2]])),
                         cbind(rf.PI.BI[[2]], rf.PI[[2]], t(rf.MI.PI[[2]])),
                         cbind(rf.MI.BI[[2]], rf.MI.PI[[2]], rf.MI[[2]]))[origOrder,origOrder]
@@ -346,19 +433,32 @@ excludeSNPs <- function(obj, criteria, name){
 }
 
 
-
+### Function for creating Linkage groups
 createGroups <- function(obj, parent, LOD=10){
   
   ## Initialize the LGs
   LGs <- list()
   
-  ## Start with the maternal side
-  if(parent=="maternal")
-    unmapped <- sort(c(obj$group$MI))
-  else(parent=="paternal")
-    unmapped <- sort(c(obj$group$PI))
+  ## check that the parent argument is correct
+  if(!is.character(parent) || length(parent) != 1 || 
+     !(parent %in% c("maternal only", "paternal only", "maternal","paternal")))
+    stop("parent argument is not a string of of length one or is incorrect:
+      Please select one of the following:
+        maternal only: Only MI SNPs
+        paternal only: Only PI SNPs
+        maternal: Both MI and BI SNPs
+        paternal: Both PI and BI SNPs")
   
-  ## Run the process of computing the linkage groups
+  if(parent == "maternal only")
+    unmapped <- sort(c(obj$group$MI))
+  else if(parent == "paternal only")
+    unmapped <- sort(c(obj$group$PI))
+  else if(parent == "maternal")
+    unmapped <- sort(c(obj$group$MI, obj$group$BI))
+  else if(parent == "paternal")
+    unmapped <- sort(c(obj$group$PI, obj$group$BI))
+  
+  ## Run algorithm for generating the linkage groups
   finish = FALSE
   while(!finish){
     newLG <- unmapped[sort(which(obj$LOD[unmapped,unmapped]==max(obj$LOD[unmapped,unmapped],na.rm=T),arr.ind=T)[1,])]
@@ -383,11 +483,127 @@ createGroups <- function(obj, parent, LOD=10){
   return(LGs)
 }
 
+addSNPs <- function(obj, LG.list, LOD=10){
+  
+  if(!is.list(LG.list))
+    stop("The Linkage group object needs to be a list")
+  if(length(LG.list) == 0)
+    stop("There are no linkage groups. Please use 'createGroups' function to create the groups")
+  nLGs <- length(LG.list)
+  
+  ## Find the unmapped loci
+  unmapped <- sort(unlist(obj$group_infer$SI))
+  if(length(unmapped) == 0)
+    stop("There are no SNPs remaining that are unmapped")
+
+  ## Run algorithm for generating the linkage groups
+  noneMapped = FALSE
+  while(!noneMapped){
+    noneMapped = TRUE
+    ## check that there are still SNPs remaining that need to be mapped
+    if(length(unmapped) == 0)
+      return(LG.list)
+    ## run the algorithm to map the SNPs
+    else{
+      for(snp in unmapped){
+        LODvalue = numeric(nLGs)
+        for(lg in 1:nLGs)
+          LODvalue[lg] <- max(obj$LOD[snp,LG.list[[lg]]])
+        if(max(LODvalue) >= LOD & sort(LODvalue, decreasing = T)[2] < LOD){
+          newLG <- which.max(LODvalue)
+          LG.list[[newLG]] <- c(LG.list[[newLG]], snp)
+          unmapped <- unmapped[-which(unmapped == snp)]
+          
+          noneMapped = FALSE
+        }
+      }
+    }
+  }
+  return(LG.list)
+}
+    
+#### Function for plotting linkage groups (or a single linkage group)
+plotLGs <- function(obj, LG.list, filename=NULL, names=NULL, chrS=2, lmai=2, chrom=T){
+  
+  rf.mat <- obj$rf
+  b <- ncol(rf.mat) + 1
+  if(chrom)
+    chrom.ind <- unlist(lapply(LG.list, function(x) c(x,b)))[-length(unlist(LG.list))+length(LG.list)]
+  else
+    chrom.ind <- 1:ncol(rf.mat)
+  
+  ## Subset the matrix 
+  rf.mat <- cbind(rf.mat,rep(0,b-1))
+  rf.mat <- rbind(rf.mat,rep(0,b))       
+  rf.mat <- rf.mat[chrom.ind,chrom.ind]
+  ## work out where the breaks are
+  breaks <- which(chrom.ind==b)
+  npixels <- length(chrom.ind)
+  if(chrom){
+    if(!is.null(filename))
+      png(filename,width=npixels+72*lmai,height=npixels,res=72)
+    par(xaxt='n',yaxt='n',mai=c(0,lmai,0,0),bty='n',ann=F)
+    image(1:npixels,1:npixels,rf.mat,zlim=c(0,0.5),col=heat.colors(100))
+    if(is.null(names))
+      mtext(paste("LG",1:length(LG.list),"  "), 
+                  at=floor(apply(cbind(c(0,breaks),c(breaks,npixels)),1,median)),side=2, line=0,cex=chrS,las=1)
+    else
+      mtext(names, at=floor(apply(cbind(c(0,breaks),c(breaks,npixels)),1,median)),side=2, line=0,cex=chrS,las=1)
+    abline(h=breaks)
+    abline(v=breaks)
+    if(!is.null(filename))
+      dev.off()
+  }
+  else{
+    npixels <- length(chrom.ind)
+    if(!is.null(filename))
+      png(filename,width=npixels,height=npixels)
+    par(xaxt='n',yaxt='n',mar=c(0,0,0,0),bty='n',ann=F)
+    image(1:npixels,1:npixels,rf.mat,zlim=c(0,0.5),col=heat.colors(100))
+    abline(h=breaks)
+    abline(v=breaks)
+    if(!is.null(filename))
+      dev.off()
+  }
+}
+
 
 mergeGroups <- function(obj, LOD=3){
   print("To be implemented")
 }
 
 
-
+#### Function for doing the Ordering
+orderLG <- function(obj, LG.list, sigma=10){
+  if(!is.list(LG.list))
+    stop("Linkage group object is not a list")
+  ## Define new list for ordered SNPs
+  LG.mat.ord <- list()
+  # iterate over the linkage groups
+  for(lg in 1:length(LG.list)){
+    snpInd <- LG.list[[lg]]
+    ## optimization based on initial ordering
+    D1 <- as.dist(obj$rf[snpInd,snpInd])
+    out1 <- seriate.distLD(D1,method="SPIN_NH_LD",control=list(sigma=sigma,verbose=T))
+    ## Try two other random orders
+    set.seed(58392+lg*9/3)
+    order2 <- sample(1:length(snpInd))
+    nSect <- 20 #floor(length(snpInd)/10)
+    order3 <- order(as.numeric(as.character(cut(1:length(snpInd),breaks=nSect,labels=sample(1:nSect)))))
+    D2 <- as.dist(obj$rf[snpInd[order2],snpInd[order2]])
+    D3 <- as.dist(obj$rf[snpInd[order3],snpInd[order3]])
+    out2 <- seriate.distLD(D2,method="SPIN_NH_LD",control=list(sigma=sigma,verbose=T))
+    out3 <- seriate.distLD(D3,method="SPIN_NH_LD",control=list(sigma=sigma,verbose=T))
+    ## Find out which has the best ordering and output that order
+    bestOut <- switch(which.min(c(out1[[2]],out2[[2]],out3[[2]])),1,2,3)
+    if(bestOut == 1) {
+      LG.mat.ord[[lg]] <- snpInd[get_order(out1[[1]])]
+    } else if(bestOut == 2){
+      LG.mat.ord[[lg]] <- snpInd[order2][get_order(out2[[1]])]
+    } else if(bestOut == 3){
+      LG.mat.ord[[lg]] <- snpInd[order3][get_order(out3[[1]])]
+    }
+  }
+  return(LG.mat.ord)
+}
 

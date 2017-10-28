@@ -131,12 +131,7 @@ rf_est_FS <- function(init_r=0.01, epsilon=0.001, depth_Ref, depth_Alt, OPGP,
   }
   else if (nSnps==2){
     
-    if(length(init_r)==1) 
-      para <- logit2(rep(init_r,nSnps-1))
-    else if(length(init_r) != nSnps-1) 
-      para <- logit2(rep(0.1,nSnps-1))
-    else
-      para <- init_r
+    para <- logit2(0.2)
     # sequencing error
     if(length(epsilon) != 1 & !is.null(epsilon))
       para <- c(para,logit(0.001))
@@ -147,7 +142,7 @@ rf_est_FS <- function(init_r=0.01, epsilon=0.001, depth_Ref, depth_Alt, OPGP,
     seqErr=!is.null(epsilon)
     
     ## Find MLE
-    optim.MLE <- optim(para,ll_fs_mp_scaled_err,method="BFGS",control=optim.arg,
+    optim.MLE <- optim(para,ll_fs_mp_scaled_err,method="BFGS",control=list(reltol=1e-10),
                        depth_Ref=depth_Ref,depth_Alt=depth_Alt,bcoef_mat=bcoef_mat,Kab=Kab,
                        nInd=nInd,nSnps=nSnps,OPGP=OPGP,noFam=noFam,
                        seqErr=seqErr)
@@ -157,6 +152,11 @@ rf_est_FS <- function(init_r=0.01, epsilon=0.001, depth_Ref, depth_Alt, OPGP,
                                                    depth_Ref=depth_Ref,depth_Alt=depth_Alt,bcoef_mat=bcoef_mat,Kab=Kab,
                                                    nInd=nInd,nSnps=nSnps,OPGP=OPGP,noFam=noFam,
                                                    seqErr=seqErr))
+    
+    # Print out the output from the optim procedure (if specified)
+    if(trace){
+      print(optim.MLE)
+    }
     
     return(list(rf=inv.logit2(optim.MLE$par[1]), 
                 epsilon=0,
