@@ -290,7 +290,8 @@ rf_2pt <- function(obj, nClust, inferSNPs = TRUE){
   cl <- makeCluster(nClust)
   registerDoSNOW(cl)
   
-  print("Paternal SNPs\n")
+  cat("\nComputing 2-point recombination fraction estimates ...\n")
+  cat("Paternal SNPs\n")
   ## Paternal informative SNPs
   rf.PI <- foreach(snp1 = iter(seq(length.out=nSnps_PI)), .combine=comb) %dopar% {
     rf <- replicate(2,numeric(nSnps_PI),simplify=F)
@@ -310,7 +311,7 @@ rf_2pt <- function(obj, nClust, inferSNPs = TRUE){
     rf.PI[[i]][upper.tri(rf.PI[[i]])] <- t(rf.PI[[i]])[upper.tri(rf.PI[[i]])]
   }
 
-  print("Maternal SNPs\n")
+  cat("Maternal SNPs\n")
   ## Maternal informative SNPs
   rf.MI <- foreach(snp1 = iter(seq(length.out=nSnps_MI)), .combine=comb) %dopar% {
     rf <- replicate(2,numeric(nSnps_MI),simplify=F)
@@ -330,7 +331,7 @@ rf_2pt <- function(obj, nClust, inferSNPs = TRUE){
     rf.MI[[i]][upper.tri(rf.MI[[i]])] <- t(rf.MI[[i]])[upper.tri(rf.MI[[i]])]
   }
   
-  print("Both informative SNPs\n")
+  cat("Both informative SNPs\n")
   ### Both Informative
   rf.BI <- foreach(snp1 = iter(seq(length.out=nSnps_BI)), .combine=comb) %dopar% {
     rf <- replicate(2,numeric(nSnps_BI),simplify=F)
@@ -356,7 +357,7 @@ rf_2pt <- function(obj, nClust, inferSNPs = TRUE){
     rf.BI[[i]][upper.tri(rf.BI[[i]])] <- t(rf.BI[[i]])[upper.tri(rf.BI[[i]])]
   }
   
-  print("Paternal information vs Both informative\n")
+  cat("Paternal information vs Both informative\n")
   ## Paternal and Informative SNPs
   rf.PI.BI <- foreach(snp.ps = iter(seq(length.out=nSnps_PI)), .combine=comb) %dopar% {
     rf <- replicate(2,numeric(nSnps_BI),simplify=F)
@@ -373,7 +374,7 @@ rf_2pt <- function(obj, nClust, inferSNPs = TRUE){
     return(rf)
   }
   
-  print("Maternal information vs Both informative\n")
+  cat("Maternal information vs Both informative\n")
   ## Maternal and Informative SNPs
   rf.MI.BI <- foreach(snp.ms = iter(seq(length.out=nSnps_MI)), .combine=comb) %dopar% {
     rf <- replicate(2,numeric(nSnps_BI),simplify=F)
@@ -392,15 +393,15 @@ rf_2pt <- function(obj, nClust, inferSNPs = TRUE){
   
   ## For the non-informative computations
   ## Really done so that we can check that there is no miss identification of the group
-  print("Maternal information vs Paternal informative\n")
+  cat("Maternal information vs Paternal informative\n")
   rf.MI.PI <- foreach(snp.ms = iter(seq(length.out=nSnps_MI)), .combine=comb) %dopar% {
     rf <- replicate(2,numeric(nSnps_PI),simplify=F)
     for(snp.pi in 1:nSnps_PI){
       ind <- c(indx_MI[snp.ms],indx_PI[snp.pi])
       rf.est1 <- rf_est_FS(depth_Ref=list(obj$depth_Ref[,ind]),depth_Alt=list(obj$depth_Alt[,ind]),
-                           OPGP=list(c(10,10) + 2*(config[ind] %in% c(3,5))), epsilon=NULL)
+                           OPGP=list(c(9,9) + 2*(config[ind] %in% c(3,5))), epsilon=NULL)
       rf.est2 <- rf_est_FS(depth_Ref=list(obj$depth_Ref[,ind]),depth_Alt=list(obj$depth_Alt[,ind]),
-                           OPGP=list(c(10,11) + 2*(config[ind] %in% c(3,5))), epsilon=NULL)
+                           OPGP=list(c(9,10) + 2*(config[ind] %in% c(3,5))), epsilon=NULL)
       rf.ind <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik)), rf.est1, rf.est2)
       rf[[1]][snp.pi] <- rf.ind$rf
       rf[[2]][snp.pi] <- rf.ind$LOD
@@ -441,22 +442,16 @@ createGroups <- function(obj, parent, LOD=10){
   
   ## check that the parent argument is correct
   if(!is.character(parent) || length(parent) != 1 || 
-     !(parent %in% c("maternal only", "paternal only", "maternal","paternal")))
+     !(parent %in% c("maternal","paternal")))
     stop("parent argument is not a string of of length one or is incorrect:
       Please select one of the following:
-        maternal only: Only MI SNPs
-        paternal only: Only PI SNPs
-        maternal: Both MI and BI SNPs
-        paternal: Both PI and BI SNPs")
+        maternal: Only MI SNPs
+        paternal: Only PI SNPs")
   
-  if(parent == "maternal only")
+  if(parent == "maternal")
     unmapped <- sort(c(obj$group$MI))
-  else if(parent == "paternal only")
-    unmapped <- sort(c(obj$group$PI))
-  else if(parent == "maternal")
-    unmapped <- sort(c(obj$group$MI, obj$group$BI))
   else if(parent == "paternal")
-    unmapped <- sort(c(obj$group$PI, obj$group$BI))
+    unmapped <- sort(c(obj$group$PI))
   
   ## Run algorithm for generating the linkage groups
   finish = FALSE
@@ -521,6 +516,46 @@ addSNPs <- function(obj, LG.list, LOD=10){
   }
   return(LG.list)
 }
+
+addBIsnps <- function(obj, LG.list, LOD=10){
+  
+  if(!is.list(LG.list))
+    stop("The Linkage group object needs to be a list")
+  if(length(LG.list) == 0)
+    stop("There are no linkage groups. Please use 'createGroups' function to create the groups")
+  nLGs <- length(LG.list)
+  
+  ## Find the unmapped loci
+  unmapped <- sort(unlist(obj$group$BI,obj$group_infer$BI))
+  if(length(unmapped) == 0)
+    stop("There are no SNPs remaining that are unmapped")
+  
+  ## Run algorithm for generating the linkage groups
+  noneMapped = FALSE
+  while(!noneMapped){
+    noneMapped = TRUE
+    ## check that there are still SNPs remaining that need to be mapped
+    if(length(unmapped) == 0)
+      return(LG.list)
+    ## run the algorithm to map the SNPs
+    else{
+      for(snp in unmapped){
+        LODvalue = numeric(nLGs)
+        for(lg in 1:nLGs)
+          LODvalue[lg] <- max(obj$LOD[snp,LG.list[[lg]]])
+        if(max(LODvalue) >= LOD & sort(LODvalue, decreasing = T)[2] < LOD){
+          newLG <- which.max(LODvalue)
+          LG.list[[newLG]] <- c(LG.list[[newLG]], snp)
+          unmapped <- unmapped[-which(unmapped == snp)]
+          
+          noneMapped = FALSE
+        }
+      }
+    }
+  }
+  return(LG.list)
+}
+
     
 #### Function for plotting linkage groups (or a single linkage group)
 plotLGs <- function(obj, LG.list, filename=NULL, names=NULL, chrS=2, lmai=2, chrom=T){
@@ -588,8 +623,12 @@ orderLG <- function(obj, LG.list, sigma=10){
     ## Try two other random orders
     set.seed(58392+lg*9/3)
     order2 <- sample(1:length(snpInd))
-    nSect <- 20 #floor(length(snpInd)/10)
-    order3 <- order(as.numeric(as.character(cut(1:length(snpInd),breaks=nSect,labels=sample(1:nSect)))))
+    if(length(snpInd) > 20){
+      nSect <- floor(length(snpInd)/10)
+      order3 <- order(as.numeric(as.character(cut(1:length(snpInd),breaks=nSect,labels=sample(1:nSect)))))
+    }
+    else
+      order3 <- sample(1:length(snpInd))
     D2 <- as.dist(obj$rf[snpInd[order2],snpInd[order2]])
     D3 <- as.dist(obj$rf[snpInd[order3],snpInd[order3]])
     out2 <- seriate.distLD(D2,method="SPIN_NH_LD",control=list(sigma=sigma,verbose=T))
