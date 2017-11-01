@@ -10,7 +10,7 @@ Package for constructing genetic maps using outcrossed full-sib family populatio
 Package: \tab GUSMap\cr
 Type: \tab Package\cr
 Version: \tab 0.1.0\cr
-Date: \tab 2017-08-31\cr
+Date: \tab 2017-10-31\cr
 License: \tab GPL 3\cr
 }
 }
@@ -19,8 +19,6 @@ Timothy P. Bilton,
 Maintainer: Timothy P. Bilton <tbilton@maths.otago.ac.nz>
 }
 \references{
-Bilton, T.P., Schofield, M.R., Black, M.A., Chagne D., Wilcox P., Dodds K.G. (2017). More accurate genetic maps using low coverage sequencing data in multiparental outcrossed populations. Unpublished manuscript.
-
-Dodds K.G., McEwan J.C., Brauning R., Anderson R.M., van Stijn, T.C., Kristjansson, T., Clarke, S.M. (2015). Construction of relatedness matrices using genotyping-by-sequencing data. \emph{BMC Genomics}. 16:1047.
+Bilton, T.P., Schofield, M.R., Black, M.A., Chagne D., Wilcox P., Dodds K.G. (2017). Accounting for errors in low coverage sequencing data when constructing genetic maps using biparental outcrossed populations. Unpublished Manuscript
 }
 \keyword{package}

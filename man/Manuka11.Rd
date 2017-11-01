@@ -10,14 +10,15 @@ Manuka11 <- function()
 \arguments{
 }
 \details{
-The data consists fo 680 SNPs, genotyped using genotyping-by-sequencing methods. The original data is in RA format and the scripts from KGD (https://github.com/AgResearch/KGD) github repository are used to convert the data into a genon matrix and depth matrix as required by GusMap. 
+The data consists fo 680 SNPs, genotyped using genotyping-by-sequencing methods. The original data is in RA format and is converted into matrices of allele counts for the reference and alternate allele as required by GUSMap. 
 
 }
 \value{
 Function outputs a list containing the following elements:
 \itemize{
-\item{genon: }{Numeric matrix of genotype calls. 2=major homozygous, 1=heterozygous, 0=minor homozygous and NA missing genotype}
-\item{depth: }{Numeric matrix of sequencing depths.}
+\item{genon: }{Numeric matrix of genotype calls. 2=homozygous for reference, 1=heterozygous, 0=homozygous for alternate and NA missing genotype}
+\item{depth_Ref: }{Numeric matrix of allele counts for the reference allele.}
+\item{depth_Alt: }{Numeric matrix of allele counts for the alternate allele.}
 \item{indNames: }{Names of the individuals. The \emph{i}th entry corresponds to the \emph{i}th row of the \code{genon} and \code{depth} matrices.}
 \item{chrom: }{Chromosome number of the SNPs. The \emph{i}th entry corresponds to the \emph{i}th column of the \code{genon} and \code{depth} matrices.}
 \item{pos: }{Position number of the SNPs. The \emph{i}th entry corresponds to the \emph{i}th column of the \code{genon} and \code{depth} matrices.}
@@ -25,16 +26,14 @@ Function outputs a list containing the following elements:
 }
 \author{Timothy P. Bilton}
 \references{
-Bilton, T.P., Schofield, M.R., Black, M.A., Chagne D., Wilcox P., Dodds K.G. (2017). More accurate genetic maps using low coverage sequencing data in multiparental outcrossed populations. Unpublished manuscript.
-
-Dodds K.G., McEwan J.C., Brauning R., Anderson R.M., van Stijn, T.C., Kristjansson, T., Clarke, S.M. (2015). Construction of relatedness matrices using genotyping-by-sequencing data. \emph{BMC Genomics}. 16:1047.
+Bilton, T.P., Schofield, M.R., Black, M.A., Chagne D., Wilcox P., Dodds K.G. (2017). Accounting for errors in low coverage sequencing data when constructing genetic maps using multiparental outcrossed populations. Unpublished manuscript.
 }
 \examples{
 ## To convert the data into the required format for GusMap:
 manuka <- Manuka11()
 
 ## To access the RA directly
-RAname <- system.file("extdata", "Manuka11.txt.gz", package="GusMap")
+RAname <- system.file("extdata", "Manuka11.txt.gz", package="GUSMap")
 RAdata <- read.table(RAname, header=T)
 
 ## Work out the segregation types
@@ -42,10 +41,14 @@ config <- unlist(apply(manuka$genon[1:4,],2,function(x){
   x_p = x[1:2]; x_m = x[3:4]
   if(any(x_p==1,na.rm=T) & any(x_m==1,na.rm=T))
     return(1)
-  else if(all(x_m==2,na.rm=T)|all(x_m==0, na.rm=T) & any(x_p==1, na.rm=T))
+  else if(all(x_m==2,na.rm=T) & any(x_p==1, na.rm=T))
     return(2)
-  else if(all(x_p==2,na.rm=T)|all(x_p==0, na.rm=T) & any(x_m==1,na.rm=T))
+  else if(all(x_m==0,na.rm=T) & any(x_p==1, na.rm=T))
     return(3)
+  else if(all(x_p==2,na.rm=T) & any(x_m==1,na.rm=T))
+    return(4)
+  else if(all(x_p==0,na.rm=T) & any(x_m==1,na.rm=T))
+    return(5)
 }))
 
 ## SNPs removed due to mis-ordering
@@ -59,28 +62,12 @@ badSnps[c(3:14,16,18:23,25:27,29,33:35,39:42,44,46:49,
   543,553,556,569,582,585,601,617,620,623,628,635,
   636:643,647:650,669:680)] <- TRUE
 
-## Make sure that the major is allele is coded as 2
-for(snp in 1:ncol(manuka$genon)){
-  x = manuka$genon[,snp]
-  if( (config[snp] %in% c(2,3)) & (sum(x==2,na.rm=T) <= sum(x==0,na.rm=T)))
-    manuka$genon[,snp] <- 2 - manuka$genon[,snp] - 2
-}
+## Compute the map for the low coverage set of SNPs 
+ind_rd6 <- which(colMeans(manuka$depth_Ref[-c(1:4),] + manuka$depth_Alt[-c(1:4),],na.rm=T ) < 6 & !badSnps) 
+OPGP_rd6 <- infer_OPGP_FS(manuka$depth_Ref[-c(1:4),ind_rd6], manuka$depth_Alt[-c(1:4),ind_rd6],
+                          config[ind_rd6], epsilon=0.001, reltol=1e-3)
 
-## Set the errorus genotypes to missing
-RAdata2 <- t(RAdata[,-c(1:6)])
-badCalls <- apply(matrix(unlist(strsplit(RAdata2,split=",")),byrow=T, ncol=2), 1,
-                   function(x) min(as.numeric(x))==1 & (sum(as.numeric(x))>8))
-manuka$genon[-c(1:4),][which(badCalls)] <- NA
-manuka$depth[-c(1:4),][which(badCalls)] <- 0
-
-## Compute the maps 
-ind_rd6 <- which(colMeans(manuka$depth[-c(1:4),],na.rm=T ) < 6 & !badSnps) 
-OPGP_rd6 <- infer_OPGP_FS(manuka$genon[-c(1:4),ind_rd6], manuka$depth[-c(1:4),ind_rd6],
-                          config[ind_rd6], ndeps=rep(0.001,sum(config[ind_rd6]==1)*2+
-                          sum(config[ind_rd6]!=1)-2), reltol=1e-3)
-
-rf_est <- rf_est_FS(init_r=0.01,genon=list(manuka$genon[-c(1:4),ind_rd6]),
-                                depth=list(manuka$depth[-c(1:4),ind_rd6]),
-                                OPGP=list(OPGP_rd6),
-                                reltol=1e-10)
+rf_est <- rf_est_FS(init_r=0.01,depth_Ref=list(manuka$depth_Ref[-c(1:4),ind_rd6]),
+                                depth_Alt=list(manuka$depth_Alt[-c(1:4),ind_rd6]),
+                                OPGP=list(OPGP_rd6), epsilon=0.001)
 }
