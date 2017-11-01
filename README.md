@@ -2,7 +2,7 @@
 
 Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap).
 
-An R package for constructing genetic linkage maps using low (or high) coverage sequencing data without requiring filtering with respect to read depth. This release accompanies the publication by Bilton et al. (2017).
+An R package for constructing genetic linkage maps using low (or high) coverage sequencing data without requiring filtering with respect to read depth. This release accompanies the paper by Bilton et al. (2017).
 
 ### Installation:
 
@@ -22,7 +22,7 @@ The key data required to use this package are:
 
 - Matrix of allele counts for the reference allele. The rows are the individuals and columns are the SNPs. Entries must be a positive integer value.
 - Matrix of allele counts for the alternate allele. The rows are the individuals and columns are the SNPs. Entries must be a positive integer value.
-- Config Vector: This vector gives the segregation type for each SNP and the length of the vector must equal the number of SNPs. Enteries are 1 for both-informative SNP (ABxAB), 2 for paternal-informative SNP (ABxAA), 2 for paternal-informative SNP (ABxBB), 4 for a maternal-informative SNP (AAxAB), and 5 for a maternal-informative SNP (BBxAB). 
+- Config Vector: This vector gives the segregation type for each SNP and the length of the vector must equal the number of SNPs. Enteries are 1 for both-informative SNP (ABxAB), 2 for paternal-informative SNP (ABxAA), 3 for paternal-informative SNP (ABxBB), 4 for a maternal-informative SNP (AAxAB), and 5 for a maternal-informative SNP (BBxAB). 
 
 ### References:
 
