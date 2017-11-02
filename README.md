@@ -1,4 +1,4 @@
-# GusMap Version 0.1.0
+# GUSMap Version 0.1.0
 
 Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap).
 
