@@ -4,7 +4,7 @@
 \description{
 Simulate genotypes and sequencing depth for the progeny of a full-sib family and write the data to various linkage mapping software formats.}
 \usage{
-  simFS <- function(rVec_f, rVec_m=rVec_f, epsilon=0, config,
+  simFS(rVec_f, rVec_m=rVec_f, epsilon=0, config,
                     nInd, nSnps, meanDepth, thres=NULL, NoDS=1,
                     formats=list(gusmap=F,onemap=F,lepmap=F,joinmap=F,crimap=F),
                     rd_dist="Neg_Binom", filename=NULL, seed1=1, seed2=1)
