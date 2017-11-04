@@ -16,12 +16,12 @@ The data consists of 680 SNPs, genotyped using genotyping-by-sequencing methods.
 \value{
 Function outputs a list containing the following elements:
 \itemize{
-\item{genon: }{Numeric matrix of genotype calls. 2=homozygous for reference, 1=heterozygous, 0=homozygous for alternate and NA missing genotype}
-\item{depth_Ref: }{Numeric matrix of allele counts for the reference allele.}
-\item{depth_Alt: }{Numeric matrix of allele counts for the alternate allele.}
-\item{indNames: }{Names of the individuals. The \emph{i}th entry corresponds to the \emph{i}th row of the \code{genon} and \code{depth} matrices.}
-\item{chrom: }{Chromosome number of the SNPs. The \emph{i}th entry corresponds to the \emph{i}th column of the \code{genon} and \code{depth} matrices.}
-\item{pos: }{Position number of the SNPs. The \emph{i}th entry corresponds to the \emph{i}th column of the \code{genon} and \code{depth} matrices.}
+\item genon Numeric matrix of genotype calls. 2=homozygous for reference, 1=heterozygous, 0=homozygous for alternate and NA missing genotype
+\item depth_Ref: Numeric matrix of allele counts for the reference allele.
+\item depth_Alt: Numeric matrix of allele counts for the alternate allele.
+\item indNames: Names of the individuals. The \emph{i}th entry corresponds to the \emph{i}th row of the \code{genon} and \code{depth} matrices.
+\item chrom: Chromosome number of the SNPs. The \emph{i}th entry corresponds to the \emph{i}th column of the \code{genon} and \code{depth} matrices.
+\item pos: Position number of the SNPs. The \emph{i}th entry corresponds to the \emph{i}th column of the \code{genon} and \code{depth} matrices.
 }
 }
 \author{Timothy P. Bilton}

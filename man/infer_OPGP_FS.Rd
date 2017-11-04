@@ -5,13 +5,13 @@
 Infers the OPGPs for all loci of a single full-sib family.
 }
 \usage{
-infer_OPGP_FS <- function(genon, depth, config, \ldots)
+infer_OPGP_FS(genon, depth, config, \ldots)
 }
 \arguments{
   \item{depth_Ref}{Numeric matrix of allele counts for the reference allele.}
   \item{depth_Alt}{Numeric matrix of allele counts for the alternate allele.}
   \item{config}{Numeric vector of the segregation types for all the loci.}
-  \item{epsilon}{Numeric value of the starting value for the sequencing error parameter. Default is NULL which means that the sequencing parameter is fixed at zero.}
+  \item{epsilon}{Numeric value of the starting value for the sequencing error parameter.} Default is NULL which means that the sequencing parameter is fixed at zero.}
   \item{\ldots}{Additional arguments passed to \code{optim()}.}
 }
 \details{
