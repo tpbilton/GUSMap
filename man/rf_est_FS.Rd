@@ -14,15 +14,15 @@ rf_est_FS <- function(init_r=NULL, epsilon=NULL, depth_Ref, depth_Alt, OPGP,
   \item{depth_Ref}{List object with each element containing a matrix of allele counts for the reference allele for each family.}
   \item{depth_Alt}{List object with each element containing a matrix of allele counts for the alternate allele for each family.}
   \item{OPGP}{List object with each element containing a numeric vector of ordered parental genotype pairs (OPGPs) for each family. See Bilton (2017) for a classification of each OPGP.}
-  \item{sexSpec}{Logical value. If TRUE, sex spceific recombination fractions are estimated.}
-  \item{trace}{Logical value. If TRUE, output from optim are printed.}
+  \item{sexSpec}{Logical value. If TRUE, sex specific recombination fractions are estimated.}
+  \item{trace}{Logical value. If TRUE, output from \code{optim()} are printed.}
   \item{noFam}{Numeric value. Specifies the number of full-sib families used to estimate the recombination fractions.}
-  \item{\ldots}{Additional arguments passed to optim}
+  \item{\ldots}{Additional arguments passed to \code{optim()}}
 }
 \details{
-The \code{depth_Ref} and \code{depth_Alt} matrices must have the rows representing the individuals and columns representing the SNPs. The entries of these two matrices must be a finite non-negative integer number. The number of families specified must match the number of genon and depths matrices given. For the vector of starting values, \code{init_r}, a single value can be given which sets all the starting values to be equal.
+The \code{depth_Ref} and \code{depth_Alt} matrices must have the rows representing the individuals and columns representing the SNPs. The entries of these two matrices must be a finite non-negative integer number. The number of families specified must match the number of genon (genotype calls) and depth matrices given. For the vector of starting values, \code{init_r}, a single value can be given which sets all the starting values to be equal.
 
-The likelihood calulations are scaled using forward recusion to advoid overflow issues and so can be implemented on a large numbers of loci. If the OPGP vector is unknown for the families, then it can be inferred using \code{\link{infer_OPGP_FS}}.
+The likelihood calculations are scaled using forward recursion to avoid overflow issues and so can be implemented on a large numbers of loci. If the OPGP vector is unknown for the families, then it can be inferred using \code{\link{infer_OPGP_FS}}.
 }
 \value{Function returns a list object. If non sex-specific recombination fractions are specified, the list contains,
 \itemize{
@@ -33,7 +33,7 @@ The likelihood calulations are scaled using forward recusion to advoid overflow 
 Else, if sex-specific recombination fractions are desired, the list contains,
 \itemize{
 \item{rf_p: }{Vector of the paternal recombination fraction estimates.}
-\item{rf_m: }{ Vector ofthe maternal recombination fraction estimates.}
+\item{rf_m: }{ Vector of the maternal recombination fraction estimates.}
 \item{epsilon:}{Estimate of the sequencing error parameter.}
 \item{loglik: }{The log-likelihood value at the maximum likelihood estimates.}
 }

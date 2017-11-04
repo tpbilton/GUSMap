@@ -1,7 +1,7 @@
 \name{GUSMap-package}
 \alias{GUSMap}
 \docType{package}
-\title{Genotyping Uncertainty with Sequening data for linkage MAPping (GUSMap)}
+\title{Genotyping Uncertainty with Sequencing data for linkage Mapping (GUSMap)}
 \description{
 Package for constructing genetic maps using outcrossed full-sib family populations that have been sequenced using next generation multiplexing sequencing methods (see Bilton et al. (2017)).
 }

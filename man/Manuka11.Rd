@@ -5,12 +5,12 @@
 Function for extracting the Manuka data used in the publication by Bilton et al. (2017).
 }
 \usage{
-Manuka11 <- function()
+Manuka11()
 }
 \arguments{
 }
 \details{
-The data consists fo 680 SNPs, genotyped using genotyping-by-sequencing methods. The original data is in RA format and is converted into matrices of allele counts for the reference and alternate allele as required by GUSMap. 
+The data consists of 680 SNPs, genotyped using genotyping-by-sequencing methods. The original data is in RA format and is converted into matrices of allele counts for the reference and alternate allele as required by GUSMap.
 
 }
 \value{
