@@ -34,7 +34,7 @@
 #' @param epsilon Numeric value of the starting value for the sequencing error
 #' parameter. Default is NULL which means that the sequencing parameter is
 #' fixed at zero.
-#' @param list() Additional arguments passed to \code{optim()}.
+#' @param \ldots Additional arguments passed to \code{optim()}.
 #' @return Function returns a vector of the inferred OPGP values
 #' @author Timothy P. Bilton
 #' @references Bilton, T.P., Schofield, M.R., Black, M.A., Chagne D., Wilcox

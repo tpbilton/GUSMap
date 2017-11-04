@@ -91,7 +91,10 @@
 #' \item rVec_f: Vector of adjacent paternal recombination fractions.
 #' \item rVec_m: Vector of adjacent maternal recombination fractions.
 #' \item nInd: Number of individuals.
-#' \item nSnps: Number of SNPs.
+
+# [ This parameter appears to be removed ]
+# \item nSnps: Number of SNPs.
+
 #' \item config: Vector of segregation types used in the simulation.
 #' \item OPGP: Vector of OPGPs used in the simulation.
 #' \item meanDepth: Mean of the distribution used to simulate the read depths.

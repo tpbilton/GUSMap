@@ -10,4 +10,4 @@ Description: Package for performing constructing linkage maps using outcrossed f
 License: GPL-3
 LazyData: true
 NeedsCompilation: yes
-
+RoxygenNote: 6.0.1

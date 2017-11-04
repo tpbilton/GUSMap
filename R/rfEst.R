@@ -41,7 +41,7 @@
 #' @param trace Logical value. If TRUE, output from \code{optim()} are printed.
 #' @param noFam Numeric value. Specifies the number of full-sib families used
 #' to estimate the recombination fractions.
-#' @param list() Additional arguments passed to \code{optim()}.
+#' @param \ldots Additional arguments passed to \code{optim()}.
 #' @return Function returns a list object. If non sex-specific recombination
 #' fractions are specified, the list contains;
 #' \itemize{
