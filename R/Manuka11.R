@@ -16,17 +16,19 @@
 #' methods. The original data is in RA format and is converted into matrices of
 #' allele counts for the reference and alternate allele as required by GUSMap.
 #' 
-#' @return Function outputs a list containing the following elements: \itemize{
+#' @return Function outputs a list containing the following elements:
+#' \itemize{
 #' \item genon Numeric matrix of genotype calls. 2=homozygous for reference,
-#' 1=heterozygous, 0=homozygous for alternate and NA missing genotype \item
-#' depth_Ref: Numeric matrix of allele counts for the reference allele. \item
-#' depth_Alt: Numeric matrix of allele counts for the alternate allele. \item
-#' indNames: Names of the individuals. The \emph{i}th entry corresponds to the
-#' \emph{i}th row of the \code{genon} and \code{depth} matrices. \item chrom:
-#' Chromosome number of the SNPs. The \emph{i}th entry corresponds to the
-#' \emph{i}th column of the \code{genon} and \code{depth} matrices. \item pos:
-#' Position number of the SNPs. The \emph{i}th entry corresponds to the
-#' \emph{i}th column of the \code{genon} and \code{depth} matrices. }
+#' 1=heterozygous, 0=homozygous for alternate and NA missing genotype
+#' \item depth_Ref: Numeric matrix of allele counts for the reference allele.
+#' \item depth_Alt: Numeric matrix of allele counts for the alternate allele.
+#' \item indNames: Names of the individuals. The \emph{i}th entry corresponds
+#' to the \emph{i}th row of the \code{genon} and \code{depth} matrices.
+#' \item chrom: Chromosome number of the SNPs. The \emph{i}th entry corresponds
+#' to the \emph{i}th column of the \code{genon} and \code{depth} matrices.
+#' \item pos: Position number of the SNPs. The \emph{i}th entry corresponds to
+#' the \emph{i}th column of the \code{genon} and \code{depth} matrices.
+#' }
 #' @author Timothy P. Bilton
 #' @references Bilton, T.P., Schofield, M.R., Black, M.A., Chagne D., Wilcox
 #' P., Dodds K.G. (2017). Accounting for errors in low coverage sequencing data

@@ -43,15 +43,20 @@
 #' to estimate the recombination fractions.
 #' @param list() Additional arguments passed to \code{optim()}.
 #' @return Function returns a list object. If non sex-specific recombination
-#' fractions are specified, the list contains, \itemize{ \item rf: Vector of
-#' recombination fraction estimates. \item epsilon: Estimate of the sequencing
-#' error parameter. \item loglik: The log-likelihood value at the maximum
-#' likelihood estimates. } Else, if sex-specific recombination fractions are
-#' desired, the list contains, \itemize{ \item rf_p: Vector of the paternal
-#' recombination fraction estimates. \item rf_m: Vector of the maternal
-#' recombination fraction estimates. \item epsilon: Estimate of the sequencing
-#' error parameter. \item loglik: The log-likelihood value at the maximum
-#' likelihood estimates. }
+#' fractions are specified, the list contains;
+#' \itemize{
+#' \item rf: Vector of recombination fraction estimates.
+#' \item epsilon: Estimate of the sequencing error parameter.
+#' \item loglik: The log-likelihood value at the maximum likelihood estimates.
+#' }
+#' else, if sex-specific recombination fractions are
+#' desired, the list contains;
+#' \itemize{
+#' \item rf_p: Vector of the paternal recombination fraction estimates.
+#' \item rf_m: Vector of the maternal recombination fraction estimates.
+#' \item epsilon: Estimate of the sequencing error parameter.
+#' \item loglik: The log-likelihood value at the maximum likelihood estimates.
+#' }
 #' @author Timothy P. Bilton
 #' @seealso \code{\link{infer_OPGP_FS}}
 #' @references Bilton, T.P., Schofield, M.R., Black, M.A., Chagne D., Wilcox
