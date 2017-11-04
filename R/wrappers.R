@@ -6,6 +6,7 @@
 #### Wrapper function for likelihoods of the GBS HMM when
 #### Likelihood function is written in C in the file 'likelihoods.c'
 
+#' @useDynLib GUSMap
 ## r.f.'s are equal
 ll_fs_mp_scaled_err <- function(para,depth_Ref,depth_Alt,bcoef_mat,Kab,OPGP,nInd,nSnps,noFam,seqErr){
   ## untransform the parameters
