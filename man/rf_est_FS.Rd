@@ -13,7 +13,7 @@ rf_est_FS(init_r=NULL, epsilon=NULL, depth_Ref, depth_Alt, OPGP,
   \item{epsilon}{Numeric value of the starting value for the sequencing error parameter. Default is NULL which means that the sequencing parameter is fixed at zero.}
   \item{depth_Ref}{List object with each element containing a matrix of allele counts for the reference allele for each family.}
   \item{depth_Alt}{List object with each element containing a matrix of allele counts for the alternate allele for each family.}
-  \item{OPGP}{List object with each element containing a numeric vector of ordered parental.} genotype pairs (OPGPs) for each family. See Bilton (2017) for a classification of each OPGP.}
+  \item{OPGP}{List object with each element containing a numeric vector of ordered parental genotype pairs (OPGPs) for each family. See Bilton (2017) for a classification of each OPGP.}
   \item{sexSpec}{Logical value. If TRUE, sex specific recombination fractions are estimated.}
   \item{trace}{Logical value. If TRUE, output from \code{optim()} are printed.}
   \item{noFam}{Numeric value. Specifies the number of full-sib families used to estimate the recombination fractions.}
