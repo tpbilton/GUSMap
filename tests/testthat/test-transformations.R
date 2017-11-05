@@ -10,6 +10,9 @@ test_that("tranformation functions", {
   expect_equal(logit2(0.1), -1.386294, tolerance=1e-6)
   expect_equal(logit2(0.25), 0)
   expect_equal(logit2(0.4), 1.386294, tolerance=1e-6)
+
+  expect_true(is.na(logit2(NA)))
+  expect_error(logit2("abc"))
   
   ## inv.logit2 function
   # Test range
@@ -37,4 +40,6 @@ test_that("tranformation functions", {
   expect_equal(inv.logit2(0), 0.25)
   expect_equal(inv.logit2(1.386294), 0.4, tolerance=1e-6)
   
+  expect_equal(inv.logit2(NA), 0.5)
+  expect_error(inv.logit2("abc"))
 })
