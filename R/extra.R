@@ -478,7 +478,7 @@ createGroups <- function(obj, parent, LOD=10){
   return(LGs)
 }
 
-addSNPs <- function(obj, LG.list, LOD=10){
+addSNPs <- function(obj, LG.list, parent, LOD=10){
   
   if(!is.list(LG.list))
     stop("The Linkage group object needs to be a list")
@@ -514,6 +514,12 @@ addSNPs <- function(obj, LG.list, LOD=10){
       }
     }
   }
+  indx_SI <- obj$group_infer$SI[which(obj$group_infer$SI %in% unlist(LG.list))]
+  if(parent == "maternal")
+    obj$config[indx_SI] <- obj$config_infer[indx_SI]
+  else if (parent == "paternal")
+    obj$config[indx_SI] <- obj$config_infer[indx_SI] - 2
+  
   return(LG.list)
 }
 
@@ -524,6 +530,8 @@ addBIsnps <- function(obj, LG.list, LOD=10){
   if(length(LG.list) == 0)
     stop("There are no linkage groups. Please use 'createGroups' function to create the groups")
   nLGs <- length(LG.list)
+  
+  LG.list.new <- LG.list
   
   ## Find the unmapped loci
   unmapped <- sort(unlist(obj$group$BI,obj$group_infer$BI))
@@ -545,7 +553,7 @@ addBIsnps <- function(obj, LG.list, LOD=10){
           LODvalue[lg] <- max(obj$LOD[snp,LG.list[[lg]]])
         if(max(LODvalue) >= LOD & sort(LODvalue, decreasing = T)[2] < LOD){
           newLG <- which.max(LODvalue)
-          LG.list[[newLG]] <- c(LG.list[[newLG]], snp)
+          LG.list.new[[newLG]] <- c(LG.list.new[[newLG]], snp)
           unmapped <- unmapped[-which(unmapped == snp)]
           
           noneMapped = FALSE
