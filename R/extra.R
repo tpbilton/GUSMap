@@ -435,7 +435,7 @@ excludeSNPs <- function(obj, criteria, name){
 
 
 ### Function for creating Linkage groups
-createGroups <- function(obj, parent, LOD=10){
+createGroups <- function(obj, parent, LOD=10, rf=0.15){
   
   ## Initialize the LGs
   LGs <- list()
@@ -456,11 +456,14 @@ createGroups <- function(obj, parent, LOD=10){
   ## Run algorithm for generating the linkage groups
   finish = FALSE
   while(!finish){
+    
     newLG <- unmapped[sort(which(obj$LOD[unmapped,unmapped]==max(obj$LOD[unmapped,unmapped],na.rm=T),arr.ind=T)[1,])]
     unmapped <- unmapped[-which(unmapped%in%newLG)]
     compLOD <- obj$LOD[newLG,unmapped]
+    comprf <- obj$rf[newLG,unmapped]
     maxLOD <- max(compLOD)
-    while(maxLOD > LOD ){
+    maxrf <- comprf[which(compLOD == max(compLOD), arr.ind=TRUE)]
+    while(maxLOD > LOD & maxrf < rf ){
       newSNP <- matrix(which(compLOD == maxLOD,arr.ind=T),ncol=2)[1,]
       if(newSNP[1]<length(newLG))
         newLG <- c(newLG[1:newSNP[1]],unmapped[newSNP[2]],newLG[(newSNP[1]+1):length(newLG)])
@@ -468,7 +471,9 @@ createGroups <- function(obj, parent, LOD=10){
         newLG <- c(newLG,unmapped[newSNP[2]])
       unmapped <- unmapped[-newSNP[2]]
       compLOD <- obj$LOD[newLG,unmapped]
+      comprf <- obj$rf[newLG,unmapped]
       maxLOD <- max(compLOD)
+      maxrf <- comprf[which(compLOD == max(compLOD), arr.ind=TRUE)]
     }
     finish <- !any(obj$LOD[unmapped,unmapped] > LOD)
     LGs <- c(LGs,list(newLG))
@@ -478,7 +483,7 @@ createGroups <- function(obj, parent, LOD=10){
   return(LGs)
 }
 
-addSNPs <- function(obj, LG.list, parent, LOD=10){
+addSNPs <- function(obj, LG.list, parent, LOD=10, rf=0.15){
   
   if(!is.list(LG.list))
     stop("The Linkage group object needs to be a list")
@@ -504,7 +509,7 @@ addSNPs <- function(obj, LG.list, parent, LOD=10){
         LODvalue = numeric(nLGs)
         for(lg in 1:nLGs)
           LODvalue[lg] <- max(obj$LOD[snp,LG.list[[lg]]])
-        if(max(LODvalue) >= LOD & sort(LODvalue, decreasing = T)[2] < LOD){
+        if(max(LODvalue) >= LOD & obj$rf[snp,LG.list[[which.max(LODvalue)]]][which.max(obj$LOD[snp,LG.list[[which.max(LODvalue)]]])] < rf){
           newLG <- which.max(LODvalue)
           LG.list[[newLG]] <- c(LG.list[[newLG]], snp)
           unmapped <- unmapped[-which(unmapped == snp)]
