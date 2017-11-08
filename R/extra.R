@@ -433,9 +433,8 @@ excludeSNPs <- function(obj, criteria, name){
   return(obj)
 }
 
-
 ### Function for creating Linkage groups
-createGroups <- function(obj, parent, LOD=10, rf=0.15){
+createGroups <- function(obj, parent, LOD=10, nComp=10){
   
   ## Initialize the LGs
   LGs <- list()
@@ -444,9 +443,9 @@ createGroups <- function(obj, parent, LOD=10, rf=0.15){
   if(!is.character(parent) || length(parent) != 1 || 
      !(parent %in% c("maternal","paternal")))
     stop("parent argument is not a string of of length one or is incorrect:
-      Please select one of the following:
-        maternal: Only MI SNPs
-        paternal: Only PI SNPs")
+         Please select one of the following:
+         maternal: Only MI SNPs
+         paternal: Only PI SNPs")
   
   if(parent == "maternal")
     unmapped <- sort(c(obj$group$MI))
@@ -456,26 +455,21 @@ createGroups <- function(obj, parent, LOD=10, rf=0.15){
   ## Run algorithm for generating the linkage groups
   finish = FALSE
   while(!finish){
-    
     newLG <- unmapped[sort(which(obj$LOD[unmapped,unmapped]==max(obj$LOD[unmapped,unmapped],na.rm=T),arr.ind=T)[1,])]
     unmapped <- unmapped[-which(unmapped%in%newLG)]
     compLOD <- obj$LOD[newLG,unmapped]
-    comprf <- obj$rf[newLG,unmapped]
-    maxLOD <- max(compLOD)
-    maxrf <- comprf[which(compLOD == max(compLOD), arr.ind=TRUE)]
-    while(maxLOD > LOD & maxrf < rf ){
-      newSNP <- matrix(which(compLOD == maxLOD,arr.ind=T),ncol=2)[1,]
-      if(newSNP[1]<length(newLG))
-        newLG <- c(newLG[1:newSNP[1]],unmapped[newSNP[2]],newLG[(newSNP[1]+1):length(newLG)])
-      else
-        newLG <- c(newLG,unmapped[newSNP[2]])
-      unmapped <- unmapped[-newSNP[2]]
+    meanLOD <- apply(compLOD,2,function(x) mean(sort(x,decreasing = T)[1:nComp], na.rm=T))
+    maxMeanLOD <- max(meanLOD)
+    while(maxMeanLOD > LOD ){
+      newSNP <- which(meanLOD == maxMeanLOD)
+      newLG <- c(newLG,unmapped[newSNP])
+      unmapped <- unmapped[-newSNP]
       compLOD <- obj$LOD[newLG,unmapped]
-      comprf <- obj$rf[newLG,unmapped]
-      maxLOD <- max(compLOD)
-      maxrf <- comprf[which(compLOD == max(compLOD), arr.ind=TRUE)]
+      meanLOD <- apply(compLOD,2,function(x) mean(sort(x,decreasing = T)[1:nComp], na.rm=T))
+      maxMeanLOD <- max(meanLOD)
     }
-    finish <- !any(obj$LOD[unmapped,unmapped] > LOD)
+    meanLOD <- apply(obj$LOD[unmapped,unmapped],2,function(x) mean(sort(x,decreasing = T)[1:nComp], na.rm=T))
+    finish <- !any(meanLOD > LOD)
     LGs <- c(LGs,list(newLG))
   }
   
@@ -483,7 +477,7 @@ createGroups <- function(obj, parent, LOD=10, rf=0.15){
   return(LGs)
 }
 
-addSNPs <- function(obj, LG.list, parent, LOD=10, rf=0.15){
+addSNPs <- function(obj, LG.list, LOD=10, nComp=10){
   
   if(!is.list(LG.list))
     stop("The Linkage group object needs to be a list")
@@ -495,7 +489,7 @@ addSNPs <- function(obj, LG.list, parent, LOD=10, rf=0.15){
   unmapped <- sort(unlist(obj$group_infer$SI))
   if(length(unmapped) == 0)
     stop("There are no SNPs remaining that are unmapped")
-
+  
   ## Run algorithm for generating the linkage groups
   noneMapped = FALSE
   while(!noneMapped){
@@ -508,27 +502,20 @@ addSNPs <- function(obj, LG.list, parent, LOD=10, rf=0.15){
       for(snp in unmapped){
         LODvalue = numeric(nLGs)
         for(lg in 1:nLGs)
-          LODvalue[lg] <- max(obj$LOD[snp,LG.list[[lg]]])
-        if(max(LODvalue) >= LOD & obj$rf[snp,LG.list[[which.max(LODvalue)]]][which.max(obj$LOD[snp,LG.list[[which.max(LODvalue)]]])] < rf){
+          LODvalue[lg] <- mean(sort(obj$LOD[snp,LG.list[[lg]]],decreasing=T)[1:nComp],na.rm=T)
+        if(max(LODvalue) >= LOD & sort(LODvalue, decreasing = T)[2] < LOD){
           newLG <- which.max(LODvalue)
           LG.list[[newLG]] <- c(LG.list[[newLG]], snp)
           unmapped <- unmapped[-which(unmapped == snp)]
-          
           noneMapped = FALSE
         }
       }
     }
   }
-  indx_SI <- obj$group_infer$SI[which(obj$group_infer$SI %in% unlist(LG.list))]
-  if(parent == "maternal")
-    obj$config[indx_SI] <- obj$config_infer[indx_SI]
-  else if (parent == "paternal")
-    obj$config[indx_SI] <- obj$config_infer[indx_SI] - 2
-  
   return(LG.list)
 }
 
-addBIsnps <- function(obj, LG.list, LOD=10){
+addBIsnps <- function(obj, LG.list, LOD=10, nComp=10){
   
   if(!is.list(LG.list))
     stop("The Linkage group object needs to be a list")
@@ -555,18 +542,17 @@ addBIsnps <- function(obj, LG.list, LOD=10){
       for(snp in unmapped){
         LODvalue = numeric(nLGs)
         for(lg in 1:nLGs)
-          LODvalue[lg] <- max(obj$LOD[snp,LG.list[[lg]]])
-        if(max(LODvalue) >= LOD & sort(LODvalue, decreasing = T)[2] < LOD){
+          LODvalue[lg] <- mean(sort(obj$LOD[snp,LG.list[[lg]]],decreasing=T)[1:nComp],na.rm=T)
+        if(max(LODvalue) >= LOD){
           newLG <- which.max(LODvalue)
           LG.list.new[[newLG]] <- c(LG.list.new[[newLG]], snp)
           unmapped <- unmapped[-which(unmapped == snp)]
-          
           noneMapped = FALSE
         }
       }
     }
   }
-  return(LG.list)
+  return(LG.list.new)
 }
 
     
