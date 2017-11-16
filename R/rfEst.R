@@ -227,7 +227,8 @@ rf_est_FS_UP <- function(depth_Ref, depth_Alt, config, epsilon, trace=F, ...){
       warning(paste0('Optimization failed to converge properly with error ',optim.MLE$convergence,'\n smallest MLE estimate is: ', round(min(optim.MLE$par),6)))
     
     # Return the MLEs
-    return(list(rf_p=inv.logit(optim.MLE$par[1:npar[1]]),rf_m=inv.logit(optim.MLE$par[npar[1]+1:npar[2]]),
+    return(list(rf_p=switch((npar[1]!=0)+1,NULL,inv.logit(optim.MLE$par[1:npar[1]])),
+                rf_m=switch((npar[2]!=0)+1,NULL,inv.logit(optim.MLE$par[npar[1]+1:npar[2]])),
                 epsilon=inv.logit(optim.MLE$par[sum(npar)+1])))
   } 
   else if(nSnps == 2){
