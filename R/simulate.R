@@ -55,9 +55,9 @@ simFS <- function(rVec_f, rVec_m=rVec_f, epsilon=0, config, nInd, meanDepth, thr
   parHap[cbind(c(rep(3,sum(config %in% c(3,7,9))),rep(4,sum(config %in% c(3,7,9)))),which(config %in% c(3,7,9)))] <- "B"
   parHap[cbind(c(rep(1,sum(config %in% c(5,8,9))),rep(2,sum(config %in% c(5,8,9)))),which(config %in% c(5,8,9)))] <- "B"
   parHap[cbind(c(sample(1:2,size=sum(config==1),replace=T),sample(3:4,size=sum(config==1),replace=T)),rep(which(config==1),2))] <- "B"
-  if(parHap[1,which(apply(parHap[1:2,],2,function(x) !(all(x=='A'))))[1]] == 'B')
+  if(any(parHap[1:2,] == "B") && parHap[1,which(apply(parHap[1:2,],2,function(x) !(all(x=='A'))))[1]] == 'B')
     parHap[1:2,] <- parHap[2:1,]
-  if(parHap[3,which(apply(parHap[3:4,],2,function(x) !(all(x=='A'))))[1]] == 'B')
+  if(any(parHap[3:4,] == "B") && parHap[3,which(apply(parHap[3:4,],2,function(x) !(all(x=='A'))))[1]] == 'B')
     parHap[3:4,] <- parHap[4:3,]
   OPGP <- parHapToOPGP(parHap)
   

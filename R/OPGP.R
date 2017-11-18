@@ -32,24 +32,46 @@ infer_OPGP_FS <- function(depth_Ref, depth_Alt, config, epsilon=0.001, ...){
   # Work out the indices of the r.f. parameters of each sex
   ps_snps <- which(config %in% c(1,2,3))
   ms_snps <- which(config %in% c(1,4,5))
-  npar <- c(length(ps_snps)-1,length(ms_snps)-1)
-  
-  s_pat <- numeric(npar[[1]]+1)
-  s_pat[1] <- 2
-  
-  s_mat <- numeric(npar[[2]]+1)
-  s_mat[1] <- 2
-  
-  for(i in 1:npar[[1]]){
-    s_pat[i+1] <- ifelse(coupling_pat[i],s_pat[i],s_pat[i]%%2+1)
-  }
-  for(i in 1:npar[[2]]){
-    s_mat[i+1] <- ifelse(coupling_mat[i],s_mat[i],s_mat[i]%%2+1)
-  }
-  
-  parHap[cbind(s_pat,ps_snps)] <- "B"
-  parHap[cbind(s_mat+2,ms_snps)] <- "B"
+  npar <- c(ifelse(length(ps_snps)==0,0,length(ps_snps)-1),
+            ifelse(length(ms_snps)==0,0,length(ms_snps)-1))
 
+  if(any(npar==0)){ ## essentially a backcross approach
+    ## If BC on maternal side
+    if(npar[1] == 0){
+      s_mat = numeric(npar[2] + 1)
+      s_mat[1] <- 2
+      for(i in 1:npar[2])
+        s_mat[i+1] <- ifelse(coupling_mat[i],s_mat[i],s_mat[i]%%2+1)
+      parHap[cbind(s_mat+2,ms_snps)] <- "B"
+    }
+    ## If BC on paternal side
+    if(npar[2] == 0){
+      s_pat = numeric(npar[1] + 1)
+      s_pat[1] <- 2
+      for(i in 1:npar[1])
+        s_pat[i+1] <- ifelse(coupling_pat[i],s_pat[i],s_pat[i]%%2+1)
+      parHap[cbind(s_pat,ps_snps)] <- "B"
+    }
+  }
+  else{ # Some intercross SNPs are present
+    s_pat <- numeric(npar[1] + 1)
+    s_pat[1] <- 2
+    
+    s_mat <- numeric(npar[2] + 1)
+    s_mat[1] <- 2
+    
+    for(i in 1:npar[1]){
+      s_pat[i+1] <- ifelse(coupling_pat[i],s_pat[i],s_pat[i]%%2+1)
+    }
+    for(i in 1:npar[2]){
+      s_mat[i+1] <- ifelse(coupling_mat[i],s_mat[i],s_mat[i]%%2+1)
+    }
+    
+    parHap[cbind(s_pat,ps_snps)] <- "B"
+    parHap[cbind(s_mat+2,ms_snps)] <- "B"
+    
+  }
+  
   return(parHapToOPGP(parHap))
 }
 
