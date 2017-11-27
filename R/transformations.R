@@ -15,7 +15,7 @@ inv.logit2 <- function(logit_p) {
   return(p)
 }
 
-## Functions requred for transforming the recombination fraction parameters on the interval [0,1]
+## Functions required for transforming the recombination fraction parameters on the interval [0,1]
 ## to the interval [-inf,inf]
 logit <- function(p) qlogis(p)
 inv.logit <- function(logit_p) plogis(logit_p)
