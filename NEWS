@@ -3,14 +3,14 @@ Release of version 0.1.0
 README 
 
   o This is the first release of GUSMap. This verison accompanies the publication by Bilton et al. (2017).
-  o As this verison is only an early verison of the package, there are only a few features at present (See FEATURES). More features are intended to be added on as the package is developed. In particular, the ability to group SNPs and order the SNPs within in groups is to be included at a later stage. Suggestions for particular improvements are welcome.
+  o As this verison is only an early verison of the package, there are only a few features at present (See FEATURES). More features are intended to be added on as the package is developed. In particular, the ability to group SNPs and order the SNPs within groups is to be included at a later stage. Suggestions for particular improvements are welcome.
 
 FEATURES
 
   o Phase inference on a set of ordered SNPs for a full-sib family.
-  o Recombination fraction estimation for an order set of SNPs using sequencing data without requiring the need to filter with respect to read depth for multiple full-sib families.
-  o Simulation of sequencing data for a full-sib family and functions to convert data into various other software formats. 
+  o Recombination fraction estimation for an order set of SNPs using sequencing data without requiring the need to filter with respect to read depth for outcrossed full-sib families.
+  o Simulation of sequencing data for a full-sib family and functions to convert data into various other software formats.
 
 REFERENCES
 
-  o Bilton, T.P., Schofield, M.R., Black, M.A., Chagne D., Wilcox P., Dodds K.G. (2017). Accounting for errors in low coverage sequencing data when constructing genetic maps using biparental outcrossed populations. Unpublished manuscript.
+  o Bilton, T.P., Schofield, M.R., Black, M.A., Chagne, D., Wilcox, P.L., Dodds, K.G. (2017). Accounting for errors in low coverage high-throughput sequencing data when constructing genetic maps using biparental outcrossed populations. Unpublished manuscript.
