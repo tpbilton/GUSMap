@@ -1,8 +1,10 @@
 
-createLGs <- function(group, LOD, parent, LODthres, nComp){
+createLG <- function(group, LOD, parent, LODthres, nComp){
   
-  ## Initialize the LGs
-  LGs <- list()
+  group <- group[[1]]
+  
+  ## Initialize the LG
+  LG <- list()
   
   ## check that the parent argument is correct
   if(!is.character(parent) || length(parent) != 1 || 
@@ -35,7 +37,7 @@ createLGs <- function(group, LOD, parent, LODthres, nComp){
     }
     meanLOD <- apply(LOD[unmapped,unmapped],2,function(x) mean(sort(x,decreasing = T)[1:nComp], na.rm=T))
     finish <- !any(meanLOD > LODthres)
-    LGs <- c(LGs,list(newLG))
+    LG <- c(LG,list(newLG))
   }
-  return(LGs)
+  return(LG)
 }

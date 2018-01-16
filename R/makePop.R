@@ -21,11 +21,13 @@ makePop <- function(obj, ...){
 }
 
 ### Make a full-sib family population
-makePop.FS <- function(R6obj, famInfo, filter=list(MAF=0.05, MISS=0.2, BIN=0, DEPTH=6, PVALUE=0.05)){
+makePop.FS <- function(R6obj, famInfo, filter=list(MAF=0.05, MISS=0.2, BIN=0, DEPTH=6, PVALUE=0.05), perInfFam=1){
   
   ## Do some checks
   if(is.null(filter$MAF) || filter$MAF<0 || filter$MAF>1 || !is.numeric(filter$MAF))
     stop("Minor allele frequency filter has not be specifies or is invalid.")
+  if(perInfFam <=0.5 || perInfFam > 1)
+    stop("The of the percentage of families which are informative for each SNP must greater than 50% and leass than equal to 100%.")
   
   ## Define variables that will be used.
   noFam <- length(famInfo)
@@ -41,6 +43,8 @@ makePop.FS <- function(R6obj, famInfo, filter=list(MAF=0.05, MISS=0.2, BIN=0, DE
   ## Extract the private variables we want
   indID <- R6obj$.__enclos_env__$private$indID
   nSnps <- R6obj$.__enclos_env__$private$nSnps
+  
+  genon_all <- depth_Ref_all <- depth_Alt_all <- vector(mode="list", length=noFam)
   
   ## extract the data and format correct for each family.
   for(fam in 1:noFam){
@@ -175,47 +179,107 @@ makePop.FS <- function(R6obj, famInfo, filter=list(MAF=0.05, MISS=0.2, BIN=0, DE
     
     nSnps_all[[fam]] <- sum(indx[[fam]])
     nInd_all[[fam]] <- nInd
+    
+    genon_all[[fam]] <- genon
+    depth_Ref_all[[fam]] <- depth_Ref
+    depth_Alt_all[[fam]] <- depth_Alt
   }
   
-  ## Find all the SNPs to keep and subset the global variables
-  indx_all <- do.call("rbind",indx)
-  indx_all <- apply(indx_all, 2, any)
-  
-  genon_all     <- genon[,indx_all]
-  depth_Ref_all <- depth_Ref[,indx_all]
-  depth_Alt_all <- depth_Alt[,indx_all]
-  chrom_all     <- R6obj$.__enclos_env__$private$chrom[indx_all]
-  pos_all       <- R6obj$.__enclos_env__$private$pos[indx_all]
-  SNP_Names     <- R6obj$.__enclos_env__$private$SNP_Names[indx_all]
-  
-  group <- group_infer <- vector(mode="list", length=noFam)
-  for(fam in 1:noFam){
-    group[[fam]]$BI <- which(config_all[[fam]][indx_all] == 1)
-    group[[fam]]$PI <- which(config_all[[fam]][indx_all] %in% c(2,3))
-    group[[fam]]$MI <- which(config_all[[fam]][indx_all] %in% c(4,5))
+  if(noFam == 1){
+    fam = 1
     
-    group_infer[[fam]]$BI <- which(config_infer_all[[fam]][indx_all] == 1) 
-    group_infer[[fam]]$SI <- which(config_infer_all[[fam]][indx_all] %in% c(4,5))
+    ## Find all the SNPs to keep and subset the global variables
+    indx_all <- indx[[fam]]
+    #indx_all <- do.call("rbind",indx)
+    #indx_all <- apply(indx_all, 2, any)
     
+    genon_all[[fam]]     <- genon[,indx_all]
+    depth_Ref_all[[fam]] <- depth_Ref[,indx_all]
+    depth_Alt_all[[fam]] <- depth_Alt[,indx_all]
+    chrom_all            <- R6obj$.__enclos_env__$private$chrom[indx_all]
+    pos_all              <- R6obj$.__enclos_env__$private$pos[indx_all]
+    SNP_Names            <- R6obj$.__enclos_env__$private$SNP_Names[indx_all]
+    
+    #group <- group_infer <- vector(mode="list", length=noFam)
+    group <- group_infer <- list()
+    group$BI <- which(config_all[[fam]][indx_all] == 1)
+    group$PI <- which(config_all[[fam]][indx_all] %in% c(2,3))
+    group$MI <- which(config_all[[fam]][indx_all] %in% c(4,5))
+      
+    group_infer$BI <- which(config_infer_all[[fam]][indx_all] == 1) 
+    group_infer$SI <- which(config_infer_all[[fam]][indx_all] %in% c(4,5))
+      
     config_all[[fam]] <- config_all[[fam]][indx_all]
     config_infer_all[[fam]] <- config_infer_all[[fam]][indx_all]
+      
+    cat("-------------\n")
+    cat("Summary:\n\n")
+    cat("Number of SNPs remaining after filtering:",sum(indx_all),"\n")
+    cat("Number of SNPs with correct segregation type:", sum(!is.na(config_all[[fam]])) ,"\n")
+    cat("Both-informative (BI):", length(group$BI),"\n")
+    cat("Maternal-informative (MI):", length(group$MI),"\n")
+    cat("Paternal-informative (PI):", length(group$PI),"\n")
+    cat("Number of SNPs with inferred segregation type:", sum(!is.na(config_infer_all[[fam]])),"\n")
+    cat("Both-informative (BI):", length(group_infer$BI),"\n")
+    cat("Maternal/Paternal-informative (MI or PI):", length(group_infer$SI),"\n")
+    cat("Number of progeny:", nInd_all[[fam]],"\n")
+  }
+  else{
+    noInfoFam <- ceiling(perInfFam*noFam)
+    group <- group.temp <- list()
+    ## Work out the SNP groupings
+    # BI
+    tabInf_BI <- table(unlist(sapply(1:noFam,function(y) which(config_all[[y]] %in% c(1) & indx[[y]]))))
+    group.temp$BI <- as.numeric(names(tabInf_BI)[which(tabInf_BI >= noInfoFam)])
+    # MI 
+    tabInf_MI <- table(unlist(sapply(1:noFam,function(y) which(config_all[[y]] %in% c(1,4,5) & indx[[y]]))))
+    group.temp$MI <- setdiff(as.numeric(names(tabInf_MI)[which(tabInf_MI >= noInfoFam)]), group.temp$BI)
+    # PI 
+    tabInf_PI <- table(unlist(sapply(1:noFam,function(y) which(config_all[[y]] %in% c(1,2,3) & indx[[y]]))))
+    group.temp$PI <- setdiff(as.numeric(names(tabInf_PI)[which(tabInf_PI >= noInfoFam)]), group.temp$BI)
+    
+    ## Work out which SNPs to keep
+    indx_all <- logical(nSnps)
+    indx_all[unlist(group.temp)] <- TRUE
+    
+    add.bi <- group.temp$PI[which(group.temp$PI %in% group.temp$MI)]
+    group.temp$BI <- sort(c(group.temp$BI,add.bi))
+    group.temp$MI <- setdiff(group.temp$MI,group.temp$BI)
+    group.temp$PI <- setdiff(group.temp$PI,group.temp$BI)
+    
+    group$BI <- which(sort(unique(unlist(group.temp))) %in% group.temp$BI)
+    group$MI <- which(sort(unique(unlist(group.temp))) %in% group.temp$MI)
+    group$PI <- which(sort(unique(unlist(group.temp))) %in% group.temp$PI)
+    
+    ## Subset the data
+    for(fam in 1:noFam){
+      genon_all[[fam]]     <- genon_all[[fam]][,indx_all]
+      depth_Ref_all[[fam]] <- depth_Ref_all[[fam]][,indx_all]
+      depth_Alt_all[[fam]] <- depth_Alt_all[[fam]][,indx_all]
+      config_all[[fam]] <- config_all[[fam]][indx_all]
+    }
+    chrom_all     <- R6obj$.__enclos_env__$private$chrom[indx_all]
+    pos_all       <- R6obj$.__enclos_env__$private$pos[indx_all]
+    SNP_Names     <- R6obj$.__enclos_env__$private$SNP_Names[indx_all]
     
     cat("-------------\n")
-    cat("Family ",names(famInfo)[fam]," Summary:\n\n",sep="")
-    cat("Number of SNPs remaining after filtering:",nSnps_all[[fam]],"\n")
-    cat("Number of progeny:", nInd_all[[fam]],"\n")
-    cat("Number of SNPs with correct segregation type:", sum(!is.na(config_all[[fam]])) ,"\n")
-    cat("Both-informative (BI):", length(group[[fam]]$BI),"\n")
-    cat("Maternal-informative (MI):", length(group[[fam]]$MI),"\n")
-    cat("Paternal-informative (PI):", length(group[[fam]]$PI),"\n")
-    cat("Number of SNPs with inferred segregation type:", sum(!is.na(config_infer_all[[fam]])),"\n")
-    cat("Both-informative (BI):", length(group_infer[[fam]]$BI),"\n")
-    cat("Maternal/Paternal-informative (MI or PI):", length(group_infer[[fam]]$SI),"\n")
+    cat("Summary:\n\n",sep="")
+    cat("Number of SNPs remaining after filtering:",sum(indx_all),"\n")
+    cat("Both-informative (BI):", length(group$BI),"\n")
+    cat("Maternal-informative (MI):", length(group$MI),"\n")
+    cat("Paternal-informative (PI):", length(group$PI),"\n")
+    cat("Number of progeny in Family...\n")
+    for(fam in 1:noFam)
+      cat(names(famInfo)[fam],":", nInd_all[[fam]],"\n")
+    cat("\n")
+    
+    group_infer <- NULL
+    config_infer_all <- NULL
   }
   
   ## Update the R6 object and return it
   R6obj$.__enclos_env__$private$updatePrivate(list(
-    genon = genon, depth_Ref = depth_Ref_all, depth_Alt = depth_Alt_all, chrom = chrom_all, pos = pos_all,
+    genon = genon_all, depth_Ref = depth_Ref_all, depth_Alt = depth_Alt_all, chrom = chrom_all, pos = pos_all,
     group = group, group_infer = group_infer, config = config_all, config_infer = config_infer_all,
     nInd = nInd_all, nSnps = nSnps_all, noFam = noFam, indID = indID_all, SNP_Names = SNP_Names)
   )

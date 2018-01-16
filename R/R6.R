@@ -1,6 +1,6 @@
 
 
-### R6 class fordata aligned to reference assembly
+### R6 class for data aligned to reference assembly
 RA <- R6Class("RA",
   public = list(
     initialize = function(List){
@@ -14,7 +14,13 @@ RA <- R6Class("RA",
       private$nSnps     <- List$nSnps
       private$nInd      <- List$nInd
       private$gform     <- List$gform
+    },
+    #### Diagonostic functions ####
+    ## Ratio of alleles for heterozygous genotype calls (observed vs expected)
+    HeteroPlot = function(model=c("random", "beta-binom"), alpha=NULL, filename="HeteroPlot", cex=1){
+      HeteroPlot(private$depth_Ref, private$depth_Alt, model=model, alpha=alpha, filename=filename, cex=cex)
     }
+    ###############################
   ),
   private = list(
     genon = NULL,
@@ -30,17 +36,25 @@ RA <- R6Class("RA",
   )
 )
 
-### R6 class for creating a data format for full-sib families
+### R6 class for creating a data format for a full-sib families
 FS <- R6Class("FS",
   inherit = RA,
   public = list(
     ## variables
-    LGs_mat = NULL,
-    LGs_pat = NULL,
+    LG_mat    = NULL,
+    LG_pat    = NULL,
+    seg_group = NULL,
+    filter    = NULL,
+    seg_num   = NULL,
+    OPGP      = NULL,
     ## initialize function
     initialize = function(R6obj){
-      self$LGs_mat      <- list()
-      self$LGs_pat      <- list()
+      self$LG_mat       <- list()
+      self$LG_pat       <- list()
+      self$seg_group    <- list()
+      self$filter       <- list()
+      self$seg_num      <- list()
+      self$OPGP         <- list()
       private$genon     <- R6obj$.__enclos_env__$private$genon
       private$depth_Ref <- R6obj$.__enclos_env__$private$depth_Ref
       private$depth_Alt <- R6obj$.__enclos_env__$private$depth_Alt
@@ -55,6 +69,12 @@ FS <- R6Class("FS",
     #############################################################
     ## Function for computing the 2-point rf estimates
     rf_2pt = function(nClust=4, inferSNPs = TRUE){
+      ## do some checks
+      if(!is.numeric(nClust) || length(nClust)!=1 || nClust < 0 || is.infinite(nClust) )
+        stop("Number clusters specifies for the parallelization needs to be a positive finite numeric number")
+      if( !is.logical(inferSNPs) || length(inferSNPs)!=1)
+        stop("Inout for using inferred SNPs needs to be a logical value")
+      
       ## If there is only one family
       if(private$noFam == 1)
         mat <- rf_2pt_single(private$depth_Ref, private$depth_Alt,
@@ -63,16 +83,14 @@ FS <- R6Class("FS",
                              inferSNPs, nClust)
       else
         mat <- rf_2pt_multi(private$depth_Ref, private$depth_Alt,
-                            private$config, private$config_infer,
-                            private$group, private$group_infer,
-                            inferSNPs, nClust)
+                            private$config,private$group, nClust, private$noFam)
       ## Save the results to the object
       private$rf <- mat$rf
       private$LOD <- mat$LOD
       return(invisible())
     },
     ## Function for creating linkage groups
-    createLGs = function(parent, LODthres=10, nComp=10){
+    createLG = function(parent, LODthres=10, nComp=10){
       ## Do some checks
       if(!is.character(parent) || length(parent) != 1 || !(parent %in% c("maternal","paternal")))
         stop("parent argument is not a string of of length one or is incorrect:
@@ -82,14 +100,35 @@ FS <- R6Class("FS",
       if(!is.numeric(LODthres) || LODthres < 0 || !is.finite(LODthres) || length(LODthres) != 1)
         stop("The LOD threshold (argument 2) needs to be a finite numeric number.")
       if(!is.integer(nComp) || nComp < 0 || !is.finite(nComp) || length(nComp) != 1)
-        stop("The number of comparion points (argument 3) needs to be a finite numeric number.")
+        stop("The number of comparsion points (argument 3) needs to be a finite numeric number.")
       
       ## Create the groups
       if(parent == "maternal")
-        self$LGs_mat <- createLGs(private$group, private$LOD, "maternal", LODthres, nComp)
-      else(parent == "paternal")
-        self$LGs_pat <- createLGs(private$group, private$LOD, "paternal", LODthres, nComp)
+        self$LG_mat <- createLG(private$group, private$LOD, "maternal", LODthres, nComp)
+      else if(parent == "paternal")
+        self$LG_pat <- createLG(private$group, private$LOD, "paternal", LODthres, nComp)
+    },
+    ## Function for plotting linkage groups
+    plotLG = function(mat=c("rf","LOD"), LG, filename=NULL, names=NULL, chrS=2, lmai=2, chrom=T){
+      
+      if(mat == "rf")
+        plotLG(mat=private$rf, LG=LG, filename=filename, names=names, chrS=chrS, lmai=lmai, chrom=chrom)
+      else if(mat == "LOD")
+        plotLG(mat=private$LOD, LG=LG, filename=filename, names=names, chrS=chrS, lmai=lmai, chrom=chrom)
+      else
+        stop("Matrix to be plotted not found.")
+    },
+    ## Ratio of alleles for heterozygous genotype calls (observed vs expected)
+    # Slightly different than the one in RA class
+    HeteroPlot = function(model=c("random"), alpha=NULL, filename="HeteroPlot", cex=1){
+      depth_Ref <- depth_Alt <- NULL
+      for(fam in 1:private$noFam){
+        depth_Ref <- rbind(depth_Ref,private$depth_Ref[[fam]])
+        depth_Alt <- rbind(depth_Alt,private$depth_Alt[[fam]])
+      }
+      HeteroPlot(depth_Ref, depth_Alt, model=model, alpha=alpha, filename=filename, cex=cex)
     }
+    
     ##############################################################
   ),
   private = list(
@@ -100,7 +139,7 @@ FS <- R6Class("FS",
     noFam        = NULL,
     rf           = NULL,
     LOD          = NULL,
-    ## Function for updating some of the private variables
+    ## Function for updating the private variables
     updatePrivate = function(List){
       if(!is.null(List$genon))
         private$genon        = List$genon
