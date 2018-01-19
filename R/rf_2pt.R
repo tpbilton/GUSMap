@@ -460,7 +460,7 @@ rf_2pt_multi <- function(depth_Ref, depth_Alt, config, group, nClust, noFam){
   #   }
   #   return(rf)
   # }
-  rf.MI.PI <- matrix(NA, nrow=nSnps_MI, ncol=nSnps_PI)
+  rf.MI.PI <- replicate(2, matrix(NA, nrow=nSnps_MI, ncol=nSnps_PI),simplify=FALSE)
   stopCluster(cl) 
   
   ## Build the rf and LOD matrices
@@ -471,7 +471,7 @@ rf_2pt_multi <- function(depth_Ref, depth_Alt, config, group, nClust, noFam){
   LOD.mat <- rbind(cbind(rf.BI[[2]],t(rf.PI.BI[[2]]),t(rf.MI.BI[[2]])),
                    cbind(rf.PI.BI[[2]], rf.PI[[2]], t(rf.MI.PI[[2]])),
                    cbind(rf.MI.BI[[2]], rf.MI.PI[[2]], rf.MI[[2]]))[origOrder,origOrder]
-  return(list(rf.mat,LOD.mat))
+  return(list(rf = rf.mat,LOD = LOD.mat))
 }
 
 

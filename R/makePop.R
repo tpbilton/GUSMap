@@ -51,6 +51,10 @@ makePop.FS <- function(R6obj, famInfo, filter=list(MAF=0.05, MISS=0.2, BIN=0, DE
     cat("Processing Family ",names(famInfo)[fam],".\n\n",sep="")
     mum <- famInfo[[fam]]$parents$Mother
     dad <- famInfo[[fam]]$parents$Father
+    patgrandmum <- famInfo[[fam]]$grandparents$paternalGrandMother
+    patgranddad <- famInfo[[fam]]$grandparents$paternalGrandFather
+    matgrandmum <- famInfo[[fam]]$grandparents$maternalGrandMother
+    matgranddad <- famInfo[[fam]]$grandparents$maternalGrandFather
     ## index the parents
     mumIndx <- which(indID %in% mum)
     if(length(mumIndx) == 0)
@@ -58,6 +62,16 @@ makePop.FS <- function(R6obj, famInfo, filter=list(MAF=0.05, MISS=0.2, BIN=0, DE
     dadIndx <- which(indID %in% dad)
     if(length(dadIndx) == 0)
       stop(paste0("Father ID not found family ",fam,"."))
+    ## index the grandparents
+    patgrandparents <- matgrandparents <- FALSE
+    patgrandmumIndx <- which(indID %in% patgrandmum)
+    patgranddadIndx <- which(indID %in% patgranddad)
+    matgrandmumIndx <- which(indID %in% matgrandmum)
+    matgranddadIndx <- which(indID %in% matgranddad)
+    if(!is.null(patgrandmumIndx) && !is.null(patgranddadIndx))
+      patgrandparents <- TRUE
+    if(!is.null(matgrandmumIndx) && !is.null(matgranddadIndx))
+      matgrandparents <- TRUE
     ## index the progeny
     progIndx <- which(indID %in% famInfo[[fam]]$progeny)
     nInd <- length(progIndx)
@@ -75,26 +89,83 @@ makePop.FS <- function(R6obj, famInfo, filter=list(MAF=0.05, MISS=0.2, BIN=0, DE
     depth_dad <- matrix(R6obj$.__enclos_env__$private$depth_Ref[dadIndx,] +
                           R6obj$.__enclos_env__$private$depth_Alt[dadIndx,], nrow=length(mumIndx), ncol=nSnps)
     
-    ## Determine segregation type of each SNP if possible
-    config <- unlist(sapply(1:nSnps,function(x){
-      x_p = genon_dad[,x]; x_m = genon_mum[,x]
-      d_p = depth_dad[,x]; d_m = depth_mum[,x]
-      if(sum(d_p) > filter$DEPTH & sum(d_p) > filter$DEPTH ){
-        if(any(x_p==1,na.rm=T) & any(x_m==1,na.rm=T))
-          return(1)
-        else if(all(x_m==2,na.rm=T) & (any(x_p==1, na.rm=T) | all(x_p %in% c(0,2), na.rm=T)))
-          return(2)
-        else if(all(x_m==0,na.rm=T) & (any(x_p==1, na.rm=T) | all(x_p %in% c(0,2), na.rm=T)))
-          return(3)
-        else if(all(x_p==2,na.rm=T) & (any(x_m==1, na.rm=T) | all(x_m %in% c(0,2), na.rm=T)))
-          return(4)
-        else if(all(x_p==0,na.rm=T) & (any(x_m==1, na.rm=T) | all(x_m %in% c(0,2), na.rm=T)))
-          return(5)
+    if(patgrandparents){
+      genon_patgrandmum <- matrix(R6obj$.__enclos_env__$private$genon[patgrandmumIndx,], nrow=length(patgrandmumIndx), ncol=nSnps) 
+      depth_patgrandmum <- matrix(R6obj$.__enclos_env__$private$depth_Ref[patgrandmumIndx,] +
+                            R6obj$.__enclos_env__$private$depth_Alt[patgrandmumIndx,], nrow=length(patgrandmumIndx), ncol=nSnps)
+      genon_patgranddad <- matrix(R6obj$.__enclos_env__$private$genon[patgranddadIndx,], nrow=length(patgranddadIndx), ncol=nSnps) 
+      depth_patgranddad <- matrix(R6obj$.__enclos_env__$private$depth_Ref[patgranddadIndx,] +
+                                    R6obj$.__enclos_env__$private$depth_Alt[patgranddadIndx,], nrow=length(patgranddadIndx), ncol=nSnps)
+    }
+    if(matgrandparents){
+      genon_matgrandmum <- matrix(R6obj$.__enclos_env__$private$genon[matgrandmumIndx,], nrow=length(matgrandmumIndx), ncol=nSnps) 
+      depth_matgrandmum <- matrix(R6obj$.__enclos_env__$private$depth_Ref[matgrandmumIndx,] +
+                                    R6obj$.__enclos_env__$private$depth_Alt[matgrandmumIndx,], nrow=length(matgrandmumIndx), ncol=nSnps)
+      genon_matgranddad <- matrix(R6obj$.__enclos_env__$private$genon[matgranddadIndx,], nrow=length(matgranddadIndx), ncol=nSnps) 
+      depth_matgranddad <- matrix(R6obj$.__enclos_env__$private$depth_Ref[matgranddadIndx,] +
+                                    R6obj$.__enclos_env__$private$depth_Alt[matgranddadIndx,], nrow=length(matgranddadIndx), ncol=nSnps)
+    }
+    
+    parHap_pat <- sapply(1:nSnps,function(x){
+      x_p = genon_dad[,x]; d_p = depth_dad[,x]
+      if(any(x_p==1,na.rm=T))
+        return("AB")
+      else if(sum(d_p) > filter$DEPTH){
+        if(x_p==2)
+          return("AA")
+        else if(x_p==0)
+          return("BB")
+        else if(patgrandparents){
+          if(sum(depth_patgranddad[,x])>filter$DEPTH && sum(depth_patgrandmum)>filter$DEPTH){
+            x_gp = genon_patgranddad[,x]; x_gm = genon_patgrandmum[,x]
+            if((x_gp == 2 & x_gm == 0) || (x_gp == 0 & x_gm == 2))
+              return("AB")
+            else if(x_gp == 2 & x_gm == 2)
+              return("AA")
+            else if(x_gp == 0 & x_gm == 0)
+              return("BB")
+          }
+        }
         else
           return(NA)
       }
-      else return(NA)
-    }))
+      else
+        return(NA)
+    })
+    
+    parHap_mat <- sapply(1:nSnps,function(x){
+      x_m = genon_mum[,x]; d_m = depth_mum[,x]
+      if(any(x_m==1,na.rm=T))
+        return("AB")
+      else if(sum(d_m) > filter$DEPTH){
+        if(x_m==2)
+          return("AA")
+        else if(x_m==0)
+          return("BB")
+        else if(matgrandparents){
+          if(sum(depth_matgranddad[,x])>filter$DEPTH && sum(depth_matgrandmum)>filter$DEPTH){
+            x_gp = genon_matgranddad[,x]; x_gm = genon_matgrandmum[,x]
+            if((x_gp == 2 & x_gm == 0) || (x_gp == 0 & x_gm == 2))
+              return("AB")
+            else if(x_gp == 2 & x_gm == 2)
+              return("AA")
+            else if(x_gp == 0 & x_gm == 0)
+              return("BB")
+          }
+        }
+        else
+          return(NA)
+      }
+      else
+        return(NA)
+    })
+    
+    config <- rep(NA,nSnps)
+    config[which(parHap_pat == "AB" & parHap_mat == "AB")] <- 1
+    config[which(parHap_pat == "AB" & parHap_mat == "AA")] <- 2
+    config[which(parHap_pat == "AB" & parHap_mat == "BB")] <- 3
+    config[which(parHap_pat == "AA" & parHap_mat == "AB")] <- 4
+    config[which(parHap_pat == "AA" & parHap_mat == "BB")] <- 5
     
     #### Segregation test to determine if the SNPs have been miss-classified
     seg_Dis <- sapply(1:nSnps,function(x){
@@ -112,17 +183,17 @@ makePop.FS <- function(R6obj, famInfo, filter=list(MAF=0.05, MISS=0.2, BIN=0, DE
           return(NA)
         else if(config[x] == 1){
           exp_prob <- c(0.25 + K,0.5 - 2*K, 0.25 + K)
-          ctest <- chisq.test(c(nBB,nAB,nAA), p = exp_prob)
+          ctest <- suppressWarnings(chisq.test(c(nBB,nAB,nAA), p = exp_prob))
           return(ifelse(ctest$p.value < filter$PVALUE, TRUE, FALSE))
         }
         else if(config[x] %in% c(2,4)){
           exp_prob <- c(K, 0.5 - 2*K, 0.5 + K)
-          ctest <- chisq.test(c(nBB,nAB,nAA), p = exp_prob)
+          ctest <- suppressWarnings(chisq.test(c(nBB,nAB,nAA), p = exp_prob))
           return(ifelse(ctest$p.value < filter$PVALUE, TRUE, FALSE))
         }
         else if(config[x] %in% c(3,5)){
           exp_prob <- c(0.5 + K, 0.5 - 2*K, K)
-          ctest <- chisq.test(c(nBB,nAB,nAA), p = exp_prob)
+          ctest <- suppressWarnings(chisq.test(c(nBB,nAB,nAA), p = exp_prob))
           return(ifelse(ctest$p.value < filter$PVALUE, TRUE, FALSE))
         }
       }
@@ -154,9 +225,9 @@ makePop.FS <- function(R6obj, famInfo, filter=list(MAF=0.05, MISS=0.2, BIN=0, DE
         ## compute chiseq test for both loci types
         exp_prob_BI <- c(0.25 + K,0.5 - 2*K, 0.25 + K)
         exp_prob_SI <- c(K, 0.5 - 2*K, 0.5 + K)
-        ctest_BI <- chisq.test(c(nBB,nAB,nAA), p = exp_prob_BI)
-        ctest_SI_1 <- chisq.test(c(nBB,nAB,nAA), p = exp_prob_SI)
-        ctest_SI_2 <- chisq.test(c(nBB,nAB,nAA), p = rev(exp_prob_SI))
+        ctest_BI <- suppressWarnings(chisq.test(c(nBB,nAB,nAA), p = exp_prob_BI))
+        ctest_SI_1 <- suppressWarnings(chisq.test(c(nBB,nAB,nAA), p = exp_prob_SI))
+        ctest_SI_2 <- suppressWarnings(chisq.test(c(nBB,nAB,nAA), p = rev(exp_prob_SI)))
         ## do tests to see if we can infer type
         if( ctest_BI$p.value > filter$PVALUE & ctest_SI_1$p.value < filter$PVALUE & ctest_SI_2$p.value < filter$PVALUE )
           return(1)

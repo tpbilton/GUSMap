@@ -1,8 +1,6 @@
 
 createLG <- function(group, LOD, parent, LODthres, nComp){
-  
-  group <- group[[1]]
-  
+
   ## Initialize the LG
   LG <- list()
   
