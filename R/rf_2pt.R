@@ -5,36 +5,23 @@ comb <- function(...){
 }
 
 ### Function for computing the pairwise RF in a single full-sib family.
-rf_2pt_single <- function(depth_Ref, depth_Alt, config, config_infer, group, group_infer, inferSNPs, nClust){
+rf_2pt_single <- function(depth_Ref, depth_Alt, config, config_infer, group, group_infer, nClust){
   
   if(length(c(unlist(group), unlist(group_infer))) == 0)
     stop("There are no SNPs in the data set.")
   
   ## Calcuate the number of SNPs
-  if(length(group_infer$BI) > 0 & inferSNPs){
-    indx_BI <- c(group$BI, group_infer$BI)
-    nSnps_BI <- length(indx_BI)
-  }
-  else{
-    indx_BI <- c(group$BI)
-    nSnps_BI <- length(indx_BI)
-  }
-  if(length(group_infer$SI) > 0 & inferSNPs){
-    indx_MI <- c(group$MI, group_infer$SI)
-    nSnps_MI <- length(indx_MI)
-  }
-  else{
-    indx_MI <- c(group$MI)
-    nSnps_MI <- length(indx_MI)
-  }
+  indx_BI <- c(group$BI, group_infer$BI)
+  nSnps_BI <- length(indx_BI)
+  indx_MI <- c(group$MI, group_infer$SI)
+  nSnps_MI <- length(indx_MI)
   indx_PI <- c(group$PI)
   nSnps_PI = length(indx_PI)
   
   ## set up the config vector
-  if(inferSNPs)
-    config[which(!is.na(config_infer))] <- config_infer[which(!is.na(config_infer))]
+  config[which(!is.na(config_infer))] <- config_infer[which(!is.na(config_infer))]
   ## Check that there are no missing configs in the data
-  if(any(is.na(config)))
+  if(any(is.na(config[c(indx_MI , indx_BI , indx_PI)])))
     stop("There are some missing segregation types in the data.")
   
   ## Set up the Clusters
@@ -48,9 +35,9 @@ rf_2pt_single <- function(depth_Ref, depth_Alt, config, config_infer, group, gro
     rf <- replicate(2,numeric(nSnps_PI),simplify=F)
     for(snp2 in seq_len(snp1-1)){
       ind = indx_PI[c(snp1,snp2)]
-      rf.est1 <- rf_est_FS(depth_Ref=list(depth_Ref[,ind]),depth_Alt=list(depth_Alt[,ind]),
+      rf.est1 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[,ind]),depth_Alt=list(depth_Alt[,ind]),
                            OPGP=list(c(5,5) + 2*(config[ind]==3)), epsilon=NULL)
-      rf.est2 <- rf_est_FS(depth_Ref=list(depth_Ref[,ind]),depth_Alt=list(depth_Alt[,ind]),
+      rf.est2 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[,ind]),depth_Alt=list(depth_Alt[,ind]),
                            OPGP=list(c(5,6) + 2*(config[ind]==3)), epsilon=NULL)
       rf.ind <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik)), rf.est1, rf.est2)
       rf[[1]][snp2] <- rf.ind$rf
@@ -68,9 +55,9 @@ rf_2pt_single <- function(depth_Ref, depth_Alt, config, config_infer, group, gro
     rf <- replicate(2,numeric(nSnps_MI),simplify=F)
     for(snp2 in seq_len(snp1-1)){
       ind = indx_MI[c(snp1,snp2)]
-      rf.est1 <- rf_est_FS(depth_Ref=list(depth_Ref[,ind]),depth_Alt=list(depth_Alt[,ind]),
+      rf.est1 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[,ind]),depth_Alt=list(depth_Alt[,ind]),
                            OPGP=list(c(9,9) + 2*(config[ind]==5)), epsilon=NULL)
-      rf.est2 <- rf_est_FS(depth_Ref=list(depth_Ref[,ind]),depth_Alt=list(depth_Alt[,ind]),
+      rf.est2 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[,ind]),depth_Alt=list(depth_Alt[,ind]),
                            OPGP=list(c(9,10) + 2*(config[ind]==5)), epsilon=NULL)
       rf.ind <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik)), rf.est1, rf.est2)
       rf[[1]][snp2] <- rf.ind$rf
@@ -88,14 +75,14 @@ rf_2pt_single <- function(depth_Ref, depth_Alt, config, config_infer, group, gro
     rf <- replicate(2,numeric(nSnps_BI),simplify=F)
     for(snp2 in seq_len(snp1-1)){
       ind = indx_BI[c(snp1,snp2)]
-      temp1 <- rf_est_FS(0.1,depth_Ref=list(depth_Ref[,ind]),depth_Alt=list(depth_Alt[,ind]), OPGP=list(c(1,1)), epsilon=NULL)
-      temp2 <- rf_est_FS(0.4,depth_Ref=list(depth_Ref[,ind]),depth_Alt=list(depth_Alt[,ind]), OPGP=list(c(1,1)), epsilon=NULL)
+      temp1 <- GUSMap:::rf_est_FS(0.1,depth_Ref=list(depth_Ref[,ind]),depth_Alt=list(depth_Alt[,ind]), OPGP=list(c(1,1)), epsilon=NULL)
+      temp2 <- GUSMap:::rf_est_FS(0.4,depth_Ref=list(depth_Ref[,ind]),depth_Alt=list(depth_Alt[,ind]), OPGP=list(c(1,1)), epsilon=NULL)
       rf.est1 <- switch(which.min(c(temp1$loglik,temp2$loglik)),temp1,temp2) 
-      temp1 <- rf_est_FS(0.1,depth_Ref=list(depth_Ref[,ind]),depth_Alt=list(depth_Alt[,ind]), OPGP=list(c(1,2)), epsilon=NULL)
-      temp2 <- rf_est_FS(0.4,depth_Ref=list(depth_Ref[,ind]),depth_Alt=list(depth_Alt[,ind]), OPGP=list(c(1,2)), epsilon=NULL)
+      temp1 <- GUSMap:::rf_est_FS(0.1,depth_Ref=list(depth_Ref[,ind]),depth_Alt=list(depth_Alt[,ind]), OPGP=list(c(1,2)), epsilon=NULL)
+      temp2 <- GUSMap:::rf_est_FS(0.4,depth_Ref=list(depth_Ref[,ind]),depth_Alt=list(depth_Alt[,ind]), OPGP=list(c(1,2)), epsilon=NULL)
       rf.est2 <- switch(which.min(c(temp1$loglik,temp2$loglik)),temp1,temp2) 
-      temp1 <- rf_est_FS(0.1,depth_Ref=list(depth_Ref[,ind]),depth_Alt=list(depth_Alt[,ind]), OPGP=list(c(1,4)), epsilon=NULL)
-      temp2 <- rf_est_FS(0.4,depth_Ref=list(depth_Ref[,ind]),depth_Alt=list(depth_Alt[,ind]), OPGP=list(c(1,4)), epsilon=NULL)
+      temp1 <- GUSMap:::rf_est_FS(0.1,depth_Ref=list(depth_Ref[,ind]),depth_Alt=list(depth_Alt[,ind]), OPGP=list(c(1,4)), epsilon=NULL)
+      temp2 <- GUSMap:::rf_est_FS(0.4,depth_Ref=list(depth_Ref[,ind]),depth_Alt=list(depth_Alt[,ind]), OPGP=list(c(1,4)), epsilon=NULL)
       rf.est4 <- switch(which.min(c(temp1$loglik,temp2$loglik)),temp1,temp2) 
       rf.ind <- switch(which.min(c(rf.est1$loglik, rf.est2$loglik, rf.est4$loglik) ),
                        rf.est1,rf.est2,rf.est4)
@@ -114,9 +101,9 @@ rf_2pt_single <- function(depth_Ref, depth_Alt, config, config_infer, group, gro
     rf <- replicate(2,numeric(nSnps_BI),simplify=F)
     for(snp.bi in 1:nSnps_BI){
       ind <- c(indx_PI[snp.ps],indx_BI[snp.bi])
-      rf.est1 <- rf_est_FS(depth_Ref=list(depth_Ref[,ind]),depth_Alt=list(depth_Alt[,ind]),
+      rf.est1 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[,ind]),depth_Alt=list(depth_Alt[,ind]),
                            OPGP=list(c(5,1) + 2*c(config[ind[1]]==3,0)), epsilon=NULL )
-      rf.est2 <- rf_est_FS(depth_Ref=list(depth_Ref[,ind]),depth_Alt=list(depth_Alt[,ind]),
+      rf.est2 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[,ind]),depth_Alt=list(depth_Alt[,ind]),
                            OPGP=list(c(5,2) + 2*c(config[ind[1]]==3,0)), epsilon=NULL )
       rf.ind <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik)), rf.est1, rf.est2)
       rf[[1]][snp.bi] <- rf.ind$rf
@@ -131,9 +118,9 @@ rf_2pt_single <- function(depth_Ref, depth_Alt, config, config_infer, group, gro
     rf <- replicate(2,numeric(nSnps_BI),simplify=F)
     for(snp.bi in 1:nSnps_BI){
       ind <- c(indx_MI[snp.mi],indx_BI[snp.bi])
-      rf.est1 <- rf_est_FS(depth_Ref=list(depth_Ref[,ind]),depth_Alt=list(depth_Alt[,ind]),
+      rf.est1 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[,ind]),depth_Alt=list(depth_Alt[,ind]),
                            OPGP=list(c(9,1) + 2*c(config[ind[1]]==5,0)), epsilon=NULL)
-      rf.est2 <- rf_est_FS(depth_Ref=list(depth_Ref[,ind]),depth_Alt=list(depth_Alt[,ind]),
+      rf.est2 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[,ind]),depth_Alt=list(depth_Alt[,ind]),
                            OPGP=list(c(9,3) + 2*c(config[ind[1]]==5,0)), epsilon=NULL)
       rf.ind <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik)), rf.est1, rf.est2)
       rf[[1]][snp.bi] <- rf.ind$rf
@@ -149,9 +136,9 @@ rf_2pt_single <- function(depth_Ref, depth_Alt, config, config_infer, group, gro
     rf <- replicate(2,numeric(nSnps_PI),simplify=F)
     for(snp.pi in 1:nSnps_PI){
       ind <- c(indx_MI[snp.mi],indx_PI[snp.pi])
-      rf.est1 <- rf_est_FS(depth_Ref=list(depth_Ref[,ind]),depth_Alt=list(depth_Alt[,ind]),
+      rf.est1 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[,ind]),depth_Alt=list(depth_Alt[,ind]),
                            OPGP=list(c(9,9) + 2*(config[ind] %in% c(3,5))), epsilon=NULL)
-      rf.est2 <- rf_est_FS(depth_Ref=list(depth_Ref[,ind]),depth_Alt=list(depth_Alt[,ind]),
+      rf.est2 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[,ind]),depth_Alt=list(depth_Alt[,ind]),
                            OPGP=list(c(9,10) + 2*(config[ind] %in% c(3,5))), epsilon=NULL)
       rf.ind <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik)), rf.est1, rf.est2)
       rf[[1]][snp.pi] <- rf.ind$rf

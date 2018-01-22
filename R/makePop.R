@@ -21,7 +21,7 @@ makePop <- function(obj, ...){
 }
 
 ### Make a full-sib family population
-makePop.FS <- function(R6obj, famInfo, filter=list(MAF=0.05, MISS=0.2, BIN=0, DEPTH=6, PVALUE=0.05), perInfFam=1){
+makePop.FS <- function(R6obj, famInfo, filter=list(MAF=0.05, MISS=0.2, BIN=0, DEPTH=6, PVALUE=0.05), inferSNPs = FALSE, perInfFam=1){
   
   ## Do some checks
   if(is.null(filter$MAF) || filter$MAF<0 || filter$MAF>1 || !is.numeric(filter$MAF))
@@ -207,47 +207,77 @@ makePop.FS <- function(R6obj, famInfo, filter=list(MAF=0.05, MISS=0.2, BIN=0, DE
     
     ## Infer geotypes for over SNPs that have passed the MAF and MISS thresholds
     #propHeter <- sapply(1:nSnps, function(x) sum(genon[,x] == 1,na.rm=T)/sum(!is.na(genon[,x])))
-    toInfer <- (MAF > filter$MAF) & (miss < filter$MISS) & is.na(config)
+    if(inferSNPs){
+      toInfer <- (MAF > filter$MAF) & (miss < filter$MISS) & is.na(config)
     
-    seg_Infer <- sapply(1:nSnps, function(x){
-      if(!toInfer[x])
-        return(NA)
-      else{
-        d = depth_Ref[,x] + depth_Alt[,x]
-        g = genon[,x]
-        K = sum(1/2^(d[which(d != 0)])*0.5)/sum(d != 0)
-        nAA = sum(g==2, na.rm=T)
-        nAB = sum(g==1, na.rm=T)
-        nBB = sum(g==0, na.rm=T)
-        ## check that there are sufficient data to perform the chisq test
-        if(sum(nAA+nAB+nBB)/length(g) <= (1-filter$MISS))
+      seg_Infer <- sapply(1:nSnps, function(x){
+        if(!toInfer[x])
           return(NA)
-        ## compute chiseq test for both loci types
-        exp_prob_BI <- c(0.25 + K,0.5 - 2*K, 0.25 + K)
-        exp_prob_SI <- c(K, 0.5 - 2*K, 0.5 + K)
-        ctest_BI <- suppressWarnings(chisq.test(c(nBB,nAB,nAA), p = exp_prob_BI))
-        ctest_SI_1 <- suppressWarnings(chisq.test(c(nBB,nAB,nAA), p = exp_prob_SI))
-        ctest_SI_2 <- suppressWarnings(chisq.test(c(nBB,nAB,nAA), p = rev(exp_prob_SI)))
-        ## do tests to see if we can infer type
-        if( ctest_BI$p.value > filter$PVALUE & ctest_SI_1$p.value < filter$PVALUE & ctest_SI_2$p.value < filter$PVALUE )
-          return(1)
-        else if ( ctest_BI$p.value < filter$PVALUE & ctest_SI_1$p.value > filter$PVALUE & ctest_SI_2$p.value < filter$PVALUE )
-          return(4)
-        else if ( ctest_BI$p.value < filter$PVALUE & ctest_SI_1$p.value < filter$PVALUE & ctest_SI_2$p.value > filter$PVALUE )
-          return(5)
-        else
-          return(NA)
-      }
-    },simplify = T)
+        else{
+          d = depth_Ref[,x] + depth_Alt[,x]
+          g = genon[,x]
+          K = sum(1/2^(d[which(d != 0)])*0.5)/sum(d != 0)
+          nAA = sum(g==2, na.rm=T)
+          nAB = sum(g==1, na.rm=T)
+          nBB = sum(g==0, na.rm=T)
+          ## check that there are sufficient data to perform the chisq test
+          if(sum(nAA+nAB+nBB)/length(g) <= (1-filter$MISS))
+            return(NA)
+          ## compute chiseq test for both loci types
+          exp_prob_BI <- c(0.25 + K,0.5 - 2*K, 0.25 + K)
+          exp_prob_SI <- c(K, 0.5 - 2*K, 0.5 + K)
+          ctest_BI <- suppressWarnings(chisq.test(c(nBB,nAB,nAA), p = exp_prob_BI))
+          ctest_SI_1 <- suppressWarnings(chisq.test(c(nBB,nAB,nAA), p = exp_prob_SI))
+          ctest_SI_2 <- suppressWarnings(chisq.test(c(nBB,nAB,nAA), p = rev(exp_prob_SI)))
+          ## do tests to see if we can infer type
+          if( ctest_BI$p.value > filter$PVALUE & ctest_SI_1$p.value < filter$PVALUE & ctest_SI_2$p.value < filter$PVALUE )
+            return(1)
+          else if ( ctest_BI$p.value < filter$PVALUE & ctest_SI_1$p.value > filter$PVALUE & ctest_SI_2$p.value < filter$PVALUE )
+            return(4)
+          else if ( ctest_BI$p.value < filter$PVALUE & ctest_SI_1$p.value < filter$PVALUE & ctest_SI_2$p.value > filter$PVALUE )
+            return(5)
+          else
+            return(NA)
+        }
+      },simplify = T)
+    }
     
-    indx[[fam]] <- (MAF > filter$MAF) & (miss < filter$MISS) & ( !is.na(config) | !is.na(seg_Infer) )
+    chrom <- R6obj$.__enclos_env__$private$chrom
+    pos <- R6obj$.__enclos_env__$private$pos
+    ## Extract one SNP from each read.
+    if(filter$BIN > 0){
+      oneSNP <- rep(FALSE,nSnps)
+      oneSNP[unlist(sapply(unique(chrom), function(x){
+        ind <- which(chrom == x)
+        g1_diff <- diff(pos[ind])
+        SNP_bin <- c(0,cumsum(g1_diff > filter$BIN)) + 1
+        set.seed(58473+as.numeric(which(x==chrom))[1])
+        keepPos <- sapply(unique(SNP_bin), function(y) {
+          ind2 <- which(SNP_bin == y)
+          if(length(ind2) > 1)
+            return(sample(ind2,size=1))
+          else if(length(ind2) == 1)
+            return(ind2)
+        })
+        return(ind[keepPos])
+      },USE.NAMES = F ))] <- TRUE
+    }
+    else 
+      oneSNP <- rep(TRUE,nSnps)
     
-    config[!indx[[fam]]] <- seg_Infer[!indx[[fam]]] <- NA
+    if(inferSNPs){
+      indx[[fam]] <- (MAF > filter$MAF) & (miss < filter$MISS) & ( !is.na(config) | !is.na(seg_Infer) ) & oneSNP
+      config[!indx[[fam]]] <- seg_Infer[!indx[[fam]]] <- NA
+    }
+    else
+      indx[[fam]] <- (MAF > filter$MAF) & (miss < filter$MISS) & (!is.na(config)) & oneSNP
+  
     
     ## Determine the segregation groups
     config_all[[fam]] <- config
-    config_infer_all[[fam]] <- seg_Infer
-    
+    if(inferSNPs)
+      config_infer_all[[fam]] <- seg_Infer
+
     nSnps_all[[fam]] <- sum(indx[[fam]])
     nInd_all[[fam]] <- nInd
     
@@ -281,18 +311,22 @@ makePop.FS <- function(R6obj, famInfo, filter=list(MAF=0.05, MISS=0.2, BIN=0, DE
     group_infer$SI <- which(config_infer_all[[fam]][indx_all] %in% c(4,5))
       
     config_all[[fam]] <- config_all[[fam]][indx_all]
-    config_infer_all[[fam]] <- config_infer_all[[fam]][indx_all]
+    if(inferSNPs)
+      config_infer_all[[fam]] <- config_infer_all[[fam]][indx_all]
       
     cat("-------------\n")
     cat("Summary:\n\n")
     cat("Number of SNPs remaining after filtering:",sum(indx_all),"\n")
-    cat("Number of SNPs with correct segregation type:", sum(!is.na(config_all[[fam]])) ,"\n")
+    if(inferSNPs)
+      cat("Number of SNPs with correct segregation type:", sum(!is.na(config_all[[fam]])) ,"\n")
     cat("Both-informative (BI):", length(group$BI),"\n")
     cat("Maternal-informative (MI):", length(group$MI),"\n")
     cat("Paternal-informative (PI):", length(group$PI),"\n")
-    cat("Number of SNPs with inferred segregation type:", sum(!is.na(config_infer_all[[fam]])),"\n")
-    cat("Both-informative (BI):", length(group_infer$BI),"\n")
-    cat("Maternal/Paternal-informative (MI or PI):", length(group_infer$SI),"\n")
+    if(inferSNPs){
+      cat("Number of SNPs with inferred segregation type:", sum(!is.na(config_infer_all[[fam]])),"\n")
+      cat("Both-informative (BI):", length(group_infer$BI),"\n")
+      cat("Maternal/Paternal-informative (MI or PI):", length(group_infer$SI),"\n")
+    }
     cat("Number of progeny:", nInd_all[[fam]],"\n")
   }
   else{
@@ -343,7 +377,7 @@ makePop.FS <- function(R6obj, famInfo, filter=list(MAF=0.05, MISS=0.2, BIN=0, DE
     for(fam in 1:noFam)
       cat(names(famInfo)[fam],":", nInd_all[[fam]],"\n")
     cat("\n")
-    
+  
     group_infer <- NULL
     config_infer_all <- NULL
   }

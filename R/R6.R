@@ -68,19 +68,17 @@ FS <- R6Class("FS",
     },
     #############################################################
     ## Function for computing the 2-point rf estimates
-    rf_2pt = function(nClust=4, inferSNPs = TRUE){
+    rf_2pt = function(nClust=4){
       ## do some checks
       if(!is.numeric(nClust) || length(nClust)!=1 || nClust < 0 || is.infinite(nClust) )
         stop("Number clusters specifies for the parallelization needs to be a positive finite numeric number")
-      if( !is.logical(inferSNPs) || length(inferSNPs)!=1)
-        stop("Inout for using inferred SNPs needs to be a logical value")
       
       ## If there is only one family
       if(private$noFam == 1)
-        mat <- rf_2pt_single(private$depth_Ref, private$depth_Alt,
+        mat <- rf_2pt_single(private$depth_Ref[[1]], private$depth_Alt[[1]],
                              private$config[[1]], private$config_infer[[1]],
-                             private$group[[1]], private$group_infer[[1]],
-                             inferSNPs, nClust)
+                             private$group, private$group_infer,
+                             nClust)
       else
         mat <- rf_2pt_multi(private$depth_Ref, private$depth_Alt,
                             private$config,private$group, nClust, private$noFam)
