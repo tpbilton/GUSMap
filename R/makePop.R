@@ -31,7 +31,7 @@ makePop.FS <- function(R6obj, famInfo, filter=list(MAF=0.05, MISS=0.2, BIN=0, DE
   
   ## Define variables that will be used.
   noFam <- length(famInfo)
-  config_all <- config_infer_all <- nSnps_all <- nInd_all <- indx <- indID_all <- vector(mode = "list", length = noFam)
+  config_all <- config_infer_all <- nInd_all <- indx <- indID_all <- vector(mode = "list", length = noFam)
   
   cat("-------------\n")
   cat("Processing Data.\n\n")
@@ -111,9 +111,9 @@ makePop.FS <- function(R6obj, famInfo, filter=list(MAF=0.05, MISS=0.2, BIN=0, DE
       if(any(x_p==1,na.rm=T))
         return("AB")
       else if(sum(d_p) > filter$DEPTH){
-        if(x_p==2)
+        if(all(x_p==2, na.rm=T))
           return("AA")
-        else if(x_p==0)
+        else if(all(x_p==0, na.rm=T))
           return("BB")
         else if(patgrandparents){
           if(sum(depth_patgranddad[,x])>filter$DEPTH && sum(depth_patgrandmum)>filter$DEPTH){
@@ -138,9 +138,9 @@ makePop.FS <- function(R6obj, famInfo, filter=list(MAF=0.05, MISS=0.2, BIN=0, DE
       if(any(x_m==1,na.rm=T))
         return("AB")
       else if(sum(d_m) > filter$DEPTH){
-        if(x_m==2)
+        if(all(x_m==2, na.rm=T))
           return("AA")
-        else if(x_m==0)
+        else if(all(x_m==0, na.rm=T))
           return("BB")
         else if(matgrandparents){
           if(sum(depth_matgranddad[,x])>filter$DEPTH && sum(depth_matgrandmum)>filter$DEPTH){
@@ -165,7 +165,7 @@ makePop.FS <- function(R6obj, famInfo, filter=list(MAF=0.05, MISS=0.2, BIN=0, DE
     config[which(parHap_pat == "AB" & parHap_mat == "AA")] <- 2
     config[which(parHap_pat == "AB" & parHap_mat == "BB")] <- 3
     config[which(parHap_pat == "AA" & parHap_mat == "AB")] <- 4
-    config[which(parHap_pat == "AA" & parHap_mat == "BB")] <- 5
+    config[which(parHap_pat == "BB" & parHap_mat == "AB")] <- 5
     
     #### Segregation test to determine if the SNPs have been miss-classified
     seg_Dis <- sapply(1:nSnps,function(x){
@@ -278,7 +278,6 @@ makePop.FS <- function(R6obj, famInfo, filter=list(MAF=0.05, MISS=0.2, BIN=0, DE
     if(inferSNPs)
       config_infer_all[[fam]] <- seg_Infer
 
-    nSnps_all[[fam]] <- sum(indx[[fam]])
     nInd_all[[fam]] <- nInd
     
     genon_all[[fam]] <- genon
@@ -291,6 +290,7 @@ makePop.FS <- function(R6obj, famInfo, filter=list(MAF=0.05, MISS=0.2, BIN=0, DE
     
     ## Find all the SNPs to keep and subset the global variables
     indx_all <- indx[[fam]]
+
     #indx_all <- do.call("rbind",indx)
     #indx_all <- apply(indx_all, 2, any)
     
@@ -337,10 +337,10 @@ makePop.FS <- function(R6obj, famInfo, filter=list(MAF=0.05, MISS=0.2, BIN=0, DE
     tabInf_BI <- table(unlist(sapply(1:noFam,function(y) which(config_all[[y]] %in% c(1) & indx[[y]]))))
     group.temp$BI <- as.numeric(names(tabInf_BI)[which(tabInf_BI >= noInfoFam)])
     # MI 
-    tabInf_MI <- table(unlist(sapply(1:noFam,function(y) which(config_all[[y]] %in% c(1,4,5) & indx[[y]]))))
+    tabInf_MI <- table(unlist(sapply(1:noFam,function(y) which(config_all[[y]] %in% c(4,5) & indx[[y]]))))
     group.temp$MI <- setdiff(as.numeric(names(tabInf_MI)[which(tabInf_MI >= noInfoFam)]), group.temp$BI)
     # PI 
-    tabInf_PI <- table(unlist(sapply(1:noFam,function(y) which(config_all[[y]] %in% c(1,2,3) & indx[[y]]))))
+    tabInf_PI <- table(unlist(sapply(1:noFam,function(y) which(config_all[[y]] %in% c(2,3) & indx[[y]]))))
     group.temp$PI <- setdiff(as.numeric(names(tabInf_PI)[which(tabInf_PI >= noInfoFam)]), group.temp$BI)
     
     ## Work out which SNPs to keep
@@ -386,7 +386,8 @@ makePop.FS <- function(R6obj, famInfo, filter=list(MAF=0.05, MISS=0.2, BIN=0, DE
   R6obj$.__enclos_env__$private$updatePrivate(list(
     genon = genon_all, depth_Ref = depth_Ref_all, depth_Alt = depth_Alt_all, chrom = chrom_all, pos = pos_all,
     group = group, group_infer = group_infer, config = config_all, config_infer = config_infer_all,
-    nInd = nInd_all, nSnps = nSnps_all, noFam = noFam, indID = indID_all, SNP_Names = SNP_Names)
+    nInd = nInd_all, nSnps = sum(indx_all), noFam = noFam, indID = indID_all, SNP_Names = SNP_Names,
+    masked=rep(FALSE,sum(indx_all)))
   )
   
   return(R6obj)

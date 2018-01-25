@@ -1,5 +1,5 @@
 
-createLG <- function(group, LOD, parent, LODthres, nComp){
+createLG <- function(group, LOD, parent, LODthres, nComp, masked){
 
   ## Initialize the LG
   LG <- list()
@@ -13,9 +13,12 @@ createLG <- function(group, LOD, parent, LODthres, nComp){
          paternal: Only PI SNPs")
   
   if(parent == "maternal")
-    unmapped <- sort(c(group$MI))
+    unmapped <- sort(group$MI[which(group$MI %in% which(!masked))])
   else if(parent == "paternal")
-    unmapped <- sort(c(group$PI))
+    unmapped <- sort(group$PI[which(group$PI %in% which(!masked))])
+  
+  if(length(unmapped) < 2)
+    stop("There are no SNPs available to create linkage groups with.")
   
   ## Run algorithm for generating the linkage groups
   finish = FALSE
@@ -29,7 +32,7 @@ createLG <- function(group, LOD, parent, LODthres, nComp){
       newSNP <- which(meanLOD == maxMeanLOD)
       newLG <- c(newLG,unmapped[newSNP])
       unmapped <- unmapped[-newSNP]
-      compLOD <- LOD[newLG,unmapped]
+      compLOD <- matrix(LOD[newLG,unmapped],ncol=length(unmapped))
       meanLOD <- apply(compLOD,2,function(x) mean(sort(x,decreasing = T)[1:nComp], na.rm=T))
       maxMeanLOD <- max(meanLOD)
     }

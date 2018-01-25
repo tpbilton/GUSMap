@@ -44,7 +44,6 @@ FS <- R6Class("FS",
     LG_mat    = NULL,
     LG_pat    = NULL,
     seg_group = NULL,
-    filter    = NULL,
     seg_num   = NULL,
     OPGP      = NULL,
     ## initialize function
@@ -52,7 +51,6 @@ FS <- R6Class("FS",
       self$LG_mat       <- list()
       self$LG_pat       <- list()
       self$seg_group    <- list()
-      self$filter       <- list()
       self$seg_num      <- list()
       self$OPGP         <- list()
       private$genon     <- R6obj$.__enclos_env__$private$genon
@@ -65,8 +63,41 @@ FS <- R6Class("FS",
       private$nSnps     <- R6obj$.__enclos_env__$private$nSnps
       private$nInd      <- R6obj$.__enclos_env__$private$nInd
       private$gform     <- R6obj$.__enclos_env__$private$gform
+      private$masked    <- rep(TRUE, R6obj$.__enclos_env__$private$nSnps)
     },
     #############################################################
+    ## Function for removing SNPs from the linkage groups
+    removeSNP = function(indx){
+      ## some checks
+      if( !is.vector(indx) || !is.numeric(indx) || !all(indx == round(indx)) || any(indx < 1) || any(indx > private$nSnps) )
+        stop(paste0("Input must be a vector of indices between 1 and ", private$nSnps))
+      ## remove SNP from the maternal linkage groups
+      for(lg in 1:length(self$LG_mat)){
+        if(any(self$LG_mat[[lg]] %in% indx))
+          self$LG_mat[[lg]] <- self$LG_mat[[lg]][-which(self$LG_mat[[lg]] %in% indx)]
+      }
+      ## remove SNP from the paternal linkage groups
+      for(lg in 1:length(self$LG_pat)){
+        if(any(self$LG_pat[[lg]] %in% indx))
+          self$LG_pat[[lg]] <- self$LG_pat[[lg]][-which(self$LG_pat[[lg]] %in% indx)]
+      }
+      return(invisible())
+    },
+    ## function for masking SNPs
+    maskSNP = function(indx){
+      if( !is.vector(indx) || !is.numeric(indx) || !all(indx == round(indx)) || any(indx < 1) || any(indx > private$nSnps) )
+        stop(paste0("Input must be a vector of indices between 1 and ", private$nSnps))
+      private$masked[indx] <- TRUE
+      return(invisible())
+    },
+    ## function for unmasking SNPs
+    unMaskSNP = function(indx){
+      if( !is.vector(indx) || !is.numeric(indx) || !all(indx == round(indx)) || any(indx < 1) || any(indx > private$nSnps) )
+        stop(paste0("Input must be a vector of indices between 1 and ", private$nSnps))
+      private$masked[indx] <- FALSE
+      return(invisible())
+    },
+    
     ## Function for computing the 2-point rf estimates
     rf_2pt = function(nClust=4){
       ## do some checks
@@ -102,9 +133,9 @@ FS <- R6Class("FS",
       
       ## Create the groups
       if(parent == "maternal")
-        self$LG_mat <- createLG(private$group, private$LOD, "maternal", LODthres, nComp)
+        self$LG_mat <- createLG(private$group, private$LOD, "maternal", LODthres, nComp, masked=private$masked)
       else if(parent == "paternal")
-        self$LG_pat <- createLG(private$group, private$LOD, "paternal", LODthres, nComp)
+        self$LG_pat <- createLG(private$group, private$LOD, "paternal", LODthres, nComp, masked=private$masked)
     },
     ## Function for plotting linkage groups
     plotLG = function(mat=c("rf","LOD"), LG, filename=NULL, names=NULL, chrS=2, lmai=2, chrom=T){
@@ -134,6 +165,7 @@ FS <- R6Class("FS",
     config_infer = NULL,
     group        = NULL,
     group_infer  = NULL,
+    masked       = NULL,
     noFam        = NULL,
     rf           = NULL,
     LOD          = NULL,
@@ -171,6 +203,8 @@ FS <- R6Class("FS",
         private$rf           = List$rf
       if(!is.null(List$LOD))
         private$LOD          = List$LOD
+      if(!is.null(List$masked))
+        private$masked       = List$masked
     }
   )
 )

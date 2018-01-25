@@ -19,7 +19,8 @@ rf_2pt_single <- function(depth_Ref, depth_Alt, config, config_infer, group, gro
   nSnps_PI = length(indx_PI)
   
   ## set up the config vector
-  config[which(!is.na(config_infer))] <- config_infer[which(!is.na(config_infer))]
+  if(!is.null(config_infer))
+    config[which(!is.na(config_infer))] <- config_infer[which(!is.na(config_infer))]
   ## Check that there are no missing configs in the data
   if(any(is.na(config[c(indx_MI , indx_BI , indx_PI)])))
     stop("There are some missing segregation types in the data.")
@@ -162,7 +163,7 @@ rf_2pt_single <- function(depth_Ref, depth_Alt, config, config_infer, group, gro
 
 
 ### Function for computing the pairwise RF in a multiple-sib family.
-rf_2pt_multi <- function(depth_Ref, depth_Alt, config, group, nClust, noFam){
+rf_2pt_multi <- function(depth_Ref, depth_Alt, config, group, nClust, noFam, init_r = 0.25){
   
   if(length(unlist(group)) == 0)
     stop("There are no SNPs in the data set.")
@@ -187,42 +188,42 @@ rf_2pt_multi <- function(depth_Ref, depth_Alt, config, group, nClust, noFam){
     for(snp2 in seq_len(snp1-1)){
       ind = indx_PI[c(snp1,snp2)]
       configFam <- matrix(unlist(lapply(config, function(z) z[ind])),ncol=2, nrow=noFam,byrow=T)
-      wFam <- which(apply(configFam,1, function(z) all(z %in% c(1,2,3))))
+      wFam <- which(apply(configFam,1, function(z) all(z %in% c(2,3))))
       OPGP <- vector(mode="list", length=noFam)
       ## Work out the phase
       for(fam in wFam){
         if(all(configFam[fam,] %in% c(2,3))){
           OPGP1 <- c(5,5) + 2*(configFam[fam,]==3)
-          rf.est1 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
+          rf.est1 <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
                                         OPGP=list(OPGP1), epsilon=NULL)
           OPGP2 <- c(5,6) + 2*(configFam[fam,]==3)
-          rf.est2 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
+          rf.est2 <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
                                         OPGP=list(OPGP2), epsilon=NULL)
           OPGP[[fam]] <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik)), OPGP1, OPGP2)
         }
         else if(all(configFam[fam,]==1)){
           OPGP1 <- c(1,1)
-          rf.est1 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
+          rf.est1 <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
                                       OPGP=list(OPGP1), epsilon=NULL)
           OPGP2 <- c(1,2)
-          rf.est2 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
+          rf.est2 <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
                                       OPGP=list(OPGP2), epsilon=NULL)
           OPGP3 <- c(1,4)
-          rf.est3 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
+          rf.est3 <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
                                         OPGP=list(OPGP3), epsilon=NULL)
           OPGP[[fam]] <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik,rf.est3$loglik)), OPGP1, OPGP2, OPGP3)
         }
         else if(any(configFam[fam,] == 1) & any(configFam[fam,] %in% c(2,3))){
           OPGP1 <- c(1,1) + 4*(configFam[fam,]==2) + 6*(configFam[fam,]==3)
-          rf.est1 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
+          rf.est1 <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
                                         OPGP=list(OPGP1), epsilon=NULL)
           OPGP2 <- c(1,2) + 4*(configFam[fam,]==2) + 6*(configFam[fam,]==3)
-          rf.est2 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
+          rf.est2 <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
                                         OPGP=list(OPGP2), epsilon=NULL)
           OPGP[[fam]] <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik)), OPGP1, OPGP2)
         }
       }
-      rf.est <- GUSMap:::rf_est_FS(depth_Ref=lapply(depth_Ref[wFam], function(x) x[,ind]),
+      rf.est <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=lapply(depth_Ref[wFam], function(x) x[,ind]),
                                    depth_Alt=lapply(depth_Alt[wFam], function(x) x[,ind]),
                                    OPGP=OPGP[wFam], epsilon=NULL, noFam=length(wFam))
       rf[[1]][snp2] <- rf.est$rf
@@ -241,42 +242,42 @@ rf_2pt_multi <- function(depth_Ref, depth_Alt, config, group, nClust, noFam){
     for(snp2 in seq_len(snp1-1)){
       ind = indx_MI[c(snp1,snp2)]
       configFam <- matrix(unlist(lapply(config, function(z) z[ind])),ncol=2, nrow=noFam,byrow=T)
-      wFam <- which(apply(configFam,1, function(z) all(z %in% c(1,4,5))))
+      wFam <- which(apply(configFam,1, function(z) all(z %in% c(4,5))))
       OPGP <- vector(mode="list", length=noFam)
       ## Work out the phase
       for(fam in wFam){
         if(all(configFam[fam,] %in% c(4,5))){
           OPGP1 <- c(9,9) + 2*(configFam[fam,]==5)
-          rf.est1 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
+          rf.est1 <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
                                         OPGP=list(OPGP1), epsilon=NULL)
           OPGP2 <- c(9,10) + 2*(configFam[fam,]==5)
-          rf.est2 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
+          rf.est2 <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
                                         OPGP=list(OPGP2), epsilon=NULL)
           OPGP[[fam]] <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik)), OPGP1, OPGP2)
         }
         else if(all(configFam[fam,]==1)){
           OPGP1 <- c(1,1)
-          rf.est1 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
+          rf.est1 <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
                                         OPGP=list(OPGP1), epsilon=NULL)
           OPGP2 <- c(1,2)
-          rf.est2 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
+          rf.est2 <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
                                         OPGP=list(OPGP2), epsilon=NULL)
           OPGP3 <- c(1,4)
-          rf.est3 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
+          rf.est3 <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
                                         OPGP=list(OPGP3), epsilon=NULL)
           OPGP[[fam]] <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik,rf.est3$loglik)), OPGP1, OPGP2, OPGP3)
         }
         else if(any(configFam[fam,] == 1) & any(configFam[fam,] %in% c(4,5))){
           OPGP1 <- c(1,1) + 8*(configFam[fam,]==4) + 10*(configFam[fam,]==5)
-          rf.est1 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
+          rf.est1 <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
                                         OPGP=list(OPGP1), epsilon=NULL)
           OPGP2 <- c(1 + 8*(configFam[fam,1]==4) + 10*(configFam[fam,1]==5),3 + 7*(configFam[fam,2]==4) + 9*(configFam[fam,2]==5))
-          rf.est2 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
+          rf.est2 <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
                                         OPGP=list(OPGP2), epsilon=NULL)
           OPGP[[fam]] <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik)), OPGP1, OPGP2)
         }
       }
-      rf.est <- GUSMap:::rf_est_FS(depth_Ref=lapply(depth_Ref[wFam], function(x) x[,ind]),
+      rf.est <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=lapply(depth_Ref[wFam], function(x) x[,ind]),
                                    depth_Alt=lapply(depth_Alt[wFam], function(x) x[,ind]),
                                    OPGP=OPGP[wFam], epsilon=NULL, noFam=length(wFam))
       rf[[1]][snp2] <- rf.est$rf
@@ -301,36 +302,36 @@ rf_2pt_multi <- function(depth_Ref, depth_Alt, config, group, nClust, noFam){
       for(fam in wFam){
         if(all(configFam[fam,]==1)){
           OPGP1 <- c(1,1)
-          rf.est1 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
+          rf.est1 <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
                                         OPGP=list(OPGP1), epsilon=NULL)
           OPGP2 <- c(1,2)
-          rf.est2 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
+          rf.est2 <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
                                         OPGP=list(OPGP2), epsilon=NULL)
           OPGP3 <- c(1,4)
-          rf.est3 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
+          rf.est3 <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
                                         OPGP=list(OPGP3), epsilon=NULL)
           OPGP[[fam]] <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik,rf.est3$loglik)), OPGP1, OPGP2, OPGP3)
         }
         else if( any(configFam[fam,]==1) & any(configFam[fam,]%in%c(2,3)) ){
           OPGP1 <- c(1,1) + 4*(configFam[fam,]==2) + 6*(configFam[fam,]==3)
-          rf.est1 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
+          rf.est1 <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
                                         OPGP=list(OPGP1), epsilon=NULL)
           OPGP2 <- c(1,2) + 4*(configFam[fam,]==2) + 6*(configFam[fam,]==3)
-          rf.est2 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
+          rf.est2 <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
                                         OPGP=list(OPGP2), epsilon=NULL)
           OPGP[[fam]] <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik)), OPGP1, OPGP2)
         }
         else if( any(configFam[fam,]==1) & any(configFam[fam,]%in%c(4,5)) ){
           OPGP1 <- c(1,1) + 8*(configFam[fam,]==4) + 10*(configFam[fam,]==5)
-          rf.est1 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
+          rf.est1 <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
                                         OPGP=list(OPGP1), epsilon=NULL)
           OPGP2 <- c(1 + 8*(configFam[fam,1]==4) + 10*(configFam[fam,1]==5),3 + 7*(configFam[fam,2]==4) + 9*(configFam[fam,2]==5))
-          rf.est2 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
+          rf.est2 <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
                                         OPGP=list(OPGP2), epsilon=NULL)
           OPGP[[fam]] <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik)), OPGP1, OPGP2)
         }
       }
-      rf.est <- GUSMap:::rf_est_FS(depth_Ref=lapply(depth_Ref[wFam], function(x) x[,ind]),
+      rf.est <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=lapply(depth_Ref[wFam], function(x) x[,ind]),
                                    depth_Alt=lapply(depth_Alt[wFam], function(x) x[,ind]),
                                    OPGP=OPGP[wFam], epsilon=NULL, noFam=length(wFam))
       rf[[1]][snp2] <- rf.est$rf
@@ -349,33 +350,33 @@ rf_2pt_multi <- function(depth_Ref, depth_Alt, config, group, nClust, noFam){
     for(snp.bi in 1:nSnps_BI){
       ind <- c(indx_PI[snp.pi],indx_BI[snp.bi])
       configFam <- matrix(unlist(lapply(config, function(z) z[ind])),ncol=2, nrow=noFam,byrow=T)
-      wFam <- which(apply(configFam,1, function(z) z[1] %in% c(1,2,3) & z[2] == 1))
+      wFam <- which(apply(configFam,1, function(z) z[1] %in% c(2,3) & z[2] == 1))
       OPGP <- vector(mode="list", length=noFam)
       ## Work out the phase
       for(fam in wFam){
         if(all(configFam[fam,]==1)){
           OPGP1 <- c(1,1)
-          rf.est1 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
+          rf.est1 <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
                                         OPGP=list(OPGP1), epsilon=NULL)
           OPGP2 <- c(1,2)
-          rf.est2 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
+          rf.est2 <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
                                         OPGP=list(OPGP2), epsilon=NULL)
           OPGP3 <- c(1,4)
-          rf.est3 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
+          rf.est3 <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
                                         OPGP=list(OPGP3), epsilon=NULL)
           OPGP[[fam]] <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik,rf.est3$loglik)), OPGP1, OPGP2, OPGP3)
         }
         else if(any(configFam[fam,] == 1) & any(configFam[fam,] %in% c(2,3))){
           OPGP1 <- c(1,1) + 4*(configFam[fam,]==2) + 6*(configFam[fam,]==3)
-          rf.est1 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
+          rf.est1 <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
                                         OPGP=list(OPGP1), epsilon=NULL)
           OPGP2 <- c(1,2) + 4*(configFam[fam,]==2) + 6*(configFam[fam,]==3)
-          rf.est2 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
+          rf.est2 <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
                                         OPGP=list(OPGP2), epsilon=NULL)
           OPGP[[fam]] <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik)), OPGP1, OPGP2)
         }
       }
-      rf.est <- GUSMap:::rf_est_FS(depth_Ref=lapply(depth_Ref[wFam], function(x) x[,ind]),
+      rf.est <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=lapply(depth_Ref[wFam], function(x) x[,ind]),
                                    depth_Alt=lapply(depth_Alt[wFam], function(x) x[,ind]),
                                    OPGP=OPGP[wFam], epsilon=NULL, noFam=length(wFam))
       rf[[1]][snp.bi] <- rf.est$rf
@@ -391,33 +392,33 @@ rf_2pt_multi <- function(depth_Ref, depth_Alt, config, group, nClust, noFam){
     for(snp.bi in 1:nSnps_BI){
       ind <- c(indx_MI[snp.mi],indx_BI[snp.bi])
       configFam <- matrix(unlist(lapply(config, function(z) z[ind])),ncol=2, nrow=noFam,byrow=T)
-      wFam <- which(apply(configFam,1, function(z) z[1] %in% c(1,4,5) & z[2] == 1))
+      wFam <- which(apply(configFam,1, function(z) z[1] %in% c(4,5) & z[2] == 1))
       OPGP <- vector(mode="list", length=noFam)
       ## Work out the phase
       for(fam in wFam){
         if(all(configFam[fam,]==1)){
           OPGP1 <- c(1,1)
-          rf.est1 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
+          rf.est1 <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
                                         OPGP=list(OPGP1), epsilon=NULL)
           OPGP2 <- c(1,2)
-          rf.est2 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
+          rf.est2 <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
                                         OPGP=list(OPGP2), epsilon=NULL)
           OPGP3 <- c(1,4)
-          rf.est3 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
+          rf.est3 <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
                                         OPGP=list(OPGP3), epsilon=NULL)
           OPGP[[fam]] <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik,rf.est3$loglik)), OPGP1, OPGP2, OPGP3)
         }
         else if(any(configFam[fam,] == 1) & any(configFam[fam,] %in% c(4,5))){
           OPGP1 <- c(1,1) + 8*(configFam[fam,]==4) + 10*(configFam[fam,]==5)
-          rf.est1 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
+          rf.est1 <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
                                         OPGP=list(OPGP1), epsilon=NULL)
           OPGP2 <- c(1 + 8*(configFam[fam,1]==4) + 10*(configFam[fam,1]==5),3 + 7*(configFam[fam,2]==4) + 9*(configFam[fam,2]==5))
-          rf.est2 <- GUSMap:::rf_est_FS(depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
+          rf.est2 <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
                                         OPGP=list(OPGP2), epsilon=NULL)
           OPGP[[fam]] <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik)), OPGP1, OPGP2)
         }
       }
-      rf.est <- GUSMap:::rf_est_FS(depth_Ref=lapply(depth_Ref[wFam], function(x) x[,ind]),
+      rf.est <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=lapply(depth_Ref[wFam], function(x) x[,ind]),
                                     depth_Alt=lapply(depth_Alt[wFam], function(x) x[,ind]),
                                     OPGP=OPGP[wFam], epsilon=NULL, noFam=length(wFam))
       rf[[1]][snp.bi] <- rf.est$rf
@@ -429,25 +430,33 @@ rf_2pt_multi <- function(depth_Ref, depth_Alt, config, group, nClust, noFam){
   ## For the non-informative computations
   ## Really done so that we can check that there is no miss identification of the group
   cat("Maternal informative vs Paternal informative\n")
-  # rf.MI.PI <- foreach(snp.mi = iter(seq(length.out=nSnps_MI)), .combine=comb) %dopar% {
-  #   rf <- replicate(2,numeric(nSnps_PI),simplify=F)
-  #   for(snp.pi in 1:nSnps_PI){
-  #     ind <- c(indx_MI[snp.mi],indx_PI[snp.pi])
-  #     configFam <- matrix(unlist(lapply(config, function(z) z[ind])),ncol=2, nrow=noFam,byrow=T)
-  #     wFam <- which(apply(configFam,1, function(z) (z[1] %in% c(1,4,5)) & (z[2] == c(1,2,3)))
-  #     OPGP <- vector(mode="list", length=noFam)
-  #     
-  #     rf.est1 <- rf_est_FS(depth_Ref=list(depth_Ref[,ind]),depth_Alt=list(depth_Alt[,ind]),
-  #                          OPGP=list(c(9,9) + 2*(config[ind] %in% c(3,5))), epsilon=NULL)
-  #     rf.est2 <- rf_est_FS(depth_Ref=list(depth_Ref[,ind]),depth_Alt=list(depth_Alt[,ind]),
-  #                          OPGP=list(c(9,10) + 2*(config[ind] %in% c(3,5))), epsilon=NULL)
-  #     rf.ind <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik)), rf.est1, rf.est2)
-  #     rf[[1]][snp.pi] <- rf.ind$rf
-  #     rf[[2]][snp.pi] <- rf.ind$LOD
-  #   }
-  #   return(rf)
-  # }
-  rf.MI.PI <- replicate(2, matrix(NA, nrow=nSnps_MI, ncol=nSnps_PI),simplify=FALSE)
+  rf.MI.PI <- foreach(snp.mi = iter(seq(length.out=nSnps_MI)), .combine=comb) %dopar% {
+    rf <- replicate(2,numeric(nSnps_PI),simplify=F)
+    for(snp.pi in 1:nSnps_PI){
+      ind = c(indx_MI[snp.mi],indx_PI[snp.pi])
+      configFam <- matrix(unlist(lapply(config, function(z) z[ind])),ncol=2, nrow=noFam,byrow=T)
+      wFam <- which(apply(configFam,1, function(z) z[1] %in% c(4,5) & z[2] %in% c(2,3)))
+      OPGP <- vector(mode="list", length=noFam)
+      ## Work out the phase
+      for(fam in wFam){
+        OPGP1 <- c(5,5) + 2*(configFam[fam,] %in% c(3,5))
+        rf.est1 <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
+                                      OPGP=list(OPGP1), epsilon=NULL)
+        OPGP2 <- c(5,6) + 2*(configFam[fam,] %in% c(3,5))
+        rf.est2 <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=list(depth_Ref[[fam]][,ind]),depth_Alt=list(depth_Alt[[fam]][,ind]),
+                                      OPGP=list(OPGP2), epsilon=NULL)
+        OPGP[[fam]] <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik)), OPGP1, OPGP2)
+      }
+      rf.est <- GUSMap:::rf_est_FS(init_r=init_r,depth_Ref=lapply(depth_Ref[wFam], function(x) x[,ind]),
+                                   depth_Alt=lapply(depth_Alt[wFam], function(x) x[,ind]),
+                                   OPGP=OPGP[wFam], epsilon=NULL, noFam=length(wFam))
+      rf[[1]][snp.pi] <- rf.est$rf
+      rf[[2]][snp.pi] <- rf.est$LOD
+    }
+    return(rf)
+  }
+  
+  #rf.MI.PI <- replicate(2, matrix(NA, nrow=nSnps_MI, ncol=nSnps_PI),simplify=FALSE)
   stopCluster(cl) 
   
   ## Build the rf and LOD matrices
