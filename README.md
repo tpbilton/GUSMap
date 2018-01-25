@@ -25,7 +25,6 @@ produced from a VCF in GUSMap using a couple of functions. There two steps to th
 
 1. The VCF file needs to be converted into RA (reference/alternate) format using the function VCFtoRA(). The following example (using the chromosome 11 SNPs of the Manuka dataset used
 by Bilton et al. (2017)) shows how this is done in GUSMap.
-
 ```
 vcffile <- Manuka()
 RAfile <- VCFtoRA(vcffile)
@@ -37,17 +36,16 @@ RA format data is available using the following command.
 ?VCFtoRA
 ```
 
-2. The pedigree file created from VCFtoRA() is in the form
-SampleID	IndividualID	Mother	Father	Family
-P1_S1					
-P1_S2								
-P2_S1		
-P2_S2
-O1
-O2
-...
-O177
-
+2. The pedigree file created from VCFtoRA() is in the form  
+SampleID	IndividualID	Mother	Father	Family  
+P1_S1  
+P1_S2  
+P2_S1  
+P2_S2  
+O1  
+O2  
+...  
+O177  
 The SampleID column is the sample ID used in the VCF to represent each sample. For the Manuka data set, there are 177 offspring (which are denoted O1 to O177) 
 while the samples P1_S1 and P1_S2 are two samples of one parent and P2_S1 and P2_S2 are two samples of the other parent. The IndividualID column is used to 
 denote the individual to which each sample belongs, where each individual must have a unique identifier. This is useful as it allows us to have multiple samples 
@@ -55,16 +53,15 @@ on the same individual. The Mother column is used to specify which individual is
 Mother or Father is unknown, then the entry in these columns should be left blank. The Family column is just used to allow the user to specify a name for each specific family.
 
 For our Manuka dataset, a filled pedigree file should look like the following:
-SampleID	IndividualID	Mother	Father	Family
-P1_S1		1			
-P1_S2		1						
-P2_S1		2
-P2_S2		2
-O1		3			2		1		Manuka
-O2		4			2		1		Manuka	
-...
-O177		179			2		1		Manuka
-
+SampleID	IndividualID	Mother	Father	Family  
+P1_S1		  1  
+P1_S2		  1  
+P2_S1		  2  
+P2_S2		  2  
+O1		    3			        2		    1		    Manuka  
+O2		    4			        2		    1		    Manuka  
+...  
+O177		  179			      2		    1		    Manuka  
 
 3. The final step is to read in and process the RA data. For the Manuka example, the relavent code is the following:
 ```
@@ -83,7 +80,7 @@ MKdata$depth_Ref
 
 ### References:
 
-Bilton, T.P., Schofield, M.R., Black, M.A., Chagn&#232, D., Wilcox, P.L., Dodds, K.G. (2017). Accounting for errors in low coverage high-throughput sequencing data when constructing genetic maps using biparental outcrossed populations. Unpublished manuscript.
+Bilton, T.P., Schofield, M.R., Black, M.A., Chagn&#232;, D., Wilcox, P.L., Dodds, K.G. (2017). Accounting for errors in low coverage high-throughput sequencing data when constructing genetic maps using biparental outcrossed populations. Unpublished manuscript.
 
 ### License
 
