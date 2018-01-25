@@ -20,7 +20,7 @@
 #### Adapted from a python script written by Rudiger Brauning and Rachael Ashby 
 #### Date: 24/01/18
 
-#' Convert VCF file into RA (ReferenceAlternative) file.
+#' Convert VCF file into RA (Reference/Alternative) file.
 #'
 #' Function for converting a VCF file into RA format.
 #'
@@ -40,7 +40,6 @@
 #' In addition to creating a RA file, a pedigree file is also initialized in the same folder as the RA file.
 #' @author Timothy P. Bilton. Adapted from a Python script written by Rudiger Brauning and Rachael Ashby.
 #' @export VCFtoRA
-
 VCFtoRA <- function(infilename, direct="./"){
   
   ## Do some checks
