@@ -22,11 +22,12 @@ Function for converting a VCF file into RA format.
 RA format is a tab-delimited with columns, CHROM, POS, SAMPLES
 where SAMPLES consists of sampleIDs, which typically consist of a colon-delimited sampleID, flowcellID, lane, seqlibID.
 e.g.,
-CHROM   POS     999220:C4TWKACXX:7:56   999204:C4TWKACXX:7:56
-1       415     5,0                     0,3
-1       443     1,0                     4,4
-1       448     0,0                     0,2
-
+\tabular{llll}{
+CHROM \tab  POS  \tab   999220:C4TWKACXX:7:56 \tab  999204:C4TWKACXX:7:56 \cr
+1     \tab  415  \tab   5,0                   \tab  0,3                   \cr
+1     \tab  443  \tab   1,0                   \tab  4,4                   \cr
+1     \tab  448  \tab   0,0                   \tab  0,2
+}
 Note: Indels are removed, multiple alternative alleles are removed and ./. is translated into 0,0.
 }
 \author{

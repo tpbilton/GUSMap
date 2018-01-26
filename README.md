@@ -45,7 +45,7 @@ RA format data is available using the following command.
 |P2_S1    |             |        |        |        |
 |P2_S2    |             |        |        |        | 
 |O1       |             |        |        |        |
-|O2       |             |        |        |        |  
+|O2       |             |        |        |        |
 | ...     |             |        |        |        |
 |O177     |             |        |        |        |
 
@@ -62,7 +62,7 @@ For our Manuka dataset, a completed pedigree file should look like the following
 |P1_S1	  |  1           |        |        |        |
 |P1_S2    |  1           |        |        |        |
 |P2_S1    |  2           |        |        |        | 
-|P2_S2    |  2           |        |        |        |  
+|P2_S2    |  2           |        |        |        |
 |O1       |  3           | 2      | 1      | Manuka | 
 |O2       |  4           | 2      | 1      | Manuka | 
 | ...     | ...          | ...    | ...    | ...    |
