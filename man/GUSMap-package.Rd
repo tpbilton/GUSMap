@@ -15,10 +15,10 @@ sequencing methods (see Bilton et al. (2017)).
 0.1.0\cr Date: \tab 2017-10-31\cr License: \tab GPL 3\cr }
 }
 \references{
-Bilton, T.P., Schofield, M.R., Black, M.A., Chagne D., Wilcox
-P., Dodds K.G. (2017). Accounting for errors in low coverage sequencing data
-when constructing genetic maps using biparental outcrossed populations.
-Unpublished Manuscript
+Bilton, T.P., Schofield, M.R., Black, M.A., Chagne, D., Wilcox,
+P.L., Dodds K.G. (2017). Accounting for errors in low coverage high-throughput
+sequencing data when constructing genetic maps using biparental outcrossed
+populations. Unpublished Manuscript.
 }
 \author{
 Timothy P. Bilton, Maintainer: Timothy P. Bilton

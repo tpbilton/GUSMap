@@ -234,8 +234,8 @@ readRA <- function(RAfile, gform, pedfile, sampthres = 0.01, filter=list(MAF=0.0
       if(is.na(config[x]))
         return(NA)
       else{
-        d = depth_Ref[,x] + depth_Alt[,x]
-        g = genon[,x]
+        d = depth_Ref_prog[,x] + depth_Alt_prog[,x]
+        g = genon_prog[,x]
         K = sum(1/2^(d[which(d != 0)])*0.5)/sum(d != 0)
         nAA = sum(g==2, na.rm=T)
         nAB = sum(g==1, na.rm=T)
@@ -263,9 +263,9 @@ readRA <- function(RAfile, gform, pedfile, sampthres = 0.01, filter=list(MAF=0.0
     config[which(seg_Dis)] <- NA
     
     ## Run the filtering of the progeny SNPs
-    MAF <- colMeans(genon, na.rm=T)/2
+    MAF <- colMeans(genon_prog, na.rm=T)/2
     MAF <- pmin(MAF,1-MAF)
-    miss <- apply(genon,2, function(x) sum(is.na(x))/length(x))
+    miss <- apply(genon_prog,2, function(x) sum(is.na(x))/length(x))
     
     ## Extract one SNP from each read.
     if(filter$BIN > 0){

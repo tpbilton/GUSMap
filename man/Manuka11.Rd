@@ -76,10 +76,10 @@ rf_est <- rf_est_FS(init_r=0.01,depth_Ref=list(manuka$depth_Ref[-c(1:4),ind_rd6]
 
 }
 \references{
-Bilton, T.P., Schofield, M.R., Black, M.A., Chagne D., Wilcox
-P., Dodds K.G. (2017). Accounting for errors in low coverage sequencing data
-when constructing genetic maps using multiparental outcrossed populations.
-Unpublished manuscript.
+Bilton, T.P., Schofield, M.R., Black, M.A., Chagne, D., Wilcox,
+P.L., Dodds K.G. (2017). Accounting for errors in low coverage high-throughput
+sequencing data when constructing genetic maps using biparental outcrossed
+populations. Unpublished Manuscript.
 }
 \author{
 Timothy P. Bilton

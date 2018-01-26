@@ -60,10 +60,10 @@ OPGP <- infer_OPGP_FS(F1data$depth_Ref, F1data$depth_Alt, config,
 
 }
 \references{
-Bilton, T.P., Schofield, M.R., Black, M.A., Chagne D., Wilcox
-P., Dodds K.G. (2017). Accounting for errors in low coverage sequencing data
-when constructing genetic maps using biparental outcrossed populations.
-Unpublished Manuscript.
+Bilton, T.P., Schofield, M.R., Black, M.A., Chagne, D., Wilcox,
+P.L., Dodds K.G. (2017). Accounting for errors in low coverage high-throughput
+sequencing data when constructing genetic maps using biparental outcrossed
+populations. Unpublished Manuscript.
 }
 \author{
 Timothy P. Bilton
