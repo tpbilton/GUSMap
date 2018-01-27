@@ -1,7 +1,19 @@
 
 
+
+
+#' @param RAfile Character string giving the path to the RA file to be read into R. Typically the required string is
+#' returned from the VCFtoRA function when the VCF file is converted to RA format.
+#' @param gform Character string specifying whether the SNPs in the RA data have been called de novo (\code{gform="denovo"})
+#' or using an reference based assembly (\code{gform="reference"}).
+#' @param pedfile Character string giving the path to the pedigree file of the samples in the RA file. See Detials for more information on specification of this file.
+#' @param sampthres filtering to finish
+#' @author Timothy P. Bilton
+#' @export VCFtoRA
+
+
 #### Function for reading in RA data and converting to genon and depth matrices.
-readRA <- function(RAfile, gform, pedfile, sampthres = 0.01, filter=list(MAF=0.05, MISS=0.2, BIN=0, DEPTH=5, PVALUE=0.01), excsamp=NULL){
+readRA <- function(RAfile, gform = "reference", pedfile, sampthres = 0.01, filter=list(MAF=0.05, MISS=0.2, BIN=0, DEPTH=5, PVALUE=0.01), excsamp=NULL){
   
   ## Do some checks
   if(!is.character(RAfile) || length(RAfile) != 1)
