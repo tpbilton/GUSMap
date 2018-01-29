@@ -111,7 +111,7 @@
 #' 
 #' @export rf_est_FS
 rf_est_FS <- function(init_r=0.01, epsilon=0.001, depth_Ref, depth_Alt, OPGP,
-                      sexSpec=F, trace=F, noFam=1, ...){
+                      sexSpec=F, trace=F, noFam=1, method="optim" ...){
   
   ## Do some checks
   if(!is.list(depth_Ref) | !is.list(depth_Alt) | !is.list(OPGP))
@@ -129,11 +129,6 @@ rf_est_FS <- function(init_r=0.01, epsilon=0.001, depth_Ref, depth_Alt, OPGP,
   if( !is.logical(sexSpec) || is.na(sexSpec) )
     sexSpec = FALSE
 
-  # Arguments for the optim function
-  optim.arg <- list(...)
-  if(length(optim.arg) == 0)
-    optim.arg <- list(maxit = 1000, reltol=1e-15)
-  
   ## Check the read count matrices
   if(any(unlist(lapply(depth_Ref,function(x) !is.numeric(x) || any( x<0 | !is.finite(x)) || any(!(x == round(x)))))))
     stop("At least one read count matrix for the reference allele is missing or invalid")
@@ -152,48 +147,78 @@ rf_est_FS <- function(init_r=0.01, epsilon=0.001, depth_Ref, depth_Alt, OPGP,
     if(is.integer(OPGP[[fam]]))
       OPGP <- as.numeric(OPGP[[fam]])
   }
+  if(method=="optim"){
   
-  ## Compute the K matrix for heterozygous genotypes
-  bcoef_mat <- Kab <- vector(mode="list", length=noFam)
-  for(fam in 1:noFam){
-    bcoef_mat[[fam]] <- choose(depth_Ref[[fam]]+depth_Alt[[fam]],depth_Ref[[fam]])
-    Kab[[fam]] <- bcoef_mat[[fam]]*(1/2)^(depth_Ref[[fam]]+depth_Alt[[fam]])
+    # Arguments for the optim function
+    optim.arg <- list(...)
+    if(length(optim.arg) == 0)
+      optim.arg <- list(maxit = 1000, reltol=1e-15)
+    
+    ## Compute the K matrix for heterozygous genotypes
+    bcoef_mat <- Kab <- vector(mode="list", length=noFam)
+    for(fam in 1:noFam){
+      bcoef_mat[[fam]] <- choose(depth_Ref[[fam]]+depth_Alt[[fam]],depth_Ref[[fam]])
+      Kab[[fam]] <- bcoef_mat[[fam]]*(1/2)^(depth_Ref[[fam]]+depth_Alt[[fam]])
+    }
+    
+    ## If we want to estimate sex-specific r.f.'s
+    if(sexSpec){
+      
+      # Work out the indices of the r.f. parameters of each sex
+      ps <- sort(unique(unlist(lapply(OPGP,function(x) which(x %in% 1:8)))))[-1] - 1
+      ms <- sort(unique(unlist(lapply(OPGP,function(x) which(x %in% c(1:4,9:12))))))[-1] - 1
+      npar <- c(length(ps),length(ms))
+      
+      # Determine the initial values
+      if(length(init_r)==1) 
+        para <- logit2(rep(init_r,sum(npar)))
+      else if(length(init_r) != sum(npar)) 
+        para <- logit2(rep(0.1,sum(npar)))
+      else
+        para <- init_r
+      # sequencing error
+      if(length(epsilon) != 1 & !is.null(epsilon))
+        para <- c(para,logit(0.001))
+      else if(!is.null(epsilon))
+        para <- c(para,logit(epsilon))
+    
+      ## Are we estimating the error parameters?
+      seqErr=!is.null(epsilon)
+      
+      ## Find MLE
+      optim.MLE <- optim(para,ll_fs_ss_mp_scaled_err,method="BFGS",control=optim.arg,
+                         depth_Ref=depth_Ref,depth_Alt=depth_Alt,bcoef_mat=bcoef_mat,Kab=Kab,
+                         nInd=nInd,nSnps=nSnps,OPGP=OPGP,ps=ps,ms=ms,npar=npar,noFam=noFam,
+                         seqErr=!is.null(epsilon))
+    }
+    else{
+      # Determine the initial values
+      if(length(init_r)==1) 
+        para <- logit2(rep(init_r,nSnps-1))
+      else if(length(init_r) != nSnps-1) 
+        para <- logit2(rep(0.1,nSnps-1))
+      else
+        para <- init_r
+      # sequencing error
+      if(length(epsilon) != 1 & !is.null(epsilon))
+        para <- c(para,logit(0.001))
+      else if(!is.null(epsilon))
+        para <- c(para,logit(epsilon))
+      
+      ## Are we estimating the error parameters?
+      seqErr=!is.null(epsilon)
+      
+      ## Find MLE
+      optim.MLE <- optim(para,ll_fs_mp_scaled_err,method="BFGS",control=optim.arg,
+                         depth_Ref=depth_Ref,depth_Alt=depth_Alt,bcoef_mat=bcoef_mat,Kab=Kab,
+                         nInd=nInd,nSnps=nSnps,OPGP=OPGP,noFam=noFam,
+                         seqErr=seqErr)
+    }
   }
-  
-  ## If we want to estimate sex-specific r.f.'s
-  if(sexSpec){
-    
-    # Work out the indices of the r.f. parameters of each sex
-    ps <- sort(unique(unlist(lapply(OPGP,function(x) which(x %in% 1:8)))))[-1] - 1
-    ms <- sort(unique(unlist(lapply(OPGP,function(x) which(x %in% c(1:4,9:12))))))[-1] - 1
-    npar <- c(length(ps),length(ms))
-    
+  else{ # EM algorithm approach
     # Determine the initial values
     if(length(init_r)==1) 
-      para <- logit2(rep(init_r,sum(npar)))
-    else if(length(init_r) != sum(npar)) 
-      para <- logit2(rep(0.1,sum(npar)))
-    else
-      para <- init_r
-    # sequencing error
-    if(length(epsilon) != 1 & !is.null(epsilon))
-      para <- c(para,logit(0.001))
-    else if(!is.null(epsilon))
-      para <- c(para,logit(epsilon))
-  
-    ## Are we estimating the error parameters?
-    seqErr=!is.null(epsilon)
-    
-    ## Find MLE
-    optim.MLE <- optim(para,ll_fs_ss_mp_scaled_err,method="BFGS",control=optim.arg,
-                       depth_Ref=depth_Ref,depth_Alt=depth_Alt,bcoef_mat=bcoef_mat,Kab=Kab,
-                       nInd=nInd,nSnps=nSnps,OPGP=OPGP,ps=ps,ms=ms,npar=npar,noFam=noFam,
-                       seqErr=!is.null(epsilon))
-  }
-  else{
-    # Determine the initial values
-    if(length(init_r)==1) 
-      para <- logit2(rep(init_r,nSnps-1))
+      init_r <- rep(init_r,nSnps-1)
     else if(length(init_r) != nSnps-1) 
       para <- logit2(rep(0.1,nSnps-1))
     else
@@ -204,14 +229,14 @@ rf_est_FS <- function(init_r=0.01, epsilon=0.001, depth_Ref, depth_Alt, OPGP,
     else if(!is.null(epsilon))
       para <- c(para,logit(epsilon))
     
-    ## Are we estimating the error parameters?
-    seqErr=!is.null(epsilon)
+    OPGPmat = do.call(what = "rbind",OPGP)
+    depth_Ref_mat = do.call(what = "rbind",depth_Ref)
+    depth_Alt_mat = do.call(what = "rbind",depth_Alt)
     
-    ## Find MLE
-    optim.MLE <- optim(para,ll_fs_mp_scaled_err,method="BFGS",control=optim.arg,
-                       depth_Ref=depth_Ref,depth_Alt=depth_Alt,bcoef_mat=bcoef_mat,Kab=Kab,
-                       nInd=nInd,nSnps=nSnps,OPGP=OPGP,noFam=noFam,
-                       seqErr=seqErr)
+    EMout <- .Call("EM_HMM", init_r, epsilon, depth_Ref_mat, depth_Alt_mat, OPGPmat,
+                   noFam, nInd, nSnps, sexSpec)
+    
+    
   }
 
   # Print out the output from the optim procedure (if specified)
