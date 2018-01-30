@@ -11,7 +11,7 @@ init_r <- matrix(0.01,nrow=2,ncol=11)
 nInd = as.integer(c(2,3))
 nSnps = as.integer(12)
 noFam = as.integer(2)
-sexSpec = TRUE
+sexSpec = FALSE
 epsilon = 0.001
 
 dyn.load("em.so")
