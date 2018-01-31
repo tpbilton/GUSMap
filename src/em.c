@@ -394,13 +394,13 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP depth_Ref, SEXP depth_Alt, SEXP OPGP, SEXP noF
         }
         // Scale forward probabilities
         for(s1 = 0; s1 < 4; s1++){
-          alphaTilde[s1][indx][0] = alphaDot[s1]/sum;
+          alphaTilde[s1][indx][0] = alphaDot[s1]; ///sum;
           //Rprintf("alphaTilde :%.6f at state %i, snp %i and ind %i\n", alphaTilde[s1][indx][0], s1, 0, ind);
         }
         //Rprintf("New weight :%.6f at snp %i\n", sum, 1);
       
         // add contribution to likelihood
-        log_w[indx][0] = log(sum);
+        log_w[indx][0] = log(1); //log(sum);
         w_logcumsum = log(sum);
         llval = llval + w_logcumsum;
         //Rprintf("llvalue :%.6f at snp %i\n", llval, 0);
@@ -432,16 +432,16 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP depth_Ref, SEXP depth_Alt, SEXP OPGP, SEXP noF
           // Add contribution to the likelihood
           llval = llval + log(w_new) + w_logcumsum;
           w_logcumsum = w_logcumsum + log(w_new);
-          log_w[indx][snp] = log(w_new);
+          log_w[indx][snp] = log(1); //log(w_new);
           // Scale the forward probability vector
           for(s2 = 0; s2 < 4; s2++){
-            alphaTilde[s2][indx][snp] = alphaDot[s2]/w_new;
+            alphaTilde[s2][indx][snp] = alphaDot[s2];// /w_new;
           }
         }
         //////////////////////
         // Compute the backward probabilities
         for(s1 = 0; s1 < 4; s1++){
-          betaTilde[s1][indx][nSnps_c-1] = exp(-log_w[indx][nSnps_c-1]);
+          betaTilde[s1][indx][nSnps_c-1] = 1;//exp(-log_w[indx][nSnps_c-1]);
           //sum = log(betaTilde[s1][indx][nSnps_c-1]) - (log(1) -  log_w[indx][nSnps_c-1]);
           //Rprintf("log(beta) :%.22f at state %i, snp %i and ind %i\n", exp(sum), s1, nSnps_c-1, ind);
         }
@@ -458,7 +458,7 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP depth_Ref, SEXP depth_Alt, SEXP OPGP, SEXP noF
           }
           // Scale the backward probability vector
           for(s1 = 0; s1 < 4; s1++){
-            betaTilde[s1][indx][snp] = betaDot[s1]/exp(log_w[indx][snp]);
+            betaTilde[s1][indx][snp] = betaDot[s1]; ///exp(log_w[indx][snp]);
             //Rprintf("betaTilde :%.6f at state %i, snp %i and ind %i\n", betaTilde[s1][indx][snp], s1, snp, ind);
           }
         }
@@ -491,17 +491,17 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP depth_Ref, SEXP depth_Alt, SEXP OPGP, SEXP noF
         indx = ind + indSum[fam];
         for(snp = 0; snp < nSnps_c - 1; snp++){
           for(s1 = 0; s1 < 4; s1++){
-            uProb[s1][indx][snp] = (alphaTilde[s1][indx][snp] * betaTilde[s1][indx][snp])/exp(-log_w[indx][snp]);
+            uProb[s1][indx][snp] = (alphaTilde[s1][indx][snp] * betaTilde[s1][indx][snp])/exp(llval); //   exp(-log_w[indx][snp]);
             for(s2 = 0; s2 < 4; s2++){
               vProb[s1][s2][indx][snp] = alphaTilde[s1][indx][snp] * Tmat_ss(s1, s2, r_c[snp], r_c[snp+nSnps_c-1]) *
                 Qentry(pOPGP[(snp+1)*noFam_c + fam], pAA[indx][snp+1], pAB[indx][snp+1], pBB[indx][snp+1], s2+1)  * 
-                betaTilde[s2][indx][snp+1];
+                betaTilde[s2][indx][snp+1] / exp(llval);
             }
           }
         }
         snp = nSnps_c - 1;
         for(s1 = 0; s1 < 4; s1++){
-          uProb[s1][indx][snp] = (alphaTilde[s1][indx][snp] * betaTilde[s1][indx][snp])/exp(-log_w[indx][snp]); //exp( log(alphaTilde[s1][indx][snp] * betaTilde[s1][indx][snp]) - log_w[indx][snp] );
+          uProb[s1][indx][snp] = (alphaTilde[s1][indx][snp] * betaTilde[s1][indx][snp])/exp(llval); //exp(-log_w[indx][snp]); 
         }
       }
     }
@@ -600,13 +600,13 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP depth_Ref, SEXP depth_Alt, SEXP OPGP, SEXP noF
       ep_c = 0;
     }
     Rprintf("llvalue :%.36Le at iter %i\n", llval, iter);
-    //Rprintf("prellval :%.20Le at iter %i\n", prellval, iter);
-    //Rprintf("diff in lik :%.20Le at iter %i\n", (llval - prellval) , iter);
+    Rprintf("prellval :%.20Le at iter %i\n", prellval, iter);
+    Rprintf("diff in lik :%.20Le at iter %i\n", (llval - prellval) , iter);
     //Rprintf("llvalue :%.22f at iter %i\n", llval, iter);
     //Rprintf("ep :%.36Le at iter %i\n", ep_c, iter);
-    for(snp = 0; snp < nSnps_c - 1; snp++){
-        Rprintf("r_c :%.36Le at iter %i\n", r_c[snp], iter);
-    }
+    //for(snp = 0; snp < nSnps_c - 1; snp++){
+    //    Rprintf("r_c :%.36Le at iter %i\n", r_c[snp], iter);
+    //}
   }
   
   // Set up the R output object.
