@@ -14,11 +14,12 @@ RA <- R6Class("RA",
       private$nSnps     <- List$nSnps
       private$nInd      <- List$nInd
       private$gform     <- List$gform
+      private$AFrq      <- List$AFrq
     },
     #### Diagonostic functions ####
     ## Ratio of alleles for heterozygous genotype calls (observed vs expected)
-    HeteroPlot = function(model=c("random", "beta-binom"), alpha=NULL, filename="HeteroPlot", cex=1){
-      HeteroPlot(private$depth_Ref, private$depth_Alt, model=model, alpha=alpha, filename=filename, cex=cex)
+    cometPlot = function(model="random", alpha=NULL, filename=NULL, cex=1, maxdepth=500, ...){
+      cometPlot(private$depth_Ref, private$depth_Alt, model=model, alpha=alpha, filename=filename, cex=cex, maxdepth=maxdepth, ...)
     }
     ###############################
   ),
@@ -32,9 +33,60 @@ RA <- R6Class("RA",
     indID = NULL,
     nSnps = NULL,
     nInd = NULL,
-    gform = NULL
+    gform = NULL,
+    AFrq = NULL
   )
 )
+
+### R6 class for creating a data format for unrelated individuals
+UR <- R6Class("UR",
+              inherit = RA,
+              public = list(
+                ## variables
+                ## initialize function
+                initialize = function(R6obj){
+                  private$genon     <- R6obj$.__enclos_env__$private$genon
+                  private$depth_Ref <- R6obj$.__enclos_env__$private$depth_Ref
+                  private$depth_Alt <- R6obj$.__enclos_env__$private$depth_Alt
+                  private$chrom     <- R6obj$.__enclos_env__$private$chrom
+                  private$pos       <- R6obj$.__enclos_env__$private$pos
+                  private$SNP_Names <- R6obj$.__enclos_env__$private$SNP_Names
+                  private$indID     <- R6obj$.__enclos_env__$private$indID
+                  private$nSnps     <- R6obj$.__enclos_env__$private$nSnps
+                  private$nInd      <- R6obj$.__enclos_env__$private$nInd
+                  private$gform     <- R6obj$.__enclos_env__$private$gform
+                  private$AFrq      <- R6obj$.__enclos_env__$private$AFrq
+                }
+              ),
+                private = list(
+                  ## Function for updating the private variables
+                  updatePrivate = function(List){
+                    if(!is.null(List$genon))
+                      private$genon        = List$genon
+                    if(!is.null(List$depth_Ref))
+                      private$depth_Ref    = List$depth_Ref
+                    if(!is.null(List$depth_Alt))
+                      private$depth_Alt    = List$depth_Alt
+                    if(!is.null(List$chrom))
+                      private$chrom        = List$chrom
+                    if(!is.null(List$pos))
+                      private$pos          = List$pos
+                    if(!is.null(List$SNP_Names))
+                      private$SNP_Names    = List$SNP_Names
+                    if(!is.null(List$indID))
+                      private$indID        = List$indID
+                    if(!is.null(List$nSnps))
+                      private$nSnps        = List$nSnps
+                    if(!is.null(List$nInd))
+                      private$nInd         = List$nInd
+                    if(!is.null(List$masked))
+                      private$masked       = List$masked
+                    if(!is.null(List$AFrq))
+                      private$AFrq         = List$AFrq
+                  }
+                )
+)
+
 
 ### R6 class for creating a data format for a full-sib families
 FS <- R6Class("FS",
@@ -149,13 +201,13 @@ FS <- R6Class("FS",
     },
     ## Ratio of alleles for heterozygous genotype calls (observed vs expected)
     # Slightly different than the one in RA class
-    HeteroPlot = function(model=c("random"), alpha=NULL, filename="HeteroPlot", cex=1){
+    cometPlot = function(model="random", alpha=NULL, filename="HeteroPlot", cex=1, maxdepth=500){
       depth_Ref <- depth_Alt <- NULL
       for(fam in 1:private$noFam){
         depth_Ref <- rbind(depth_Ref,private$depth_Ref[[fam]])
         depth_Alt <- rbind(depth_Alt,private$depth_Alt[[fam]])
       }
-      HeteroPlot(depth_Ref, depth_Alt, model=model, alpha=alpha, filename=filename, cex=cex)
+      cometPlot(depth_Ref, depth_Alt, model=model, alpha=alpha, filename=filename, cex=cex, maxdepth=maxdepth)
     }
     
     ##############################################################

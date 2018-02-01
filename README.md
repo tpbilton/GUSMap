@@ -1,8 +1,11 @@
-# GusMap Version 0.1.0
+# GusMap Version 1.0.0
 
 Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap).
 
-An R package for constructing genetic linkage maps using low (or high) coverage sequencing data with requiring filtering with respect to read depth. This release accompanies the publication by Bilton et al. (2017).
+An R package for constructing genetic linkage maps using low (or high) coverage sequencing data with requiring filtering with respect to read depth 
+published by Bilton et al (2017). 
+
+This branch of GUSMap is a development version to include the ability to undertake a complete linkage mapping approach, with some additional features being added progressively..
 
 ### Installation:
 

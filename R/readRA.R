@@ -4,11 +4,11 @@ readRA <- function(genofile, gform, sampthres = 0.01, excsamp = NULL){
   
   if(!is.character(genofile) || length(genofile) != 1)
     stop("File name of RA data set is not a string of length one")
-  if(!is.character(gform) || length(gform) != 1 || !(gform %in% c("reference","denovo")))
-    stop("gform argument must be either 'reference' ot 'denovo'")
+  if(!is.character(gform) || length(gform) != 1 || !(gform %in% c("reference","uneak")))
+    stop("gform argument must be either 'reference' ot 'uneak'")
   
   ## separate character between reference and alternate allele count
-  gsep <- switch(gform, denovo = "|", reference = ",")
+  gsep <- switch(gform, uneak = "|", reference = ",")
   ## Process the individuals info
   ghead <- scan(genofile, what = "", nlines = 1, sep = "\t")
   
@@ -20,20 +20,23 @@ readRA <- function(genofile, gform, sampthres = 0.01, excsamp = NULL){
     pos <- genosin[[2]]
     SNP_Names <- paste(genosin[[1]],genosin[[2]],sep="_")
     indID <- ghead[3:length(ghead)]
+    AFrq <- NULL
   }
-  else if (gform == "denovo"){
+  else if (gform == "uneak"){
     genosin <- scan(genofile, skip = 1, sep = "\t", what = c(list(chrom = ""), rep(list(""), length(ghead) - 6), list(hetc1 = 0, hetc2 = 0, acount1 = 0, acount2 = 0, p = 0)))
     SNP_Names <- genosin[[1]]
     indID <- ghead[2:(length(ghead)-5)]
+    AFrq <- genosin[[length(genosin)]]
+    chrom <- pos <- NULL
   }
   
   ## compute dimensions
   nSnps <- length(SNP_Names)
-  nInd <- length(ghead) - switch(gform, reference=2, denovo=6)
+  nInd <- length(ghead) - switch(gform, reference=2, uneak=6)
   
   ## generate the genon and depth matrices
   depth_Ref <- depth_Alt <- matrix(0, nrow = nInd, ncol = nSnps)
-  start.ind <- switch(gform, denovo=1, reference=2)
+  start.ind <- switch(gform, uneak=1, reference=2)
   for (i in 1:nInd){ 
     depths <- strsplit(genosin[[start.ind+i]], split = gsep, fixed = TRUE)
     depth_Ref[i, ] <- as.numeric(unlist(lapply(depths,function(z) z[1])))
@@ -46,7 +49,8 @@ readRA <- function(genofile, gform, sampthres = 0.01, excsamp = NULL){
   sampDepth <- rowMeans(depth_Ref + depth_Alt)
   badSamp <- which(sampDepth < sampthres)
   if(length(badSamp) > 0){
-    cat("Removed ",length(badSamp)," samples due to having a minimum sample threshold below ",sampthres,".\n\n",sep="")
+    cat("Samples removed due to having a minimum sample threshold below ",sampthres,":\n",sep="")
+    cat(paste0(indID[badSamp],collapse = "\n"),"\n\n")
     excsamp <- unique(c(excsamp,indID[badSamp]))
   }
   ## Remove any sample which we don't want
@@ -61,15 +65,11 @@ readRA <- function(genofile, gform, sampthres = 0.01, excsamp = NULL){
     }
   }
   
-  ## Create the objects
-  if (gform == "reference"){
-    obj <- RA$new(
-      list(genon = genon, depth_Ref = depth_Ref, depth_Alt = depth_Alt, chrom = chrom, pos = pos,
-           SNP_Names = SNP_Names, indID = indID, nSnps = nSnps, nInd = nInd, gform = gform)
-    )
-  } else if (gform == "denovo"){
-    stop("To be implemented")
-  }
+  ## Create the R6 object
+  obj <- RA$new(
+    list(genon = genon, depth_Ref = depth_Ref, depth_Alt = depth_Alt, chrom = chrom, pos = pos,
+         SNP_Names = SNP_Names, indID = indID, nSnps = nSnps, nInd = nInd, gform = gform, AFrq = AFrq)
+  )
   
   return(obj)
 }

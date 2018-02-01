@@ -6,6 +6,8 @@ createPop <- function(R6obj, pop = c("full-sib"), ...){
   ## Make new R6 object depending on the family type.
   if(pop == "full-sib")
     newObj <- FS$new(R6obj)
+  else if(pop == "unrelated")
+    newObj <- UR$new(R6obj)
   else
     stop(paste("Population structure",pop,"has not yet be implemented\n"))
   
@@ -392,3 +394,71 @@ makePop.FS <- function(R6obj, famInfo, filter=list(MAF=0.05, MISS=0.2, BIN=0, DE
   
   return(R6obj)
 }
+
+
+#### Make an unrelated population
+makePop.UR <- function(R6obj, filter=list(MAF=0.05, MISS=0.2, HWdis=c(-0.05,1))){
+  
+  ## Do some checks
+  if(is.null(filter$MAF) || filter$MAF<0 || filter$MAF>1 || !is.numeric(filter$MAF))
+    stop("Minor allele frequency filter has not be specifies or is invalid.")
+  
+  
+  cat("-------------\n")
+  cat("Processing Data.\n\n")
+  
+  cat("Filtering criteria for removing SNPs :\n")
+  cat("Minor allele frequency (MAF) < ", filter$MAF,"\n")
+  cat("Percentage of missing genotypes > ", filter$MISS*100,"%\n",sep="")
+  cat("Hardy-Weinberg equilibrium: < ", filter$HWdis[1]," and > ",filter$HWdis[2],"\n\n",sep="")
+  
+  ## Extract the private variables we want
+  indID <- R6obj$.__enclos_env__$private$indID
+  nSnps <- R6obj$.__enclos_env__$private$nSnps
+  genon <- R6obj$.__enclos_env__$private$genon
+  
+  ## Calculate the MAF
+  maf <-  colMeans(genon, na.rm=T)/2
+  maf <- pmin(maf,1-maf)
+  ## Calculate the proportion of missing data
+  miss <- apply(genon,2, function(x) sum(is.na(x))/length(x))
+  
+  ## Compute teh HWE distance
+  naa <- colSums(genon == 2, na.rm = TRUE) 
+  nab <- colSums(genon == 1, na.rm = TRUE) 
+  nbb <- colSums(genon == 0, na.rm = TRUE) 
+  n1 <- 2 * naa + nab 
+  n2 <- nab + 2 * nbb 
+  n <- n1 + n2  #n alleles 
+  p1 <- n1/n 
+  p2 <- 1 - p1 
+  HWdis <- naa/(naa + nab + nbb) - p1 * p1 
+  
+  ## Indx the filtered SNPs
+  indx <- (maf > filter$MAF) & (miss > filter$MISS) & (HWdis > filter$HWdis[1]) & (HWdis < filter$HWdis[2])
+  
+  ## Update the data in the R6 object
+  genon <- genon[,indx]
+  depth_Ref <- R6obj$.__enclos_env__$private$depth_Ref[,indx]
+  depth_Alt <- R6obj$.__enclos_env__$private$depth_Alt[,indx]
+  SNP_Names <- R6obj$.__enclos_env__$private$SNP_Names[indx]
+  nSnps = sum(indx)
+  if(R6obj$.__enclos_env__$private$gform == "reference"){
+    chrom = R6obj$.__enclos_env__$private$chrom[indx]
+    pos = R6obj$.__enclos_env__$private$pos[indx]
+    AFrq = NULL
+  }
+  else if(R6obj$.__enclos_env__$private$gform == "uneak"){
+    chrom = pos = NULL
+    AFrq = R6obj$.__enclos_env__$private$AFrq[indx]
+  }
+  
+  ## Update the R6 objective 
+  R6obj$.__enclos_env__$private$updatePrivate(list(
+    genon = genon, depth_Ref = depth_Ref, depth_Alt = depth_Alt, chrom = chrom, pos = pos,
+    SNP_Names = SNP_Names, nSnps = nSnps, AFrq = AFrq)
+  )
+  
+  return(R6obj)
+}
+  
