@@ -46,6 +46,6 @@
 #' 
 #' @export Manuka11
 Manuka11 <- function(){
-  return(system.file("extdata", "Manuka11_chr11.vcf", package="GUSMap"))
+  return(system.file("extdata", "Manuka_chr11.vcf", package="GUSMap"))
 }
 

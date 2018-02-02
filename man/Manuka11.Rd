@@ -7,7 +7,7 @@
 Manuka11()
 }
 \value{
-Function outputs outputs a character sting of the complete path to the data set in the package.
+Function outputs a character string of the complete path to the data set in the package.
 }
 \description{
 Function for extracting the path to the (VCF) file of the Manuka data used in the publication by Bilton et
@@ -21,11 +21,11 @@ for specification of VCF format).
 \examples{
 
 ## extract the name of the vcf file 
-vcffile <- Manuka()
+Manuka11()
 
 }
 \references{
-Bilton, T.P., Schofield, M.R., Black, M.A., Chagné;, D., Wilcox,
+Bilton, T.P., Schofield, M.R., Black, M.A., Chagné, D., Wilcox,
 P.L., Dodds K.G. (2017). Accounting for errors in low coverage high-throughput
 sequencing data when constructing genetic maps using biparental outcrossed
 populations. Unpublished Manuscript.

@@ -26,7 +26,7 @@ produced from a VCF in GUSMap using a couple of functions. There two steps to th
 1. The VCF file needs to be converted into RA (reference/alternate) format using the function VCFtoRA(). The following example (using the chromosome 11 SNPs of the Manuka dataset used
 by Bilton et al. (2017)) shows how this is done in GUSMap.
 ```
-vcffile <- Manuka()
+vcffile <- Manuka11()
 RAfile <- VCFtoRA(vcffile)
 ```
 The function Manuka() just returns the path to the chromosome 11 SNPs in the Manuka data set that comes with the package.
@@ -59,7 +59,7 @@ For our Manuka dataset, a completed pedigree file should look like the following
 
 |SampleID | IndividualID | Mother | Father | Family |
 | ------- | ------------ | ------ | ------ | ------ |
-|P1_S1	  |  1           |        |        |        |
+|P1_S1    |  1           |        |        |        |
 |P1_S2    |  1           |        |        |        |
 |P2_S1    |  2           |        |        |        | 
 |P2_S2    |  2           |        |        |        |
@@ -129,7 +129,7 @@ write(rf_est$rf, file="Manuka_chr11_rd6_rf.txt", ncolumns=1)
 
 ### References:
 
-Bilton, T.P., Schofield, M.R., Black, M.A., Chagn&#233;, D., Wilcox, P.L., Dodds, K.G. (2017). Accounting for errors in low coverage high-throughput sequencing data when constructing genetic maps using biparental outcrossed populations. Unpublished manuscript.
+Bilton, T.P., Schofield, M.R., Black, M.A., Chagn&#233, D., Wilcox, P.L., Dodds, K.G. (2017). Accounting for errors in low coverage high-throughput sequencing data when constructing genetic maps using biparental outcrossed populations. Unpublished manuscript.
 
 ### License
 

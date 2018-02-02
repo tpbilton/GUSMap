@@ -111,7 +111,7 @@
 #' 
 #' @export rf_est_FS
 rf_est_FS <- function(init_r=0.01, epsilon=0.001, depth_Ref, depth_Alt, OPGP,
-                      sexSpec=F, trace=F, noFam=1, method="optim" ...){
+                      sexSpec=F, trace=F, noFam=1, ...){
   
   ## Do some checks
   if(!is.list(depth_Ref) | !is.list(depth_Alt) | !is.list(OPGP))
@@ -147,7 +147,7 @@ rf_est_FS <- function(init_r=0.01, epsilon=0.001, depth_Ref, depth_Alt, OPGP,
     if(is.integer(OPGP[[fam]]))
       OPGP <- as.numeric(OPGP[[fam]])
   }
-  if(method=="optim"){
+  #if(method=="optim"){
   
     # Arguments for the optim function
     optim.arg <- list(...)
@@ -214,30 +214,30 @@ rf_est_FS <- function(init_r=0.01, epsilon=0.001, depth_Ref, depth_Alt, OPGP,
                          nInd=nInd,nSnps=nSnps,OPGP=OPGP,noFam=noFam,
                          seqErr=seqErr)
     }
-  }
-  else{ # EM algorithm approach
-    # Determine the initial values
-    if(length(init_r)==1) 
-      init_r <- rep(init_r,nSnps-1)
-    else if(length(init_r) != nSnps-1) 
-      para <- logit2(rep(0.1,nSnps-1))
-    else
-      para <- init_r
-    # sequencing error
-    if(length(epsilon) != 1 & !is.null(epsilon))
-      para <- c(para,logit(0.001))
-    else if(!is.null(epsilon))
-      para <- c(para,logit(epsilon))
-    
-    OPGPmat = do.call(what = "rbind",OPGP)
-    depth_Ref_mat = do.call(what = "rbind",depth_Ref)
-    depth_Alt_mat = do.call(what = "rbind",depth_Alt)
-    
-    EMout <- .Call("EM_HMM", init_r, epsilon, depth_Ref_mat, depth_Alt_mat, OPGPmat,
-                   noFam, nInd, nSnps, sexSpec)
-    
-    
-  }
+  # }
+  # else{ # EM algorithm approach
+  #   # Determine the initial values
+  #   if(length(init_r)==1) 
+  #     init_r <- rep(init_r,nSnps-1)
+  #   else if(length(init_r) != nSnps-1) 
+  #     para <- logit2(rep(0.1,nSnps-1))
+  #   else
+  #     para <- init_r
+  #   # sequencing error
+  #   if(length(epsilon) != 1 & !is.null(epsilon))
+  #     para <- c(para,logit(0.001))
+  #   else if(!is.null(epsilon))
+  #     para <- c(para,logit(epsilon))
+  #   
+  #   OPGPmat = do.call(what = "rbind",OPGP)
+  #   depth_Ref_mat = do.call(what = "rbind",depth_Ref)
+  #   depth_Alt_mat = do.call(what = "rbind",depth_Alt)
+  #   
+  #   EMout <- .Call("EM_HMM", init_r, epsilon, depth_Ref_mat, depth_Alt_mat, OPGPmat,
+  #                  noFam, nInd, nSnps, sexSpec)
+  #   
+  #   
+  # }
 
   # Print out the output from the optim procedure (if specified)
   if(trace){

@@ -3,6 +3,7 @@
 export(Manuka11)
 export(VCFtoRA)
 export(infer_OPGP_FS)
+export(readRA)
 export(rf_est_FS)
 export(simFS)
 useDynLib(GUSMap)

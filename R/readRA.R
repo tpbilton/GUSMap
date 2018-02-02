@@ -1,7 +1,10 @@
 
-
-
-
+#' Read in an Reference/Alternate (RA) file.
+#' 
+#' Function which reads in an RA file into R.
+#' 
+#' 
+#' 
 #' @param RAfile Character string giving the path to the RA file to be read into R. Typically the required string is
 #' returned from the VCFtoRA function when the VCF file is converted to RA format.
 #' @param gform Character string specifying whether the SNPs in the RA data have been called de novo (\code{gform="denovo"})
@@ -9,7 +12,7 @@
 #' @param pedfile Character string giving the path to the pedigree file of the samples in the RA file. See Detials for more information on specification of this file.
 #' @param sampthres filtering to finish
 #' @author Timothy P. Bilton
-#' @export VCFtoRA
+#' @export readRA
 
 
 #### Function for reading in RA data and converting to genon and depth matrices.
