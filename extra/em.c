@@ -24,9 +24,92 @@
 #include <stdio.h>
 #include <limits.h>
 
+// Function for returning a specified enetry of the transition matrix for a given recombination fraction value
+// when the r.f.'s are sex-specific 
+double Tmat_ss(int s1, int s2, double r_f, double r_m){
+  int sSum = s1 + s2*4;
+  if((sSum == 0)|(sSum == 5)|(sSum == 10)|(sSum == 15))
+    return (1-r_f)*(1-r_m);
+  else if((sSum == 3)|(sSum == 6)|(sSum == 9)|(sSum == 12))
+    return r_f*r_m;
+  else if((sSum == 1)|(sSum == 4)|(sSum == 11)|(sSum == 14))
+    return (1-r_f)*r_m;
+  else 
+    return r_f*(1-r_m);
+}
+
+int Tcount(int s1, int s2){
+  int sSum = s1 + s2*4;
+  if((sSum == 0)|(sSum == 5)|(sSum == 10)|(sSum == 15))
+    return 0;
+  else if((sSum == 3)|(sSum == 6)|(sSum == 9)|(sSum == 12))
+    return 2;
+  else
+    return 1;
+}
+
+// Function for computing binomial coefficients
+// taken  from this website "https://rosettacode.org/wiki/Evaluate_binomial_coefficients#C"
+static unsigned long gcd_ui(unsigned long x, unsigned long y) {
+  unsigned long t;
+  if (y < x) { t = x; x = y; y = t; }
+  while (y > 0) {
+    t = y;  y = x % y;  x = t;  /* y1 <- x0 % y0 ; x1 <- y0 */
+  }
+  return x;
+}
+
+unsigned long binomial(unsigned long n, unsigned long k) {
+  unsigned long d, g, r = 1;
+  if (k == 0) return 1;
+  if (k == 1) return n;
+  if (k >= n) return (k == n);
+  if (k > n/2) k = n-k;
+  for (d = 1; d <= k; d++) {
+    if (r >= ULONG_MAX/n) {  /* Possible overflow */
+unsigned long nr, dr;  /* reduced numerator / denominator */
+g = gcd_ui(n, d);  nr = n/g;  dr = d/g;
+g = gcd_ui(r, dr);  r = r/g;  dr = dr/g;
+if (r >= ULONG_MAX/nr) return 0;  /* Unavoidable overflow */
+r *= nr;
+r /= dr;
+n--;
+    } else {
+      r *= n--;
+      r /= d;
+    }
+  }
+  return r;
+}
+
+
+// Function for computing the emission probabilities given the true genotypes
+double computeProb(double *ppAA, double *ppBB, double *pbin_coef,
+                        double epsilon, double *pdepth_Ref, double *pdepth_Alt,
+                        int nInd, int nSnps){
+  int snp, ind, indx;
+  for(ind = 0; ind < nInd; ind++){
+    for(snp = 0; snp < nSnps; snp++){
+      indx = ind + nInd * snp;
+      if( (pdepth_Ref[indx] + pdepth_Alt[indx]) == 0){
+        *ppAA = 1;
+        *ppBB = 1;
+      }
+      else{
+        *ppAA = *pbin_coef * pow(1 - epsilon, pdepth_Ref[indx]) * pow(epsilon, pdepth_Alt[indx]);
+        *ppBB = *pbin_coef * pow(epsilon, pdepth_Ref[indx]) * pow(1 - epsilon, pdepth_Alt[indx]);
+      }
+      ppAA++;
+      ppBB++;
+      pbin_coef++;
+    }
+  }
+  return -1;
+}
+
 // Function for extracting entries of the emission probability matrix
 // when the OPGPs are known
-double Qentry(int OPGP,double Kaa,double Kab, double Kbb,int elem){
+double Qentry(int OPGP, double Kaa, double Kab, double Kbb,int elem){
   switch(OPGP){
   case 1:
     if(elem == 1)
@@ -108,125 +191,6 @@ double Qentry(int OPGP,double Kaa,double Kab, double Kbb,int elem){
   return -1;
 }
 
-
-// Function for extracting entries of the emission probability matrix
-// when the OPGP are considered the baseline (and so phase is unknown and the r.f's are sex-specific)
-double Qentry_up(int config,double Kaa,double Kab, double Kbb,int elem){
-  switch(config){
-  case 1:
-    if(elem == 1)
-      return Kbb;
-    else if ((elem == 2)|(elem == 3))  
-      return Kab;
-    else if (elem == 4)
-      return Kaa;
-  case 2:
-    if ((elem == 1)|(elem == 2))
-      return Kab;
-    else if ((elem == 3)|(elem == 4))
-      return Kaa;
-  case 3:
-    if ((elem == 1)|(elem == 2))
-      return Kbb;
-    else if ((elem == 3)|(elem == 4))
-      return Kab;
-  case 4:
-    if ((elem == 1)|(elem == 3))
-      return Kab;
-    else if ((elem == 2)|(elem == 4))
-      return Kaa;
-  case 5:
-    if ((elem == 1)|(elem == 3))
-      return Kbb;
-    else if ((elem == 2)|(elem == 4))
-      return Kab;
-  } // end of Switch
-  return -1;
-}
-
-// Function for returning a specified enetry of the transition matrix for a given recombination fraction value
-// when the r.f.'s are sex-specific 
-double Tmat_ss(int s1, int s2, double r_f, double r_m){
-  int sSum = s1 + s2*4;
-  if((sSum == 0)|(sSum == 5)|(sSum == 10)|(sSum == 15))
-    return (1-r_f)*(1-r_m);
-  else if((sSum == 3)|(sSum == 6)|(sSum == 9)|(sSum == 12))
-    return r_f*r_m;
-  else if((sSum == 1)|(sSum == 4)|(sSum == 11)|(sSum == 14))
-    return (1-r_f)*r_m;
-  else 
-    return r_f*(1-r_m);
-}
-
-
-int Tcount(int s1, int s2){
-  int sSum = s1 + s2*4;
-  if((sSum == 0)|(sSum == 5)|(sSum == 10)|(sSum == 15))
-    return 0;
-  else if((sSum == 3)|(sSum == 6)|(sSum == 9)|(sSum == 12))
-    return 2;
-  else
-    return 1;
-}
-
-// Function for computing binomial coefficients
-// taken  from this website "https://rosettacode.org/wiki/Evaluate_binomial_coefficients#C"
-static unsigned long gcd_ui(unsigned long x, unsigned long y) {
-  unsigned long t;
-  if (y < x) { t = x; x = y; y = t; }
-  while (y > 0) {
-    t = y;  y = x % y;  x = t;  /* y1 <- x0 % y0 ; x1 <- y0 */
-  }
-  return x;
-}
-
-unsigned long binomial(unsigned long n, unsigned long k) {
-  unsigned long d, g, r = 1;
-  if (k == 0) return 1;
-  if (k == 1) return n;
-  if (k >= n) return (k == n);
-  if (k > n/2) k = n-k;
-  for (d = 1; d <= k; d++) {
-    if (r >= ULONG_MAX/n) {  /* Possible overflow */
-unsigned long nr, dr;  /* reduced numerator / denominator */
-g = gcd_ui(n, d);  nr = n/g;  dr = d/g;
-g = gcd_ui(r, dr);  r = r/g;  dr = dr/g;
-if (r >= ULONG_MAX/nr) return 0;  /* Unavoidable overflow */
-r *= nr;
-r /= dr;
-n--;
-    } else {
-      r *= n--;
-      r /= d;
-    }
-  }
-  return r;
-}
-
-
-// Function for computing the emission probabilities given the true genotypes
-double computeProb(double *ppAA, double *ppBB, double *pbin_coef,
-                        double epsilon, double *pdepth_Ref, double *pdepth_Alt,
-                        int nInd, int nSnps){
-  int snp, ind, indx;
-  for(ind = 0; ind < nInd; ind++){
-    for(snp = 0; snp < nSnps; snp++){
-      indx = ind + nInd * snp;
-      if( (pdepth_Ref[indx] + pdepth_Alt[indx]) == 0){
-        *ppAA = 1;
-        *ppBB = 1;
-      }
-      else{
-        *ppAA = *pbin_coef * pow(1 - epsilon, pdepth_Ref[indx]) * pow(epsilon, pdepth_Alt[indx]);
-        *ppBB = *pbin_coef * pow(epsilon, pdepth_Ref[indx]) * pow(1 - epsilon, pdepth_Alt[indx]);
-      }
-      ppAA++;
-      ppBB++;
-      pbin_coef++;
-    }
-  }
-  return -1;
-}
 
 // Function for extracting entries of the emission probability matrix
 // when the OPGPs are known
@@ -704,6 +668,40 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP depth_Ref, SEXP depth_Alt, SEXP OPGP, SEXP noF
   return pout;
 }
 
+// Function for extracting entries of the emission probability matrix
+// when the OPGP are considered the baseline (and so phase is unknown and the r.f's are sex-specific)
+double Qentry_up(int config,double Kaa,double Kab, double Kbb,int elem){
+  switch(config){
+  case 1:
+    if(elem == 1)
+      return Kbb;
+    else if ((elem == 2)|(elem == 3))  
+      return Kab;
+    else if (elem == 4)
+      return Kaa;
+  case 2:
+    if ((elem == 1)|(elem == 2))
+      return Kab;
+    else if ((elem == 3)|(elem == 4))
+      return Kaa;
+  case 3:
+    if ((elem == 1)|(elem == 2))
+      return Kbb;
+    else if ((elem == 3)|(elem == 4))
+      return Kab;
+  case 4:
+    if ((elem == 1)|(elem == 3))
+      return Kab;
+    else if ((elem == 2)|(elem == 4))
+      return Kaa;
+  case 5:
+    if ((elem == 1)|(elem == 3))
+      return Kbb;
+    else if ((elem == 2)|(elem == 4))
+      return Kab;
+  } // end of Switch
+  return -1;
+}
 
 
 // Function for extracting entries of the emission probability matrix
@@ -916,7 +914,7 @@ SEXP EM_HMM_UP(SEXP r, SEXP ep, SEXP depth_Ref, SEXP depth_Alt, SEXP config, SEX
           }
           // Add contribution to the likelihood
           llval = llval + log(w_new);
-          Rprintf("llvalue :%.8f at iter %i\n", llval, indx);
+          //Rprintf("llvalue :%.8f at iter %i\n", llval, indx);
         }
         //////////////////////
         // Compute the backward probabilities

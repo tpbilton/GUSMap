@@ -111,7 +111,7 @@
 #' 
 #' @export rf_est_FS
 rf_est_FS <- function(init_r=0.01, epsilon=0.001, depth_Ref, depth_Alt, OPGP,
-                      sexSpec=F, trace=F, noFam=1, ...){
+                      sexSpec=F, trace=F, noFam=1, method = "EM", ...){
   
   ## Do some checks
   if(!is.list(depth_Ref) | !is.list(depth_Alt) | !is.list(OPGP))
@@ -128,6 +128,8 @@ rf_est_FS <- function(init_r=0.01, epsilon=0.001, depth_Ref, depth_Alt, OPGP,
     trace = FALSE
   if( !is.logical(sexSpec) || is.na(sexSpec) )
     sexSpec = FALSE
+  if(!(method %in% c("EM","optim")))
+     stop("Specified optimization method is unknown. Please select one of 'EM' or 'optim'")
 
   ## Check the read count matrices
   if(any(unlist(lapply(depth_Ref,function(x) !is.numeric(x) || any( x<0 | !is.finite(x)) || any(!(x == round(x)))))))
@@ -144,10 +146,17 @@ rf_est_FS <- function(init_r=0.01, epsilon=0.001, depth_Ref, depth_Alt, OPGP,
   if(!is.numeric(init_r)|is.integer(init_r))
     init_r <- as.numeric(init_r)
   for(fam in 1:noFam){
+    if(is.integer(depth_Ref[[fam]]))
+      depth_Ref[[fam]] <- matrix(as.numeric(depth_Ref[[fam]]), nrow=nInd, ncol=nSnps)
+    if(is.integer(depth_Alt[[fam]]))
+      depth_Alt[[fam]] <- matrix(as.numeric(depth_Alt[[fam]]), nrow=nInd, ncol=nSnps)
     if(is.integer(OPGP[[fam]]))
       OPGP <- as.numeric(OPGP[[fam]])
   }
-  #if(method=="optim"){
+  if(!is.integer(noFam))
+    noFam <- as.integer(noFam)
+  
+  if(method=="optim"){
   
     # Arguments for the optim function
     optim.arg <- list(...)
@@ -214,53 +223,83 @@ rf_est_FS <- function(init_r=0.01, epsilon=0.001, depth_Ref, depth_Alt, OPGP,
                          nInd=nInd,nSnps=nSnps,OPGP=OPGP,noFam=noFam,
                          seqErr=seqErr)
     }
-  # }
-  # else{ # EM algorithm approach
-  #   # Determine the initial values
-  #   if(length(init_r)==1) 
-  #     init_r <- rep(init_r,nSnps-1)
-  #   else if(length(init_r) != nSnps-1) 
-  #     para <- logit2(rep(0.1,nSnps-1))
-  #   else
-  #     para <- init_r
-  #   # sequencing error
-  #   if(length(epsilon) != 1 & !is.null(epsilon))
-  #     para <- c(para,logit(0.001))
-  #   else if(!is.null(epsilon))
-  #     para <- c(para,logit(epsilon))
-  #   
-  #   OPGPmat = do.call(what = "rbind",OPGP)
-  #   depth_Ref_mat = do.call(what = "rbind",depth_Ref)
-  #   depth_Alt_mat = do.call(what = "rbind",depth_Alt)
-  #   
-  #   EMout <- .Call("EM_HMM", init_r, epsilon, depth_Ref_mat, depth_Alt_mat, OPGPmat,
-  #                  noFam, nInd, nSnps, sexSpec)
-  #   
-  #   
-  # }
-
-  # Print out the output from the optim procedure (if specified)
-  if(trace){
-    print(optim.MLE)
+    # Print out the output from the optim procedure (if specified)
+    if(trace){
+      print(optim.MLE)
+    }
+    # Check for convergence
+    if(trace & optim.MLE$convergence != 0)
+      warning(paste0('Optimization failed to converge properly with error ',optim.MLE$convergence,'\n smallest MLE estimate is: ', round(min(optim.MLE$par),6)))
+    # Return the MLEs
+    if(sexSpec)
+      return(list(rf_p=inv.logit2(optim.MLE$par[1:npar[1]]),rf_m=inv.logit2(optim.MLE$par[npar[1]+1:npar[2]]),
+                  epsilon=ifelse(seqErr,inv.logit(optim.MLE$par[sum(npar)+1]),0),
+                  loglik=optim.MLE$value))
+    else
+      return(list(rf=inv.logit2(optim.MLE$par[1:(nSnps-1)]), 
+                  epsilon=ifelse(seqErr,inv.logit(optim.MLE$par[nSnps]),0),
+                  loglik=optim.MLE$value))
   }
-  # Check for convergence
-  if(trace & optim.MLE$convergence != 0)
-    warning(paste0('Optimization failed to converge properly with error ',optim.MLE$convergence,'\n smallest MLE estimate is: ', round(min(optim.MLE$par),6)))
-  # Return the MLEs
-  if(sexSpec)
-    return(list(rf_p=inv.logit2(optim.MLE$par[1:npar[1]]),rf_m=inv.logit2(optim.MLE$par[npar[1]+1:npar[2]]),
-                epsilon=ifelse(seqErr,inv.logit(optim.MLE$par[sum(npar)+1]),0),
-                loglik=optim.MLE$value))
-  else
-    return(list(rf=inv.logit2(optim.MLE$par[1:(nSnps-1)]), 
-                epsilon=ifelse(seqErr,inv.logit(optim.MLE$par[nSnps]),0),
-                loglik=optim.MLE$value))
+  else{ # EM algorithm approach
+    ## Set up the parameter values
+    temp.arg <- list(...)
+    if(!is.null(temp.arg$maxit) && is.numeric(temp.arg$maxit) && length(temp.arg$maxit) == 1) 
+      EM.arg = c(temp.arg$maxit)
+    else
+      EM.arg = c(1000)
+    if(!is.null(temp.arg$reltol) && is.numeric(temp.arg$reltol) && length(temp.arg$reltol) == 1){
+      EM.arg = c(EM.arg,temp.arg$reltol)
+    }
+    else
+      EM.arg = c(EM.arg,1e-20)
+    
+    # Determine the initial values
+    if(length(init_r)==1)
+      init_r <- rep(init_r,nSnps-1)
+    else if(length(init_r) != nSnps-1)
+      init_r <- rep(0.1,nSnps-1)
+
+    # sequencing error
+    if(length(epsilon) != 1 & !is.null(epsilon))
+      epsilon <- 0.001
+    
+    if(sexSpec){
+      ps <- sort(unique(unlist(lapply(OPGP,function(x) which(x %in% 1:8)))))[-1] - 1
+      ms <- sort(unique(unlist(lapply(OPGP,function(x) which(x %in% c(1:4,9:12))))))[-1] - 1
+      npar <- c(length(ps),length(ms))
+      ss_rf <- logical(2*(nSnps-1))
+      ss_rf[ps] <- TRUE
+      ss_rf[ms + nSnps-1] <- TRUE
+    }
+    else ss_rf = 0;
+    ## convert the data into the right format:
+    OPGPmat = do.call(what = "rbind",OPGP)
+    depth_Ref_mat = do.call(what = "rbind",depth_Ref)
+    depth_Alt_mat = do.call(what = "rbind",depth_Alt)
+    
+    ## Are we estimating the error parameters?
+    seqErr=!is.null(epsilon)
+    
+    EMout <- .Call("EM_HMM", init_r, epsilon, depth_Ref_mat, depth_Alt_mat, OPGPmat,
+                   noFam, unlist(nInd), nSnps, sexSpec, seqErr, EM.arg, as.integer(ss_rf))
+
+    if(sexSpec){
+      return(list(rf_p=EMout[[1]][ps],rf_m=EMout[[1]][nSnps-1+ms],
+                  epsilon=EMout[[2]],
+                  loglik=EMout[[3]]))
+    }
+    else
+      return(list(rf=EMout[[1]][1:(nSnps-1)], 
+                  epsilon=EMout[[2]],
+                  loglik=EMout[[3]]))
+    
+  }
 }
 
 
 ## recombination estimates for case where the phase is unkonwn.
 ## The r.f.'s are sex-specific and constrained to the range [0,1]
-rf_est_FS_UP <- function(depth_Ref, depth_Alt, config, epsilon, trace=F, ...){
+rf_est_FS_UP <- function(depth_Ref, depth_Alt, config, epsilon, method="EM", trace=F, ...){
   
   ## Check imputs
   if( any( depth_Ref<0 | !is.finite(depth_Ref)) || any(!(depth_Ref == round(depth_Ref))))
@@ -271,84 +310,122 @@ rf_est_FS_UP <- function(depth_Ref, depth_Alt, config, epsilon, trace=F, ...){
     stop("Invalid config vector. It must be a numeric vector with entries between 1 and 9.")
   if( !is.logical(trace) || is.na(trace) )
     trace = FALSE
+  if(!(method %in% c("EM","optim")))
+     stop("Specified optimization method is unknown. Please select one of 'EM' or 'optim'")
   
   nInd <- nrow(depth_Ref)  # number of individuals
   nSnps <- ncol(depth_Ref)  # number of SNPs
+  if(is.integer(depth_Ref))
+    depth_Ref <- matrix(as.numeric(depth_Ref), nrow=nInd, ncol=nSnps)
+  if(is.integer(depth_Alt))
+     depth_Alt <- matrix(as.numeric(depth_Alt), nrow=nInd, ncol=nSnps)
   
-  # Arguments for the optim function
-  optim.arg <- list(...)
-  if(length(optim.arg) == 0)
-    optim.arg <- list(maxit = 1000, reltol=1e-10)
-  
-  ## check inputs are of required type for C functions
-  if(is.integer(config))
-    config <- as.numeric(config)
-  
-  # Work out the indices of the r.f. parameters of each sex
-  ps <- which(config %in% c(1,2,3))[-1] - 1
-  ms <- which(config %in% c(1,4,5))[-1] - 1
-  npar <- c(length(ps),length(ms))
-  
-  ## Compute the K matrix for heterozygous genotypes
-  bcoef_mat <- choose(depth_Ref+depth_Alt,depth_Ref)
-  Kab <- bcoef_mat*(1/2)^(depth_Ref+depth_Alt)
-  
-  ## Are we estimating the error parameters?
-  seqErr=!is.null(epsilon)
-  
-  para <- logit(rep(0.5,sum(npar)))
-  # sequencing error
-  if(length(epsilon) != 1 & !is.null(epsilon))
-    para <- c(para,logit(0.01))
-  else if(!is.null(epsilon))
-    para <- c(para,logit(epsilon))
-  
-  if(nSnps > 2){
-    ## Find MLE
-    optim.MLE <- optim(para,ll_fs_up_ss_scaled_err,method="BFGS",control=optim.arg,
-                         depth_Ref=depth_Ref,depth_Alt=depth_Alt,bcoef_mat=bcoef_mat,Kab=Kab,
-                       nInd=nInd,nSnps=nSnps,config=config,ps=ps,ms=ms,npar=npar,
-                       seqErr=seqErr)
-    # Print out the output from the optim procedure (if specified)
-    if(trace){
-      print(optim.MLE)
-    }
+  if(method == "optim"){
+    # Arguments for the optim function
+    optim.arg <- list(...)
+    if(length(optim.arg) == 0)
+      optim.arg <- list(maxit = 1000, reltol=1e-10)
     
-    # Check for convergence
-    if(optim.MLE$convergence != 0)
-      warning(paste0('Optimization failed to converge properly with error ',optim.MLE$convergence,'\n smallest MLE estimate is: ', round(min(optim.MLE$par),6)))
+    ## check inputs are of required type for C functions
+    if(is.integer(config))
+      config <- as.numeric(config)
     
-    # Return the MLEs
-    return(list(rf_p=inv.logit(optim.MLE$par[1:npar[1]]),rf_m=inv.logit(optim.MLE$par[npar[1]+1:npar[2]]),
-                epsilon=inv.logit(optim.MLE$par[sum(npar)+1])))
-  } 
-  else if(nSnps == 2){
-    ## If both SNPs are informative, need to use the Nelder-Mead to distinguish between the two sexes.
-    if(all(config == 1)){
-      optim.MLE <- optim(para,ll_fs_up_ss_scaled_err,method="Nelder-Mead",control=optim.arg,
-                         depth_Ref=depth_Ref,depth_Alt=depth_Alt,bcoef_mat=bcoef_mat,Kab=Kab,
-                         nInd=nInd,nSnps=nSnps,config=config,ps=ps,ms=ms,npar=npar,
-                         seqErr=seqErr)
-    }
-    ## Otherwise, proceed as normal
-    else{
+    # Work out the indices of the r.f. parameters of each sex
+    ps <- which(config %in% c(1,2,3))[-1] - 1
+    ms <- which(config %in% c(1,4,5))[-1] - 1
+    npar <- c(length(ps),length(ms))
+    
+    ## Compute the K matrix for heterozygous genotypes
+    bcoef_mat <- choose(depth_Ref+depth_Alt,depth_Ref)
+    Kab <- bcoef_mat*(1/2)^(depth_Ref+depth_Alt)
+    
+    ## Are we estimating the error parameters?
+    seqErr=!is.null(epsilon)
+    
+    para <- logit(rep(0.5,sum(npar)))
+    # sequencing error
+    if(length(epsilon) != 1 & !is.null(epsilon))
+      para <- c(para,logit(0.01))
+    else if(!is.null(epsilon))
+      para <- c(para,logit(epsilon))
+    
+    if(nSnps > 2){
+      ## Find MLE
       optim.MLE <- optim(para,ll_fs_up_ss_scaled_err,method="BFGS",control=optim.arg,
-                         depth_Ref=depth_Ref,depth_Alt=depth_Alt,bcoef_mat=bcoef_mat,Kab=Kab,
+                           depth_Ref=depth_Ref,depth_Alt=depth_Alt,bcoef_mat=bcoef_mat,Kab=Kab,
                          nInd=nInd,nSnps=nSnps,config=config,ps=ps,ms=ms,npar=npar,
                          seqErr=seqErr)
+      # Print out the output from the optim procedure (if specified)
+      if(trace){
+        print(optim.MLE)
+      }
+      
+      # Check for convergence
+      if(optim.MLE$convergence != 0)
+        warning(paste0('Optimization failed to converge properly with error ',optim.MLE$convergence,'\n smallest MLE estimate is: ', round(min(optim.MLE$par),6)))
+      
+      # Return the MLEs
+      return(list(rf_p=inv.logit(optim.MLE$par[1:npar[1]]),rf_m=inv.logit(optim.MLE$par[npar[1]+1:npar[2]]),
+                  epsilon=inv.logit(optim.MLE$par[sum(npar)+1])))
+    } 
+    else if(nSnps == 2){
+      ## If both SNPs are informative, need to use the Nelder-Mead to distinguish between the two sexes.
+      if(all(config == 1)){
+        optim.MLE <- optim(para,ll_fs_up_ss_scaled_err,method="Nelder-Mead",control=optim.arg,
+                           depth_Ref=depth_Ref,depth_Alt=depth_Alt,bcoef_mat=bcoef_mat,Kab=Kab,
+                           nInd=nInd,nSnps=nSnps,config=config,ps=ps,ms=ms,npar=npar,
+                           seqErr=seqErr)
+      }
+      ## Otherwise, proceed as normal
+      else{
+        optim.MLE <- optim(para,ll_fs_up_ss_scaled_err,method="BFGS",control=optim.arg,
+                           depth_Ref=depth_Ref,depth_Alt=depth_Alt,bcoef_mat=bcoef_mat,Kab=Kab,
+                           nInd=nInd,nSnps=nSnps,config=config,ps=ps,ms=ms,npar=npar,
+                           seqErr=seqErr)
+      }
+      # Print out the output from the optim procedure (if specified)
+      if(trace){
+        print(optim.MLE)
+      }
+      
+      # Check for convergence
+      if(trace & optim.MLE$convergence != 0)
+        warning(paste0('Optimization failed to converge properly with error ',optim.MLE$convergence,'\n smallest MLE estimate is: ', round(min(optim.MLE$par),6)))
+      
+      # Return the MLEs
+      return(list(rf_p=inv.logit(optim.MLE$par[npar[1]]),rf_m=inv.logit(optim.MLE$par[npar[1]+npar[2]]),
+                  epsilon=inv.logit(optim.MLE$par[sum(npar)+1])))
     }
-    # Print out the output from the optim procedure (if specified)
-    if(trace){
-      print(optim.MLE)
+  }
+  else{ ## EM approach
+    ## Set up the parameter values
+    temp.arg <- list(...)
+    if(!is.null(temp.arg$maxit) && is.numeric(temp.arg$maxit) && length(temp.arg$maxit) == 1) 
+      EM.arg = c(temp.arg$maxit)
+    else
+      EM.arg = c(1000)
+    if(!is.null(temp.arg$reltol) && is.numeric(temp.arg$reltol) && length(temp.arg$reltol) == 1){
+      EM.arg = c(EM.arg,temp.arg$reltol)
     }
+    else
+      EM.arg = c(EM.arg,1e-20)
     
-    # Check for convergence
-    if(trace & optim.MLE$convergence != 0)
-      warning(paste0('Optimization failed to converge properly with error ',optim.MLE$convergence,'\n smallest MLE estimate is: ', round(min(optim.MLE$par),6)))
+    ## work out which rf can be estimated
+    ps <- which(config %in% c(1,2,3))[-1] - 1
+    ms <- which(config %in% c(1,4,5))[-1] - 1 
+    npar <- c(length(ps),length(ms))
+    ss_rf <- logical(2*(nSnps-1))
+    ss_rf[ps] <- TRUE
+    ss_rf[ms + nSnps-1] <- TRUE
     
-    # Return the MLEs
-    return(list(rf_p=inv.logit(optim.MLE$par[npar[1]]),rf_m=inv.logit(optim.MLE$par[npar[1]+npar[2]]),
-                epsilon=inv.logit(optim.MLE$par[sum(npar)+1])))
+    ## Are we estimating the error parameters?
+    seqErr=!is.null(epsilon)
+    
+    EMout <- .Call("EM_HMM_UP", rep(0.5,(nSnps-1)*2), epsilon, depth_Ref, depth_Alt, config,
+          as.integer(1), nInd, nSnps, seqErr, EM.arg, as.integer(ss_rf))
+    return(list(rf_p=EMout[[1]][ps],rf_m=EMout[[1]][nSnps-1+ms],
+                epsilon=EMout[[2]],
+                loglik=EMout[[3]]))
   }
 }
 

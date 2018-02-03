@@ -74,7 +74,7 @@
 #'                       ndeps=rep(1e-1,sum(config==1)*2+sum(config!=1)-1))
 #' 
 #' @export infer_OPGP_FS
-infer_OPGP_FS <- function(depth_Ref, depth_Alt, config, epsilon=0.001, ...){
+infer_OPGP_FS <- function(depth_Ref, depth_Alt, config, epsilon=0.001, method="EM", ...){
   
   if(!is.matrix(depth_Ref) || !is.matrix(depth_Alt))
     stop("The read counts inputs are not matrix objects")
@@ -89,7 +89,7 @@ infer_OPGP_FS <- function(depth_Ref, depth_Alt, config, epsilon=0.001, ...){
   Isnps <- which(!(config %in% 6:9))
 
   ## solve the likelihood for when phase is not known
-  MLEs <- rf_est_FS_UP(depth_Ref[,Isnps], depth_Alt[,Isnps], config[Isnps], epsilon=epsilon, ...)
+  MLEs <- rf_est_FS_UP(depth_Ref[,Isnps], depth_Alt[,Isnps], config[Isnps], epsilon=epsilon, method=method, ...)
   
   parHap <- matrix("A",nrow=4,ncol=nSnps)
   parHap[cbind(c(rep(3,sum(config %in% c(3,7,9))),rep(4,sum(config %in% c(3,7,9)))),which(config %in% c(3,7,9)))] <- "B"
