@@ -22,6 +22,7 @@
 #include <Rinternals.h>
 #include <Rmath.h>
 #include <math.h>
+#include "probFun.h"
 
 
 // Function for returning a specified enetry of the transition matrix for a given recombination fraction value
@@ -57,14 +58,14 @@ double Tmat(int s1, int s2, double rval){
 // Include error parameters
 SEXP ll_fs_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nInd, SEXP nSnps){
   // Initialize variables
-  int s1, s2, ind, snp, nInd_c, nSnps_c;
-  double *pll, *pr, *pKaa, *pKab, *pKbb, *pOPGP;
-  double alphaTilde[4], alphaDot[4], sum, w_logcumsum, w_new;
+  int s1, s2, ind, snp, nInd_c, nSnps_c, *pOPGP;
+  double *pll, *pr, *pKaa, *pKab, *pKbb;
+  double alphaTilde[4], alphaDot[4], sum, w_new;
   // Load R input variables into C
   nInd_c = INTEGER(nInd)[0];
   nSnps_c = INTEGER(nSnps)[0];
   // Define the pointers to the other input R variables
-  pOPGP = REAL(OPGP);
+  pOPGP = INTEGER(OPGP);
   pKaa = REAL(Kaa);
   pKab = REAL(Kab);
   pKbb = REAL(Kbb);
@@ -132,14 +133,14 @@ SEXP ll_fs_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nI
 // OPGP's (or phase) are assumed to be known
 SEXP ll_fs_ss_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nInd, SEXP nSnps){
   // Initialize variables
-  int s1, s2, ind, snp, nInd_c, nSnps_c;
-  double *pll, *pr, *pKaa, *pKab, *pKbb, *pOPGP;
-  double alphaTilde[4], alphaDot[4], sum, w_logcumsum, w_new;
+  int s1, s2, ind, snp, nInd_c, nSnps_c, *pOPGP;
+  double *pll, *pr, *pKaa, *pKab, *pKbb;
+  double alphaTilde[4], alphaDot[4], sum, w_new;
   // Load R input variables into C
   nInd_c = INTEGER(nInd)[0];
   nSnps_c = INTEGER(nSnps)[0];
   // Define the pointers to the other input R variables
-  pOPGP = REAL(OPGP);
+  pOPGP = INTEGER(OPGP);
   pKaa = REAL(Kaa);
   pKab = REAL(Kab);
   pKbb = REAL(Kbb);
@@ -206,14 +207,14 @@ SEXP ll_fs_ss_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP
 // OPGP's (or phase) are not known
 SEXP ll_fs_up_ss_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP config, SEXP nInd, SEXP nSnps){
   // Initialize variables
-  int s1, s2, ind, snp, nInd_c, nSnps_c;
-  double *pll, *pr, *pKaa, *pKab, *pKbb, *pconfig;
-  double alphaTilde[4], alphaDot[4], sum, w_logcumsum, w_new;
+  int s1, s2, ind, snp, nInd_c, nSnps_c, *pconfig;
+  double *pll, *pr, *pKaa, *pKab, *pKbb;
+  double alphaTilde[4], alphaDot[4], sum, w_new;
   // Load R input variables into C
   nInd_c = INTEGER(nInd)[0];
   nSnps_c = INTEGER(nSnps)[0];
   // Define the pointers to the other input R variables
-  pconfig = REAL(config);
+  pconfig = INTEGER(config);
   pKaa = REAL(Kaa);
   pKab = REAL(Kab);
   pKbb = REAL(Kbb);

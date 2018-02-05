@@ -146,12 +146,12 @@ rf_est_FS <- function(init_r=0.01, epsilon=0.001, depth_Ref, depth_Alt, OPGP,
   if(!is.numeric(init_r)|is.integer(init_r))
     init_r <- as.numeric(init_r)
   for(fam in 1:noFam){
-    if(is.integer(depth_Ref[[fam]]))
-      depth_Ref[[fam]] <- matrix(as.numeric(depth_Ref[[fam]]), nrow=nInd, ncol=nSnps)
-    if(is.integer(depth_Alt[[fam]]))
-      depth_Alt[[fam]] <- matrix(as.numeric(depth_Alt[[fam]]), nrow=nInd, ncol=nSnps)
-    if(is.integer(OPGP[[fam]]))
-      OPGP <- as.numeric(OPGP[[fam]])
+    if(!is.integer(depth_Ref[[fam]]))
+      depth_Ref[[fam]] <- matrix(as.integer(depth_Ref[[fam]]), nrow=nInd[[fam]], ncol=nSnps)
+    if(!is.integer(depth_Alt[[fam]]))
+      depth_Alt[[fam]] <- matrix(as.integer(depth_Alt[[fam]]), nrow=nInd[[fam]], ncol=nSnps)
+    if(!is.integer(OPGP[[fam]]))
+      OPGP[[fam]] <- as.integer(OPGP[[fam]])
   }
   if(!is.integer(noFam))
     noFam <- as.integer(noFam)
@@ -255,9 +255,9 @@ rf_est_FS <- function(init_r=0.01, epsilon=0.001, depth_Ref, depth_Alt, OPGP,
     
     # Determine the initial values
     if(length(init_r)==1)
-      init_r <- rep(init_r,nSnps-1)
+      init_r <- rep(init_r,2*(nSnps-1))
     else if(length(init_r) != nSnps-1)
-      init_r <- rep(0.1,nSnps-1)
+      init_r <- rep(0.1,2*(nSnps-1))
 
     # sequencing error
     if(length(epsilon) != 1 & !is.null(epsilon))
@@ -315,20 +315,18 @@ rf_est_FS_UP <- function(depth_Ref, depth_Alt, config, epsilon, method="EM", tra
   
   nInd <- nrow(depth_Ref)  # number of individuals
   nSnps <- ncol(depth_Ref)  # number of SNPs
-  if(is.integer(depth_Ref))
-    depth_Ref <- matrix(as.numeric(depth_Ref), nrow=nInd, ncol=nSnps)
-  if(is.integer(depth_Alt))
-     depth_Alt <- matrix(as.numeric(depth_Alt), nrow=nInd, ncol=nSnps)
+  if(!is.integer(depth_Ref))
+    depth_Ref <- matrix(as.integer(depth_Ref), nrow=nInd, ncol=nSnps)
+  if(!is.integer(depth_Alt))
+     depth_Alt <- matrix(as.integer(depth_Alt), nrow=nInd, ncol=nSnps)
+  if(!is.integer(config))
+    config <- as.integer(config)
   
   if(method == "optim"){
     # Arguments for the optim function
     optim.arg <- list(...)
     if(length(optim.arg) == 0)
       optim.arg <- list(maxit = 1000, reltol=1e-10)
-    
-    ## check inputs are of required type for C functions
-    if(is.integer(config))
-      config <- as.numeric(config)
     
     # Work out the indices of the r.f. parameters of each sex
     ps <- which(config %in% c(1,2,3))[-1] - 1
@@ -403,12 +401,12 @@ rf_est_FS_UP <- function(depth_Ref, depth_Alt, config, epsilon, method="EM", tra
     if(!is.null(temp.arg$maxit) && is.numeric(temp.arg$maxit) && length(temp.arg$maxit) == 1) 
       EM.arg = c(temp.arg$maxit)
     else
-      EM.arg = c(1000)
+      EM.arg = c(5000)
     if(!is.null(temp.arg$reltol) && is.numeric(temp.arg$reltol) && length(temp.arg$reltol) == 1){
       EM.arg = c(EM.arg,temp.arg$reltol)
     }
     else
-      EM.arg = c(EM.arg,1e-20)
+      EM.arg = c(EM.arg,1e-5)
     
     ## work out which rf can be estimated
     ps <- which(config %in% c(1,2,3))[-1] - 1

@@ -23,140 +23,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <limits.h>
-
-// Function for extracting entries of the emission probability matrix
-// when the OPGPs are known
-double Qentry(int OPGP,double Kaa,double Kab, double Kbb,int elem){
-  switch(OPGP){
-  case 1:
-    if(elem == 1)
-      return Kbb;
-    else if ((elem == 2)|(elem == 3))  
-      return Kab;
-    else if (elem == 4)
-      return Kaa;
-  case 2:
-    if(elem == 3)
-      return Kbb;
-    else if ((elem == 1)|(elem == 4))
-      return Kab;
-    else if (elem == 2)
-      return Kaa;
-  case 3:
-    if(elem == 2) 
-      return Kbb;
-    else if ((elem == 1)|(elem == 4))
-      return Kab;
-    else if (elem == 3)
-      return Kaa;
-  case 4:
-    if(elem == 4) 
-      return Kbb;
-    else if ((elem == 2)|(elem == 3))
-      return Kab;
-    else if (elem == 1)
-      return Kaa;
-  case 5:
-    if ((elem == 1)|(elem == 2))
-      return Kab;
-    else if ((elem == 3)|(elem == 4))
-      return Kaa;
-  case 6:
-    if ((elem == 1)|(elem == 2))
-      return Kaa;
-    else if ((elem == 3)|(elem == 4))
-      return Kab;
-  case 7:
-    if ((elem == 1)|(elem == 2))
-      return Kbb;
-    else if ((elem == 3)|(elem == 4))
-      return Kab;
-  case 8:
-    if ((elem == 1)|(elem == 2))
-      return Kab;
-    else if ((elem == 3)|(elem == 4))
-      return Kbb;
-  case 9:
-    if ((elem == 1)|(elem == 3))
-      return Kab;
-    else if ((elem == 2)|(elem == 4))
-      return Kaa;
-  case 10:
-    if ((elem == 1)|(elem == 3))
-      return Kaa;
-    else if ((elem == 2)|(elem == 4))
-      return Kab;
-  case 11:
-    if ((elem == 1)|(elem == 3))
-      return Kbb;
-    else if ((elem == 2)|(elem == 4))
-      return Kab;
-  case 12:
-    if ((elem == 1)|(elem == 3))
-      return Kab;
-    else if ((elem == 2)|(elem == 4))
-      return Kbb;
-  case 13:
-    return Kaa;
-  case 14:
-    return Kab;
-  case 15:
-    return Kab;
-  case 16:
-    return Kbb;
-  } // end of Switch
-  return -1;
-}
-
-
-// Function for extracting entries of the emission probability matrix
-// when the OPGP are considered the baseline (and so phase is unknown and the r.f's are sex-specific)
-double Qentry_up(int config,double Kaa,double Kab, double Kbb,int elem){
-  switch(config){
-  case 1:
-    if(elem == 1)
-      return Kbb;
-    else if ((elem == 2)|(elem == 3))  
-      return Kab;
-    else if (elem == 4)
-      return Kaa;
-  case 2:
-    if ((elem == 1)|(elem == 2))
-      return Kab;
-    else if ((elem == 3)|(elem == 4))
-      return Kaa;
-  case 3:
-    if ((elem == 1)|(elem == 2))
-      return Kbb;
-    else if ((elem == 3)|(elem == 4))
-      return Kab;
-  case 4:
-    if ((elem == 1)|(elem == 3))
-      return Kab;
-    else if ((elem == 2)|(elem == 4))
-      return Kaa;
-  case 5:
-    if ((elem == 1)|(elem == 3))
-      return Kbb;
-    else if ((elem == 2)|(elem == 4))
-      return Kab;
-  } // end of Switch
-  return -1;
-}
-
-// Function for returning a specified enetry of the transition matrix for a given recombination fraction value
-// when the r.f.'s are sex-specific 
-double Tmat_ss(int s1, int s2, double r_f, double r_m){
-  int sSum = s1 + s2*4;
-  if((sSum == 0)|(sSum == 5)|(sSum == 10)|(sSum == 15))
-    return (1-r_f)*(1-r_m);
-  else if((sSum == 3)|(sSum == 6)|(sSum == 9)|(sSum == 12))
-    return r_f*r_m;
-  else if((sSum == 1)|(sSum == 4)|(sSum == 11)|(sSum == 14))
-    return (1-r_f)*r_m;
-  else 
-    return r_f*(1-r_m);
-}
+#include "probFun.h"
 
 
 int Tcount(int s1, int s2){
@@ -169,13 +36,14 @@ int Tcount(int s1, int s2){
     return 1;
 }
 
+/*
 // Function for computing binomial coefficients
 // taken  from this website "https://rosettacode.org/wiki/Evaluate_binomial_coefficients#C"
 static unsigned long gcd_ui(unsigned long x, unsigned long y) {
   unsigned long t;
   if (y < x) { t = x; x = y; y = t; }
   while (y > 0) {
-    t = y;  y = x % y;  x = t;  /* y1 <- x0 % y0 ; x1 <- y0 */
+    t = y;  y = x % y;  x = t;  // y1 <- x0 % y0 ; x1 <- y0
   }
   return x;
 }
@@ -187,11 +55,11 @@ unsigned long binomial(unsigned long n, unsigned long k) {
   if (k >= n) return (k == n);
   if (k > n/2) k = n-k;
   for (d = 1; d <= k; d++) {
-    if (r >= ULONG_MAX/n) {  /* Possible overflow */
-unsigned long nr, dr;  /* reduced numerator / denominator */
+    if (r >= ULONG_MAX/n) {  // Possible overflow 
+unsigned long nr, dr;  // reduced numerator / denominator 
 g = gcd_ui(n, d);  nr = n/g;  dr = d/g;
 g = gcd_ui(r, dr);  r = r/g;  dr = dr/g;
-if (r >= ULONG_MAX/nr) return 0;  /* Unavoidable overflow */
+if (r >= ULONG_MAX/nr) return 0;  // Unavoidable overflow
 r *= nr;
 r /= dr;
 n--;
@@ -202,11 +70,17 @@ n--;
   }
   return r;
 }
+*/
 
+double long binomial(int a, int b){
+  double long res;
+  res = expl(lgammal(a+b+1) - lgammal(b+1) - lgammal(a+1));
+  return res;
+}
 
 // Function for computing the emission probabilities given the true genotypes
 double computeProb(double *ppAA, double *ppBB, double *pbin_coef,
-                        double epsilon, double *pdepth_Ref, double *pdepth_Alt,
+                        double epsilon, int *pdepth_Ref, int *pdepth_Alt,
                         int nInd, int nSnps){
   int snp, ind, indx;
   for(ind = 0; ind < nInd; ind++){
@@ -217,8 +91,8 @@ double computeProb(double *ppAA, double *ppBB, double *pbin_coef,
         *ppBB = 1;
       }
       else{
-        *ppAA = *pbin_coef * pow(1 - epsilon, pdepth_Ref[indx]) * pow(epsilon, pdepth_Alt[indx]);
-        *ppBB = *pbin_coef * pow(epsilon, pdepth_Ref[indx]) * pow(1 - epsilon, pdepth_Alt[indx]);
+        *ppAA = *pbin_coef * powl(1 - epsilon, pdepth_Ref[indx]) * powl(epsilon, pdepth_Alt[indx]);
+        *ppBB = *pbin_coef * powl(epsilon, pdepth_Ref[indx]) * powl(1 - epsilon, pdepth_Alt[indx]);
       }
       ppAA++;
       ppBB++;
@@ -347,23 +221,19 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP depth_Ref, SEXP depth_Alt, SEXP OPGP, SEXP noF
   double w_logcumsum, w_new, log_w[nTotal][nSnps_c];
   double uProb[4][nTotal][nSnps_c], vProb[4][4][nTotal][nSnps_c-1];
   // Define the pointers to the other input R variables
-  double *pOPGP, *pdepth_Ref, *pdepth_Alt;
-  pOPGP = REAL(OPGP);
-  pdepth_Ref = REAL(depth_Ref);
-  pdepth_Alt = REAL(depth_Alt);
+  int *pOPGP, *pdepth_Ref, *pdepth_Alt;
+  pOPGP = INTEGER(OPGP);
+  pdepth_Ref = INTEGER(depth_Ref);
+  pdepth_Alt = INTEGER(depth_Alt);
   int *pss_rf;
   pss_rf = INTEGER(ss_rf);
   // if sex-specific rf
   if(sexSpec_c){
     for(snp = 0; snp < nSnps_c-1; snp++){
-      Rprintf("pss_rf %i\n",pss_rf[snp*2]);
       if(pss_rf[snp]==0){
-        Rprintf("r_c to zero: snp %i pat\n", snp);
         r_c[snp] = 0;
       }
-      Rprintf("pss_rf %i\n",pss_rf[snp*2+1]);
       if(pss_rf[snp+nSnps_c-1]==0){
-        Rprintf("r_c to zero: snp %i mat\n", snp);
         r_c[snp + nSnps_c-1] = 0;
       }
     }
@@ -385,7 +255,7 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP depth_Ref, SEXP depth_Alt, SEXP OPGP, SEXP noF
       indx = ind + indSum[fam];
       for(snp = 0; snp < nSnps_c; snp++){
         bin_coef[indx][snp] = binomial(pdepth_Ref[indx + nTotal*snp] + pdepth_Alt[indx + nTotal*snp], pdepth_Ref[indx + nTotal*snp]);
-        pAB[indx][snp] = bin_coef[indx][snp] * pow(0.5,pdepth_Ref[indx + nTotal*snp] + pdepth_Alt[indx + nTotal*snp]);
+        pAB[indx][snp] = bin_coef[indx][snp] * powl(0.5,pdepth_Ref[indx + nTotal*snp] + pdepth_Alt[indx + nTotal*snp]);
         for(s1 = 0; s1 < 4; s1++){
           g = Iindx(pOPGP[snp*noFam_c + fam], s1 + 1);
           if( g == 1 ){
@@ -414,7 +284,33 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP depth_Ref, SEXP depth_Alt, SEXP OPGP, SEXP noF
   pllout = REAL(llout);
   SEXP pout = PROTECT(allocVector(VECSXP, 3));
   double llval = 0, prellval = 0;
-  Rprintf("delta :%.22f\n", delta);
+
+  // Lets check the input variables have been specified correctly
+  //computeProb(ppAA, ppBB, pbin_coef, ep_c, pdepth_Ref, pdepth_Alt, nTotal, nSnps_c);
+  for(fam = 0; fam < noFam_c; fam++){
+    for(ind = 0; ind < nInd_c[fam]; ind++){
+      indx = ind + indSum[fam];
+      for(snp = 0; snp < nSnps_c; snp++){
+        //Rprintf("pAA :%.22f at ind %i and snp %i\n", pAA[indx][snp], indx, snp);
+        //Rprintf("pAB :%.22f at ind %i and snp %i\n", pAB[indx][snp], indx, snp);
+        //Rprintf("pBB :%.22f at ind %i and snp %i\n", pBB[indx][snp], indx, snp);
+      }
+    }
+  }
+  for(snp = 0; snp < nSnps_c; snp++){
+    //Rprintf("OPGP :%i at snp %i\n", pOPGP[snp], snp);
+  }
+  //Rprintf("seqError :%i\n", seqError_c);
+  //Rprintf("sexSpec :%i\n", sexSpec_c);
+  //Rprintf("nSnps :%i\n", nSnps_c);
+  for(fam = 0; fam < noFam_c; fam++){
+    //Rprintf("nInd in fam %i\n", nInd_c[fam]);
+  }
+  //Rprintf("noFam :%i\n", noFam_c);
+  //Rprintf("ep :%.22f\n", ep_c);
+  //for(snp = 0; snp < 2*(nSnps_c - 1); snp++){
+  //  Rprintf("r_c :%.22f\n", r_c[snp]);
+  //}
   
   /////// Start algorithm
   iter = 0;
@@ -441,14 +337,15 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP depth_Ref, SEXP depth_Alt, SEXP OPGP, SEXP noF
         sum = 0;
         //Rprintf("OPGP :%.6f at snp %i in ind %i\n", pOPGP[fam], 0, ind);
         for(s1 = 0; s1 < 4; s1++){
-          //Rprintf("Q value :%.6f at snp %i in ind %i\n", Qentry(pOPGP[fam], pAA[indx][0], pAB[indx][0], pBB[indx][0], s1+1), 0, ind);
+          //Rprintf("pAA %.16f, pAB %.16f pBB %.16f at snp %i in ind %i\n", pAA[indx][0], pAB[indx][0], pBB[indx][0], 0, ind);
+          //Rprintf("Q value :%.22f at snp %i in ind %i\n", Qentry(pOPGP[fam], pAA[indx][0], pAB[indx][0], pBB[indx][0], s1+1), 0, ind);
           alphaDot[s1] = 0.25 * Qentry(pOPGP[fam], pAA[indx][0], pAB[indx][0], pBB[indx][0], s1+1);
           sum = sum + alphaDot[s1];
         }
+        //Rprintf("Q value :%.22f at snp %i in ind %i\n", sum, 0, ind);
         // Scale forward probabilities
         for(s1 = 0; s1 < 4; s1++){
           alphaTilde[s1][indx][0] = alphaDot[s1]/sum;
-          //Rprintf("alphaTilde :%.6f at state %i, snp %i and ind %i\n", alphaTilde[s1][indx][0], s1, 0, ind);
         }
         //Rprintf("New weight :%.6f at snp %i\n", sum, 1);
       
@@ -462,6 +359,7 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP depth_Ref, SEXP depth_Alt, SEXP OPGP, SEXP noF
         
         // iterate over the remaining SNPs
         for(snp = 1; snp < nSnps_c; snp++){
+          //Rprintf("snp %i and ind %i\n", snp, ind);
           //Rprintf("snp %i\n", snp );
           //Rprintf("nSnps %i\n", nSnps_c );
           // compute the next forward probabilities for snp j
@@ -472,10 +370,13 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP depth_Ref, SEXP depth_Alt, SEXP OPGP, SEXP noF
             sum = 0;
             for(s1 = 0; s1 < 4; s1++){
               sum = sum + Tmat_ss(s1, s2, r_c[snp-1], r_c[snp-1+nSnps_c-1]) * alphaTilde[s1][indx][snp-1];
-              //Rprintf("Tmat %.16f", Tmat_ss(s1, s2, r_c[snp-1], r_c[snp-1+nSnps_c-1]));
+              
+              //Rprintf("Tmat %.16f for r_c %.12f and %.12f and state %i and %i\n", Tmat_ss(s1, s2, r_c[snp-1], r_c[snp-1+nSnps_c-1]), r_c[snp-1], r_c[snp-1+nSnps_c-1], s1, s2);
             }
             //Rprintf("sum :%.16f at state %i, snp %i and ind %i\n", sum, s2, snp, ind);
-            //Rprintf("Q value :%.6f at snp %i in ind %i\n", Qentry(pOPGP[snp*noFam_c + fam], pAA[indx][snp], pAB[indx][snp], pBB[indx][snp], s2+1), snp, ind);
+            //Rprintf("Q value :%.22f at snp %i in ind %i\n", Qentry(pOPGP[snp*noFam_c + fam], pAA[indx][snp], pAB[indx][snp], pBB[indx][snp], s2+1), snp, ind);
+            //Rprintf("pAA %.16f, pAB %.16f pBB %.16f at snp %i in ind %i\n", pAA[indx][snp], pAB[indx][snp], pBB[indx][snp], snp, indx);
+            //Rprintf("Q value :%.22f at snp %i in ind %i\n", Qentry(pOPGP[snp*noFam_c + fam], pAA[indx][snp], pAB[indx][snp], pBB[indx][snp], s2+1), snp, indx);
             alphaDot[s2] = Qentry(pOPGP[snp*noFam_c + fam], pAA[indx][snp], pAB[indx][snp], pBB[indx][snp], s2+1) * sum;
             //Rprintf("alphaDot :%.22f at state %i, snp %i and ind %i\n", alphaDot[s2], s2, snp, ind);
           }
@@ -492,6 +393,7 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP depth_Ref, SEXP depth_Alt, SEXP OPGP, SEXP noF
           // Scale the forward probability vector
           for(s2 = 0; s2 < 4; s2++){
             alphaTilde[s2][indx][snp] = alphaDot[s2]/w_new;
+            //Rprintf("alphaTilde :%.22f at state %i, snp %i and ind %i\n", alphaTilde[s2][indx][snp], s2, snp, ind);
           }
           // Add contribution to the likelihood
           llval = llval + log(w_new);
@@ -538,47 +440,7 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP depth_Ref, SEXP depth_Alt, SEXP OPGP, SEXP noF
         }
       }  
     }
-    fam = 0;
-    ind = 1;
-    indx = ind + indSum[fam];
-    sumA = 0;
-    for(snp = 0; snp < nSnps_c; snp++){
-      sumA = sumA + log_w[indx][snp];
-      //Rprintf("sumA :%.22f at snp %i and ind %i\n", log_w[indx][snp], snp, ind);
-      for(s1 = 0; s1 < 4; s1++){
-        //Rprintf("alphaTilde :%.16f at state %i, snp %i and ind %i\n", alphaTilde[s1][indx][snp], s1, snp, ind);
-      }
-    }
-    sumB = 0;
-    for(snp = nSnps_c-1; snp > -1; snp--){
-      sumB = sumB + log_w[indx][snp];
-      //Rprintf("sumB :%.22f at snp %i and ind %i\n", log_w[indx][snp], snp, ind);
-      for(s1 = 0; s1 < 4; s1++){
-        //Rprintf("betaTilde :%.16f at state %i, snp %i and ind %i\n", betaTilde[s1][indx][snp], s1, snp, ind);
-      }
-    }
-    
-    ///////// E-step:
-    // Compute the probabilities of the hidden variables given the data and parameter values
-/*    for(fam = 0; fam < noFam_c; fam++){
-      for(ind = 0; ind < nInd_c[fam]; ind++){
-        indx = ind + indSum[fam];
-        for(snp = 0; snp < nSnps_c - 1; snp++){
-          for(s1 = 0; s1 < 4; s1++){
-            uProb[s1][indx][snp] = (alphaTilde[s1][indx][snp] * betaTilde[s1][indx][snp])/exp(-llval); //   exp(-log_w[indx][snp]);
-            for(s2 = 0; s2 < 4; s2++){
-              vProb[s1][s2][indx][snp] = alphaTilde[s1][indx][snp] * Tmat_ss(s1, s2, r_c[snp], r_c[snp+nSnps_c-1]) *
-                Qentry(pOPGP[(snp+1)*noFam_c + fam], pAA[indx][snp+1], pAB[indx][snp+1], pBB[indx][snp+1], s2+1)  * 
-                betaTilde[s2][indx][snp+1] / exp(-llval);
-            }
-          }
-        }
-        snp = nSnps_c - 1;
-        for(s1 = 0; s1 < 4; s1++){
-          uProb[s1][indx][snp] = (alphaTilde[s1][indx][snp] * betaTilde[s1][indx][snp])/exp(-llval); //exp(-log_w[indx][snp]); 
-        }
-      }
-} */
+
     //for(fam = 0; fam < noFam_c; fam++){
     //  for(ind = 0; ind < nInd_c[fam]; ind++){
         indx = ind + indSum[fam];
@@ -673,18 +535,15 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP depth_Ref, SEXP depth_Alt, SEXP OPGP, SEXP noF
           }
         }
       }
-      Rprintf("sumA :%.8f\n", sumA);
-      Rprintf("sumB :%.8f\n", sumB);
       ep_c = sumA/(sumA + sumB);
-      Rprintf("ep :%.8f at iter %i\n", ep_c, iter);
     }
-    Rprintf("llvalue :%.8f at iter %i\n", llval, iter);
-    Rprintf("prellval :%.8f at iter %i\n", prellval, iter);
-    Rprintf("diff in lik :%.8f at iter %i\n", (llval - prellval) , iter);
+    //Rprintf("llvalue :%.8f at iter %i\n", llval, iter);
+    //Rprintf("prellval :%.8f at iter %i\n", prellval, iter);
+    //Rprintf("diff in lik :%.8f at iter %i\n", (llval - prellval) , iter);
     //Rprintf("llvalue :%.22f at iter %i\n", llval, iter);
-    //Rprintf("ep :%.36Le at iter %i\n", ep_c, iter);
+    //Rprintf("ep :%.22f at iter %i\n", ep_c, iter);
     //for(snp = 0; snp < nSnps_c - 1; snp++){
-    //    Rprintf("r_c :%.36Le at iter %i\n", r_c[snp], iter);
+    //    Rprintf("r_c :%.22f at iter %i\n", r_c[snp], iter);
     //}
   }
   
@@ -774,10 +633,10 @@ SEXP EM_HMM_UP(SEXP r, SEXP ep, SEXP depth_Ref, SEXP depth_Alt, SEXP config, SEX
   double w_logcumsum, w_new, log_w[nTotal][nSnps_c];
   double uProb[4][nTotal][nSnps_c], vProb[4][4][nTotal][nSnps_c-1];
   // Define the pointers to the other input R variables
-  double *pconfig, *pdepth_Ref, *pdepth_Alt;
-  pconfig = REAL(config);
-  pdepth_Ref = REAL(depth_Ref);
-  pdepth_Alt = REAL(depth_Alt);
+  int *pconfig, *pdepth_Ref, *pdepth_Alt;
+  pconfig = INTEGER(config);
+  pdepth_Ref = INTEGER(depth_Ref);
+  pdepth_Alt = INTEGER(depth_Alt);
   int *pss_rf;
   pss_rf = INTEGER(ss_rf);
   // if sex-specific rf
@@ -807,7 +666,7 @@ SEXP EM_HMM_UP(SEXP r, SEXP ep, SEXP depth_Ref, SEXP depth_Alt, SEXP config, SEX
       indx = ind + indSum[fam];
       for(snp = 0; snp < nSnps_c; snp++){
         bin_coef[indx][snp] = binomial(pdepth_Ref[indx + nTotal*snp] + pdepth_Alt[indx + nTotal*snp], pdepth_Ref[indx + nTotal*snp]);
-        pAB[indx][snp] = bin_coef[indx][snp] * pow(0.5,pdepth_Ref[indx + nTotal*snp] + pdepth_Alt[indx + nTotal*snp]);
+        pAB[indx][snp] = bin_coef[indx][snp] * powl(0.5,pdepth_Ref[indx + nTotal*snp] + pdepth_Alt[indx + nTotal*snp]);
         for(s1 = 0; s1 < 4; s1++){
           g = Iindx_up(pconfig[snp*noFam_c + fam], s1 + 1);
           if( g == 1 ){
@@ -862,9 +721,11 @@ SEXP EM_HMM_UP(SEXP r, SEXP ep, SEXP depth_Ref, SEXP depth_Alt, SEXP config, SEX
         sum = 0;
         //Rprintf("config :%.6f at snp %i in ind %i\n", pconfig[fam], 0, ind);
         for(s1 = 0; s1 < 4; s1++){
-          //Rprintf("Q value :%.6f at snp %i in ind %i\n", Qentry(pconfig[fam], pAA[indx][0], pAB[indx][0], pBB[indx][0], s1+1), 0, ind);
+          //Rprintf("Q value :%.6f at snp %i in ind %i\n", Qentry_up(pconfig[fam], pAA[indx][0], pAB[indx][0], pBB[indx][0], s1+1), 0, ind);
           alphaDot[s1] = 0.25 * Qentry_up(pconfig[fam], pAA[indx][0], pAB[indx][0], pBB[indx][0], s1+1);
           sum = sum + alphaDot[s1];
+          //Rprintf("pAA %.16f, pAB %.16f pBB %.16f at snp %i in ind %i\n", pAA[indx][0], pAB[indx][0], pBB[indx][0], 0, ind);
+          //Rprintf("Q value :%.22f at snp %i in ind %i\n", Qentry_up(pconfig[fam], pAA[indx][0], pAB[indx][0], pBB[indx][0], s1+1), 0, ind);
         }
         // Scale forward probabilities
         for(s1 = 0; s1 < 4; s1++){
@@ -896,7 +757,8 @@ SEXP EM_HMM_UP(SEXP r, SEXP ep, SEXP depth_Ref, SEXP depth_Alt, SEXP config, SEX
               //Rprintf("Tmat %.16f", Tmat_ss(s1, s2, r_c[snp-1], r_c[snp-1+nSnps_c-1]));
             }
             //Rprintf("sum :%.16f at state %i, snp %i and ind %i\n", sum, s2, snp, ind);
-            //Rprintf("Q value :%.6f at snp %i in ind %i\n", Qentry(pconfig[snp*noFam_c + fam], pAA[indx][snp], pAB[indx][snp], pBB[indx][snp], s2+1), snp, ind);
+            //Rprintf("pAA %.16f, pAB %.16f pBB %.16f at snp %i in ind %i\n", pAA[indx][snp], pAB[indx][snp], pBB[indx][snp], snp, indx);
+            //Rprintf("Q value :%.16f at snp %i in ind %i\n", Qentry_up(pconfig[snp*noFam_c + fam], pAA[indx][snp], pAB[indx][snp], pBB[indx][snp], s2+1), snp, ind);
             alphaDot[s2] = Qentry_up(pconfig[snp*noFam_c + fam], pAA[indx][snp], pAB[indx][snp], pBB[indx][snp], s2+1) * sum;
             //Rprintf("alphaDot :%.22f at state %i, snp %i and ind %i\n", alphaDot[s2], s2, snp, ind);
           }
@@ -916,7 +778,7 @@ SEXP EM_HMM_UP(SEXP r, SEXP ep, SEXP depth_Ref, SEXP depth_Alt, SEXP config, SEX
           }
           // Add contribution to the likelihood
           llval = llval + log(w_new);
-          Rprintf("llvalue :%.8f at iter %i\n", llval, indx);
+          //Rprintf("llvalue :%.8f at ind %i\n", llval, indx);
         }
         //////////////////////
         // Compute the backward probabilities
@@ -959,26 +821,6 @@ SEXP EM_HMM_UP(SEXP r, SEXP ep, SEXP depth_Ref, SEXP depth_Alt, SEXP config, SEX
         }
       }  
     }
-    fam = 0;
-    ind = 1;
-    indx = ind + indSum[fam];
-    sumA = 0;
-    for(snp = 0; snp < nSnps_c; snp++){
-      sumA = sumA + log_w[indx][snp];
-      //Rprintf("sumA :%.22f at snp %i and ind %i\n", log_w[indx][snp], snp, ind);
-      for(s1 = 0; s1 < 4; s1++){
-        //Rprintf("alphaTilde :%.16f at state %i, snp %i and ind %i\n", alphaTilde[s1][indx][snp], s1, snp, ind);
-      }
-    }
-    sumB = 0;
-    for(snp = nSnps_c-1; snp > -1; snp--){
-      sumB = sumB + log_w[indx][snp];
-      //Rprintf("sumB :%.22f at snp %i and ind %i\n", log_w[indx][snp], snp, ind);
-      for(s1 = 0; s1 < 4; s1++){
-        //Rprintf("betaTilde :%.16f at state %i, snp %i and ind %i\n", betaTilde[s1][indx][snp], s1, snp, ind);
-      }
-    }
-    
     // The recombination fractions
     for(snp = 0; snp < nSnps_c-1; snp++){
       // Paternal
@@ -1031,10 +873,13 @@ SEXP EM_HMM_UP(SEXP r, SEXP ep, SEXP depth_Ref, SEXP depth_Alt, SEXP config, SEX
       }
       ep_c = sumA/(sumA + sumB);
     }
-    Rprintf("llvalue :%.8f at iter %i\n", llval, iter);
-    Rprintf("prellval :%.8f at iter %i\n", prellval, iter);
-    Rprintf("diff in lik :%.8f at iter %i\n", (llval - prellval) , iter);
-    Rprintf("ep :%.8f at iter %i\n", ep_c, iter);
+    //Rprintf("llvalue :%.8f at iter %i\n", llval, iter);
+    //Rprintf("prellval :%.8f at iter %i\n", prellval, iter);
+    //Rprintf("diff in lik :%.8f at iter %i\n", (llval - prellval) , iter);
+    //Rprintf("ep :%.22f at iter %i\n", ep_c, iter);
+    //for(snp = 0; snp < nSnps_c - 1; snp++){
+    //  Rprintf("r_c :%.22f at iter %i\n", r_c[snp], iter);
+    //}
   }
 
   
