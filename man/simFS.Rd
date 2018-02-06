@@ -6,10 +6,14 @@
 \usage{
 simFS(rVec_f, rVec_m = rVec_f, epsilon = 0, config, nInd, meanDepth,
   thres = NULL, NoDS = 1, formats = list(gusmap = F, onemap = F, lepmap =
-  F, joinmap = F, crimap = F), rd_dist = "Neg_Binom", filename = "sim",
+  F, joinmap = F, crimap = F), rd_dist = "NegBinom", filename = "sim",
   direct = "./", seed1 = 1, seed2 = 1)
 }
 \arguments{
+\item{rVec_f, rVec_m}{Numeric vector of true paternal and maternal
+recombination fractions (in the interval [0,0.5]). If only a single number
+is given, then recombination between adjacent loci are equal.}
+
 \item{epsilon}{Numeric value of the sequencing error rate.}
 
 \item{config}{Numeric vector of the segregation types for all the loci.}
@@ -40,12 +44,6 @@ parental phase (or OPGP).}
 
 \item{seed2}{Numeric value. Random seed used for the simulation of the data
 sets.}
-
-\item{rVec_frVec_m}{Numeric vector of true paternal and maternal
-recombination fractions (in the interval [0,0.5]). If only a single number
-is given, then recombination between adjacent loci are equal.}
-
-\item{nSnps}{Positive integer value. The number of SNPs (or loci).}
 }
 \value{
 If at least one method in \code{formats} argument is specified to be
@@ -75,6 +73,7 @@ then a list containing the following elements will be returned;
 \item rVec_f: Vector of adjacent paternal recombination fractions.
 \item rVec_m: Vector of adjacent maternal recombination fractions.
 \item nInd: Number of individuals.
+\item nSnps: Number of SNPs.
 \item config: Vector of segregation types used in the simulation.
 \item OPGP: Vector of OPGPs used in the simulation.
 \item meanDepth: Mean of the distribution used to simulate the read depths.

@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and linkage MAPping
-# Copyright 2017 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
+# Copyright 2017-2018 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,12 +18,21 @@
 #### Functions for converting VCF files to RA data
 #### Author: Timothy P. Bilton
 #### Adapted from a python script written by Rudiger Brauning and Rachael Ashby 
-#### Date: 24/01/18
+#### Date: 06/02/18
 
 #' Convert VCF file into RA (Reference/Alternative) file.
 #'
 #' Function for converting a VCF file into RA format.
-#'
+#' 
+#' The VCF files must contain some information regarding allelic depth. Currently, the function can use one of the following
+#' fields (or group of fields) in a VCF file:
+#' \itemize{
+#' \item AD field
+#' \item AO and RO fields
+#' \item DP4 field
+#' }
+#' Information regarding VCF files and their format can be found at the samtools \href{https://samtools.github.io/hts-specs/VCFv4.3.pdf}{github} page.
+#' 
 #' RA format is a tab-delimited with columns, CHROM, POS, SAMPLES
 #' where SAMPLES consists of sampleIDs, which typically consist of a colon-delimited sampleID, flowcellID, lane, seqlibID.
 #' e.g.,
@@ -35,13 +44,31 @@
 #' }
 #' Note: Indels are removed, multiple alternative alleles are removed and ./. is translated into 0,0.
 #' 
+#' The format of the pedigree files is a csv file with the following columns.
+#' \itemize{
+#' \item SampleID: A unique character string of the sample ID. These must correspond to those found in the VCF file.
+#' \item IndividualID: A character giving the ID number of the individual for which the sample corresponds to.
+#' Note that some samples can be from the same individual. 
+#' \item Mother: The ID of the mother as given in the IndividualID. Note, if the mother is unknown then this should be left blank.
+#' \item Father: The ID of the father as given in the IndividualID. Note, if the father is unknown then this should be left blank.
+#' \item Family: The name of the Family for a group of progeny with the same parents. Note that this is not necessary but if
+#' given must be the same for all the progeny.
+#' }
+#' 
 #' @param infilename String giving the filename of the VCF file to be converted to RA format
 #' @param direct String of the directory (or relative to the working direct) where the RA file is to be written.
+#' @param makePed A logical value. If TRUE, a pedigree file is initialized.
 #' @return A string of the complete file path and name of the RA file created from the function.
-#' In addition to creating a RA file, a pedigree file is also initialized in the same folder as the RA file.
+#' In addition to creating a RA file, a pedigree file is also initialized in the same folder as the RA file if
+#' specified and the named pedigree does not already exist.
 #' @author Timothy P. Bilton. Adapted from a Python script written by Rudiger Brauning and Rachael Ashby.
+#' @seealso \code{\link{readRA}}
+#' @examples
+#' MKfile <- Manuka11()
+#' RAfile <- VCFtoRA(MKfile$vcf, makePed=F)
 #' @export VCFtoRA
-VCFtoRA <- function(infilename, direct="./"){
+
+VCFtoRA <- function(infilename, direct="./", makePed=T){
   
   ## Do some checks
   if(!is.character(infilename) || length(infilename) !=1)
@@ -144,15 +171,18 @@ VCFtoRA <- function(infilename, direct="./"){
   cat("Name of RA file:    ",outfilename,"\n")
   cat("Location of RA file: ",outpath,"/\n\n",sep="")
   ## Initialize the pedigree file
-  pedfile <- paste0(strsplit(paste0(tail(strsplit(infilename,split=.Platform$file.sep)[[1]],1)),split="\\.")[[1]][1],"_ped.csv")
-  pedpath <- file.path(outpath,pedfile)
-  cat("A pedigree has been initialized.\n")
-  cat("Name of pedigree file:    ",pedfile,"\n")
-  cat("Location of pedigree file: ",outpath,"/\n\n",sep="")
-  nSamp <- length(headerlist) - 2
-  write.csv(cbind("SampleID"=c(headerlist[-c(1,2)]),"IndividualID"=rep("",nSamp),"Mother"=rep("",nSamp),
-              "Father"=rep("",nSamp), "Family"=rep("",nSamp)), file = pedpath, row.names=F)
-  
+  if(makePed){
+    pedfile <- paste0(strsplit(paste0(tail(strsplit(infilename,split=.Platform$file.sep)[[1]],1)),split="\\.")[[1]][1],"_ped.csv")
+    pedpath <- file.path(outpath,pedfile)
+    if(!file.exist(pedpath)){
+      cat("A pedigree file has been initialized.\n")
+      cat("Name of pedigree file:     ",pedfile,"\n")
+      cat("Location of pedigree file: ",outpath,"/\n\n",sep="")
+      nSamp <- length(headerlist) - 2
+      write.csv(cbind("SampleID"=c(headerlist[-c(1,2)]),"IndividualID"=rep("",nSamp),"Mother"=rep("",nSamp),
+                  "Father"=rep("",nSamp), "Family"=rep("",nSamp)), file = pedpath, row.names=F)
+    }
+  }  
   return(invisible(outfile))
 }
 

@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and linkage MAPping
-# Copyright 2017 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
+# Copyright 2017-2018 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,14 +17,11 @@
 #########################################################################
 #### Functions for converting phase information to OPGPs
 #### Author: Timothy P. Bilton
-#### Date: 03/04/17
-#### Edited: 19/06/17
+#### Date: 06/02/16
 
 
 ## Function for deteriming the parental phase of a full-sib family
-
-
-#' Inference of the OPGPs (or parental phase) for a single full-sub families.
+#' Inference of the OPGPs (or parental phase) for a single full-sub family.
 #' 
 #' Infers the OPGPs for all loci of a single full-sib family.
 #' 
@@ -41,9 +38,22 @@
 #' OPGPs" of the manuscript by Bilton et al. (2017). Note that inference is
 #' made on a single full-sib family at a time.
 #' 
+#' Two different optimzation procedures are available, which are the EM algorithm and optim.
+#' To control the parameters to these procedures, addition arguments can be passed to the function.
+#' The arguments which have an effect are dependent on the optimization procedure.
+#' \itemize{
+#' \item EM: Only two arguments currently have an effect. 'reltol' specifies 
+#' the maximum difference between the likelihood value of successive iterations
+#' before the algorithm terminates. 'maxit' specifies the maximum number of iterations
+#' used in the algorithm
+#' \item optim: The extra arguments are passed directly to optim. Those see what 
+#' arguments are valid, visit the help page fro optim using '?optim'.
+#' }
+#' 
 #' Note: There can be issues at times in finding the maximum likelihood
-#' estimate (MLE) of the likelihood. Changing the \code{ndeps} argument that is
-#' passed to \code{optim()} sometimes helps.
+#' estimate (MLE) of the likelihood for the implementation which uses optim.
+#' Changing the \code{ndeps} argument that is passed to \code{optim()} sometimes helps.
+#' Alternatively, one can just use the EM approach (which is the default).
 #' 
 #' @param depth_Ref Numeric matrix of allele counts for the reference allele.
 #' @param depth_Alt Numeric matrix of allele counts for the alternate allele.
@@ -51,10 +61,13 @@
 #' @param epsilon Numeric value of the starting value for the sequencing error
 #' parameter. Default is NULL which means that the sequencing parameter is
 #' fixed at zero.
-#' @param \ldots Additional arguments passed to \code{optim()}.
-#' @return Function returns a vector of the inferred OPGP values
+#' @param method A character string specifying whether to use the EM algorithm
+#' or optim to perform the optimzation.
+#' @param \ldots Additional arguments passed to optimization procedure. See details for more information.
+#' @return Function returns a vector of the inferred OPGP values. These values correspond to those 
+#' given in Table 1 of Bilton et al. (2017).
 #' @author Timothy P. Bilton
-#' @references Bilton, T.P., Schofield, M.R., Black, M.A., Chagne, D., Wilcox,
+#' @references Bilton, T.P., Schofield, M.R., Black, M.A., Chagné, D., Wilcox,
 #' P.L., Dodds K.G. (2017). Accounting for errors in low coverage high-throughput
 #' sequencing data when constructing genetic maps using biparental outcrossed
 #' populations. Unpublished Manuscript.
@@ -70,10 +83,12 @@
 #' F1data$OPGP
 #' 
 #' ## if there are issues with solving the likelihood (see comment in details)
-#' OPGP <- infer_OPGP_FS(F1data$depth_Ref, F1data$depth_Alt, config,
+#' ## Note: Only if using optim method
+#' OPGP <- infer_OPGP_FS(F1data$depth_Ref, F1data$depth_Alt, config, method = "optim",
 #'                       ndeps=rep(1e-1,sum(config==1)*2+sum(config!=1)-1))
 #' 
 #' @export infer_OPGP_FS
+
 infer_OPGP_FS <- function(depth_Ref, depth_Alt, config, epsilon=0.001, method="EM", ...){
   
   if(!is.matrix(depth_Ref) || !is.matrix(depth_Alt))
@@ -82,6 +97,8 @@ infer_OPGP_FS <- function(depth_Ref, depth_Alt, config, epsilon=0.001, method="E
     stop("Starting values for the error parameter needs to be a single numeric value in the interval (0,1) or a NULL object")
   if( !is.numeric(config) || !is.vector(config) || any(!(config == round(config))) || any(config < 1) || any(config > 9) )
     stop("Segregation information needs to be an integer vector equal to the number of SNPs with entires from 1 to 9")
+  if(!(length(method) != 1) || !(method %in% c("EM","optim")) )
+    stop("Optimzation method specified is invalid. Please select one of 'EM' or 'optim'")
   
   nSnps <- ncol(depth_Ref); nInd <- nrow(depth_Ref)
   

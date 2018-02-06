@@ -2,9 +2,10 @@
 % Please edit documentation in R/OPGP.R
 \name{infer_OPGP_FS}
 \alias{infer_OPGP_FS}
-\title{Inference of the OPGPs (or parental phase) for a single full-sub families.}
+\title{Inference of the OPGPs (or parental phase) for a single full-sub family.}
 \usage{
-infer_OPGP_FS(depth_Ref, depth_Alt, config, epsilon = 0.001, ...)
+infer_OPGP_FS(depth_Ref, depth_Alt, config, epsilon = 0.001, method = "EM",
+  ...)
 }
 \arguments{
 \item{depth_Ref}{Numeric matrix of allele counts for the reference allele.}
@@ -17,10 +18,14 @@ infer_OPGP_FS(depth_Ref, depth_Alt, config, epsilon = 0.001, ...)
 parameter. Default is NULL which means that the sequencing parameter is
 fixed at zero.}
 
-\item{\ldots}{Additional arguments passed to \code{optim()}.}
+\item{method}{A character string specifying whether to use the EM algorithm
+or optim to perform the optimzation.}
+
+\item{\ldots}{Additional arguments passed to optimization procedure. See details for more information.}
 }
 \value{
-Function returns a vector of the inferred OPGP values
+Function returns a vector of the inferred OPGP values. These values correspond to those 
+given in Table 1 of Bilton et al. (2017).
 }
 \description{
 Infers the OPGPs for all loci of a single full-sib family.
@@ -39,9 +44,22 @@ The methodology used to infer the OPGP is found in the section "Inferring
 OPGPs" of the manuscript by Bilton et al. (2017). Note that inference is
 made on a single full-sib family at a time.
 
+Two different optimzation procedures are available, which are the EM algorithm and optim.
+To control the parameters to these procedures, addition arguments can be passed to the function.
+The arguments which have an effect are dependent on the optimization procedure.
+\itemize{
+\item EM: Only two arguments currently have an effect. 'reltol' specifies 
+the maximum difference between the likelihood value of successive iterations
+before the algorithm terminates. 'maxit' specifies the maximum number of iterations
+used in the algorithm
+\item optim: The extra arguments are passed directly to optim. Those see what 
+arguments are valid, visit the help page fro optim using '?optim'.
+}
+
 Note: There can be issues at times in finding the maximum likelihood
-estimate (MLE) of the likelihood. Changing the \code{ndeps} argument that is
-passed to \code{optim()} sometimes helps.
+estimate (MLE) of the likelihood for the implementation which uses optim.
+Changing the \code{ndeps} argument that is passed to \code{optim()} sometimes helps.
+Alternatively, one can just use the EM approach (which is the default).
 }
 \examples{
 
@@ -55,12 +73,13 @@ OPGP <- infer_OPGP_FS(F1data$depth_Ref, F1data$depth_Alt, config)
 F1data$OPGP
 
 ## if there are issues with solving the likelihood (see comment in details)
-OPGP <- infer_OPGP_FS(F1data$depth_Ref, F1data$depth_Alt, config,
+## Note: Only if using optim method
+OPGP <- infer_OPGP_FS(F1data$depth_Ref, F1data$depth_Alt, config, method = "optim",
                       ndeps=rep(1e-1,sum(config==1)*2+sum(config!=1)-1))
 
 }
 \references{
-Bilton, T.P., Schofield, M.R., Black, M.A., Chagne, D., Wilcox,
+Bilton, T.P., Schofield, M.R., Black, M.A., Chagné, D., Wilcox,
 P.L., Dodds K.G. (2017). Accounting for errors in low coverage high-throughput
 sequencing data when constructing genetic maps using biparental outcrossed
 populations. Unpublished Manuscript.

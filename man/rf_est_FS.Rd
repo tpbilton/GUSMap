@@ -5,7 +5,7 @@
 \title{Estimation of adjacent recombination fractions in full-sib families.}
 \usage{
 rf_est_FS(init_r = 0.01, epsilon = 0.001, depth_Ref, depth_Alt, OPGP,
-  sexSpec = F, trace = F, noFam = 1, ...)
+  sexSpec = F, trace = F, noFam = 1, method = "EM", ...)
 }
 \arguments{
 \item{init_r}{Vector of starting values for the recombination fractions}
@@ -32,7 +32,9 @@ are estimated.}
 \item{noFam}{Numeric value. Specifies the number of full-sib families used
 to estimate the recombination fractions.}
 
-\item{\ldots}{Additional arguments passed to \code{optim()}.}
+\item{method}{A character string specifying the optimzation procedure to be used.}
+
+\item{\ldots}{Additional arguments passed to the optimizer procedure. See details for more information.}
 }
 \value{
 Function returns a list object. If non sex-specific recombination
@@ -65,8 +67,20 @@ a single value can be given which sets all the starting values to be equal.
 
 The likelihood calculations are scaled using forward recursion to avoid
 overflow issues and so can be implemented on a large numbers of loci. If the
-OPGP vector is unknown for the families, then it can be inferred using
+OPGP vector is unknown for the families, then it can be inferred using the function
 \code{\link{infer_OPGP_FS}}.
+
+Two different optimzation procedures are available, which are the EM algorithm and optim.
+To control the parameters to these procedures, addition arguments can be passed to the function.
+The arguments which have an effect are dependent on the optimization procedure.
+\itemize{
+\item EM: Only two arguments currently have an effect. 'reltol' specifies 
+the maximum difference between the likelihood value of successive iterations
+before the algorithm terminates. 'maxit' specifies the maximum number of iterations
+used in the algorithm
+\item optim: The extra arguments are passed directly to optim. Those see what 
+arguments are valid, visit the help page fro optim using '?optim'.
+}
 }
 \examples{
 
@@ -80,6 +94,14 @@ OPGP <- infer_OPGP_FS(F1data$depth_Ref, F1data$depth_Alt, config)
 
 ## Estimate the recombination fractions
 rf_est_FS(depth_Ref = list(F1data$depth_Ref), depth_Alt = list(F1data$depth_Alt), OPGP = list(OPGP), noFam = 1)
+## To change the optimzation parameters 
+## Max number of iterations for the EM algorithm set at 100
+rf_est_FS(depth_Ref = list(F1data$depth_Ref), depth_Alt = list(F1data$depth_Alt), OPGP = list(OPGP),
+  noFam = 1, maxit=100)
+## The algorithm will dtop when the difference between the likelihood at sucessive iterations is less
+## than 0.00001
+rf_est_FS(depth_Ref = list(F1data$depth_Ref), depth_Alt = list(F1data$depth_Alt), OPGP = list(OPGP),
+  noFam = 1, reltol=1e-5)
 
 ########################
 ### Case 2: Two families
@@ -96,13 +118,14 @@ OPGP_2 <- infer_OPGP_FS(Fam2$depth_Ref, Fam2$depth_Alt, config_2)
 ## Estimate the recombination fractions
 rf_est_FS(depth_Ref = list(Fam1$depth_Ref,Fam2$depth_Ref),
           depth_Alt = list(Fam1$depth_Alt,Fam2$depth_Alt), OPGP = list(OPGP_1,OPGP_2), noFam = 2)
+          
 
 }
 \references{
-Bilton, T.P., Schofield, M.R., Black, M.A., Chagne, D., Wilcox,
+Bilton, T.P., Schofield, M.R., Black, M.A., Chagné, D., Wilcox,
 P.L., Dodds K.G. (2017). Accounting for errors in low coverage high-throughput
 sequencing data when constructing genetic maps using biparental outcrossed
- populations. Unpublished Manuscript.
+populations. Unpublished Manuscript.
 }
 \seealso{
 \code{\link{infer_OPGP_FS}}

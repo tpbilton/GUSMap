@@ -1,36 +1,114 @@
+##########################################################################
+# Genotyping Uncertainty with Sequencing data and linkage MAPping
+# Copyright 2017-2018 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#########################################################################
+### R Function for reading in RA data.
+### Author: Timothy Bilton
+### Date: 6/02/18
 
-#' Read in an Reference/Alternate (RA) file.
+#' Read an Reference/Alternate (RA) file.
 #' 
-#' Function which reads in an RA file into R.
+#' Function which processes an RA file containing full-sib families into R and filters the data.
 #' 
+#' RA format is a tab-delimited with columns, CHROM, POS, SAMPLES
+#' where SAMPLES consists of sampleIDs, which typically consist of a colon-delimited sampleID, flowcellID, lane, seqlibID.
+#' e.g.,
+#' \tabular{llll}{
+#' CHROM \tab  POS  \tab   999220:C4TWKACXX:7:56 \tab  999204:C4TWKACXX:7:56 \cr
+#' 1     \tab  415  \tab   5,0                   \tab  0,3                   \cr
+#' 1     \tab  443  \tab   1,0                   \tab  4,4                   \cr
+#' 1     \tab  448  \tab   0,0                   \tab  0,2
+#' }
 #' 
+#' Currently, the data is filtered based on the followin criteria:
+#' \itemize{
+#' \item Minor Allele Frequency (MAF): SNPs with a MAF that is below the specified threshold are discarded.
+#' \item Proportion of missing genotypes (MISS): SNPs where the proportion of genotypes (e.g., non zero read depth)
+#' is less than the specified threshold are discarded.
+#' \item Distance between adjacent SNPs (BIN): SNPs which less than a specified distance apart are binned and one
+#' SNP is retained by random select.
+#' \item Read depth of parental genotypes (DEPTH): Parental genotypes which are (collectly) homozygous are discarded 
+#' if the sum of the read depths is not above the specified threshold. SNPs where the segregation type is not inferred 
+#' are discarded.
+#' \item P-value for segregation test (PVALUE): SNPs must pass a segregation test to be retained in the data set 
+#' for a given p-value. Note that the segregation test is adjusted for low depth as given in the supplementary 
+#' methods of Bilton et al. (2017).
+#' }
 #' 
 #' @param RAfile Character string giving the path to the RA file to be read into R. Typically the required string is
 #' returned from the VCFtoRA function when the VCF file is converted to RA format.
-#' @param gform Character string specifying whether the SNPs in the RA data have been called de novo (\code{gform="denovo"})
-#' or using an reference based assembly (\code{gform="reference"}).
 #' @param pedfile Character string giving the path to the pedigree file of the samples in the RA file. See Detials for more information on specification of this file.
-#' @param sampthres filtering to finish
+#' @param gform Character string specifying whether the SNPs in the RA data have been called using Uneak (\code{gform="uneak"})
+#' or using an reference based assembly (\code{gform="reference"}).
+#' @param sampthres A numeric value giving the filtering threshold for which infividual samples are removed.
+#' @param filter A list containing name elements corresponding to the filtering threshold to use for the processing of the full sib families.
+#' See Details for more iinformation regarding the filtering criteria available.
+#' @param excsamp A character vector of the sample IDs that are to be excluded (or discarded). Note that the sample IDs must correspond
+#' to those given in the RA file that is to be processed.
+#' @return A list containing the following elements will be returned;
+#' \itemize{
+#' \item genon: Matrix of genotypes for the simulated sequencing data.
+#' \item depth_Ref: Matrix of the allele counts for the reference allele.
+#' \item depth_Alt: Matrix of the allele counts for the alternate allele.
+#' \item chrom: Vector of the chromosome number corresponding to each SNP as given in the RA file.
+#' \item pos: Vector of chromosome positions corresponding to each SNP as given in the RA file.
+#' \item config: Vector of segregation types used in the simulation.
+#' \item famInfo: A list containing the information of the pedigree structure as supplied in the pedfile file.
+#' simulation.
+#' }
 #' @author Timothy P. Bilton
+#' @export readRA
+#' @examples
+#' MKfile <- Manuka11()
+#' RAfile <- VCFtoRA(MKfile$vcf, makePed=F)
+#' MKdata <- readRA(RAfile, MKfile$ped)
 #' @export readRA
 
 
 #### Function for reading in RA data and converting to genon and depth matrices.
-readRA <- function(RAfile, gform = "reference", pedfile, sampthres = 0.01, filter=list(MAF=0.05, MISS=0.2, BIN=0, DEPTH=5, PVALUE=0.01), excsamp=NULL){
+readRA <- function(RAfile, pedfile, gform = "reference", sampthres = 0.01, filter=list(MAF=0.05, MISS=0.2, BIN=0, DEPTH=5, PVALUE=0.01), excsamp=NULL){
   
   ## Do some checks
   if(!is.character(RAfile) || length(RAfile) != 1)
     stop("File name of RA data set is not a string of length one")
-  if(!is.character(gform) || length(gform) != 1 || !(gform %in% c("reference","denovo")))
-    stop("gform argument must be either 'reference' or 'denovo'")
-  if(is.null(filter$MAF) || filter$MAF<0 || filter$MAF>1 || !is.numeric(filter$MAF))
-    stop("Minor allele frequency filter has not be specified or is invalid.")
-  if(is.null(filter$MISS) || filter$MISS<0 || filter$MISS>1 || !is.numeric(filter$MISS))
-    stop("Proportion of missing data filter has not be specified or is invalid.")
-  if(is.null(filter$BIN) || filter$BIN<0 || filter$BIN>1 || !is.numeric(filter$BIN))
-    stop("Proportion of missing data filter has not be specified or is invalid.")
-  if(is.null(filter$DEPTH) || filter$DEPTH<0 || is.infinite(filter$DEPTH) || !is.numeric(filter$DEPTH))
-    stop("Minimum depth on the parental genotypes filter has not be specified or is invalid.")
+  if(!is.character(gform) || length(gform) != 1 || !(gform %in% c("reference","uneak")))
+    stop("gform argument must be either 'reference' or 'uneak'")
+  ## check the filtering criteria
+  if(is.null(filter$MAF) || filter$MAF<0 || filter$MAF>1 || !is.numeric(filter$MAF)){
+    warning("Minor allele frequency filter has not be specified or is invalid. Setting to 0.05:")
+    filter$MAF <- 0.05
+  }
+  if(is.null(filter$MISS) || filter$MISS<0 || filter$MISS>1 || !is.numeric(filter$MISS)){
+    warning("Proportion of missing data filter has not be specified or is invalid. Setting to 20%:")
+    filter$MISS <- 0.2
+  }
+  if(is.null(filter$BIN) || filter$BIN<0 || filter$BIN>1 || !is.numeric(filter$BIN)){
+    warning("Minimum distance between adjacent SNPs is not specified or is invalid. Setting to 0:")
+    filter$BIN <- 0 
+  }
+  if(is.null(filter$DEPTH) || filter$DEPTH<0 || is.infinite(filter$DEPTH) || !is.numeric(filter$DEPTH)){
+    warning("Minimum depth on the parental genotypes filter has not be specified or is invalid. Setting to a depth of 5")
+    filter$DEPTH <- 5
+  }
+  if(is.null(filter$DEPTH) || filter$DEPTH<0 || is.infinite(filter$DEPTH) || !is.numeric(filter$DEPTH)){
+    warning("P-value for segregation test is not specified or invalid. Setting a P-value of 0.01:")
+    filter$DEPTH <- 5
+  }
+  if( (!is.null(excsamp) & !is.vector(excsamp)) || !is.character(excsamp) )
+    stop("Input for samples which are to be excluded is invalid. Check argument 'excsamp'")
   
   ## separate character between reference and alternate allele count
   gsep <- switch(gform, denovo = "|", reference = ",")

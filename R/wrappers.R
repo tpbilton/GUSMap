@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap)
-# Copyright 2017 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
+# Copyright 2017-2018 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,8 +17,7 @@
 #########################################################################
 ### Wrapper functions required for calling C code.
 ### Author: Timothy Bilton
-### Date: 18/01/17
-### Edited: 19/06/17
+### Date: 06/02/18
 
 #### Wrapper function for likelihoods of the GBS HMM when
 #### Likelihood function is written in C in the file 'likelihoods.c'

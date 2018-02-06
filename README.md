@@ -1,4 +1,4 @@
-# GUSMap Version 0.1.0
+# GUSMap Version 0.1.1
 
 Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap).
 
@@ -20,21 +20,21 @@ Note: Some of the functions are coded in C and therefore an appropriate C compil
 
 ### Reading Data into GUSMap:
 
-The format of the data required by GUSMap is a matrix of allele counts for the reference and alternate allele and segregation type of each SNP. This data can
-produced from a VCF in GUSMap using a couple of functions. There two steps to the process.
+The format of the data required by GUSMap is a matrix of allele counts for the reference and alternate allele and segregation type of each SNP. This data can produced from a VCF in GUSMap using a couple of functions. There are steps in the process to do this.
 
-1. The VCF file needs to be converted into RA (reference/alternate) format using the function VCFtoRA(). The following example (using the chromosome 11 SNPs of the Manuka dataset used
-by Bilton et al. (2017)) shows how this is done in GUSMap.
+1. The VCF file needs to be converted into RA (reference/alternate) format using the function VCFtoRA(). The following example (using the chromosome 11 SNPs of the Manuka dataset used by Bilton et al. (2017)) shows how this is done in GUSMap.
 ```
-vcffile <- Manuka11()
-RAfile <- VCFtoRA(vcffile)
+MKfile <- Manuka11()
+RAfile <- VCFtoRA(MKfile$vcf)
 ```
-The function Manuka() just returns the path to the chromosome 11 SNPs in the Manuka data set that comes with the package.
-The function VCFtoRA() creates two files, an RA file and a partially completed pedigree file (we shall touch on the later in the next step). More information about the VCFtoRA() function and 
+The function Manuka11() just returns the path to the chromosome 11 SNPs in the Manuka data set that comes with the package.
+The function VCFtoRA() creates two files, an RA file and a partially completed pedigree file (we shall touch on this file later). More information about the VCFtoRA() function and 
 RA format data is available using the following command.
 ```
 ?VCFtoRA
 ```
+In order to convert the VCF file to RA format, some information regarding allelic depth is required. Specifically, one of the fields 'AD', 'RO' and 'AO', or 'DP4' needs to be 
+supplied in the VCF file.
 
 2. The pedigree file created from VCFtoRA() is in the form of
 
@@ -70,7 +70,7 @@ For our Manuka dataset, a completed pedigree file should look like the following
 
 3. The final step is to read in and process the RA data. For the Manuka example, the relavent code is the following:
 ```
-MKdata <- readRA(RAfile, gform = "reference", pedfile=paste0(strsplit(RAfile,split="\\.")[[1]][1],"_ped.csv"))
+MKdata <- readRA(RAfile, pedfile=MKfile$ped)
 ```
 The function readRA() processes the RA data file and extract list with the required data.
 ```
@@ -126,12 +126,19 @@ Once the recombination fractions have been estimated, they can be written to a f
 ```
 write(rf_est$rf, file="Manuka_chr11_rd6_rf.txt", ncolumns=1)
 ```
+To estimate sex-specific recombination fractions, the sexSpec argument needs to be set as TRUE.
+```
+rf_est_ss <- rf_est_FS(depth_Ref=list(MKdata$depth_Ref[[1]][,ind_rd6]), 
+                      depth_Alt=list(MKdata$depth_Alt[[1]][,ind_rd6]), 
+                      OPGP=list(OPGP_rd6), sexSpec=T) 
+```
+
 
 ### References:
 
-Bilton, T.P., Schofield, M.R., Black, M.A., Chagn&#233, D., Wilcox, P.L., Dodds, K.G. (2017). Accounting for errors in low coverage high-throughput sequencing data when constructing genetic maps using biparental outcrossed populations. Unpublished manuscript.
+Bilton, T.P., Schofield, M.R., Black, M.A., Chagn&#233;, D., Wilcox, P.L., Dodds, K.G. (2017). Accounting for errors in low coverage high-throughput sequencing data when constructing genetic maps using biparental outcrossed populations. Unpublished manuscript.
 
 ### License
 
-GUSMap is Copyright 2017 Timothy P. Bilton, released under the GNU General Public License version 3.
+GUSMap is Copyright 2017-2018 Timothy P. Bilton, released under the GNU General Public License version 3.
 

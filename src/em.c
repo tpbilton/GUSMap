@@ -218,7 +218,7 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP depth_Ref, SEXP depth_Alt, SEXP OPGP, SEXP noF
   // Initialize some more variables
   double alphaTilde[4][nTotal][nSnps_c], alphaDot[4];
   double betaTilde[4][nTotal][nSnps_c], betaDot[4];
-  double w_logcumsum, w_new, log_w[nTotal][nSnps_c];
+  double w_new, log_w[nTotal][nSnps_c];
   double uProb[4][nTotal][nSnps_c], vProb[4][4][nTotal][nSnps_c-1];
   // Define the pointers to the other input R variables
   int *pOPGP, *pdepth_Ref, *pdepth_Alt;
@@ -284,33 +284,6 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP depth_Ref, SEXP depth_Alt, SEXP OPGP, SEXP noF
   pllout = REAL(llout);
   SEXP pout = PROTECT(allocVector(VECSXP, 3));
   double llval = 0, prellval = 0;
-
-  // Lets check the input variables have been specified correctly
-  //computeProb(ppAA, ppBB, pbin_coef, ep_c, pdepth_Ref, pdepth_Alt, nTotal, nSnps_c);
-  for(fam = 0; fam < noFam_c; fam++){
-    for(ind = 0; ind < nInd_c[fam]; ind++){
-      indx = ind + indSum[fam];
-      for(snp = 0; snp < nSnps_c; snp++){
-        //Rprintf("pAA :%.22f at ind %i and snp %i\n", pAA[indx][snp], indx, snp);
-        //Rprintf("pAB :%.22f at ind %i and snp %i\n", pAB[indx][snp], indx, snp);
-        //Rprintf("pBB :%.22f at ind %i and snp %i\n", pBB[indx][snp], indx, snp);
-      }
-    }
-  }
-  for(snp = 0; snp < nSnps_c; snp++){
-    //Rprintf("OPGP :%i at snp %i\n", pOPGP[snp], snp);
-  }
-  //Rprintf("seqError :%i\n", seqError_c);
-  //Rprintf("sexSpec :%i\n", sexSpec_c);
-  //Rprintf("nSnps :%i\n", nSnps_c);
-  for(fam = 0; fam < noFam_c; fam++){
-    //Rprintf("nInd in fam %i\n", nInd_c[fam]);
-  }
-  //Rprintf("noFam :%i\n", noFam_c);
-  //Rprintf("ep :%.22f\n", ep_c);
-  //for(snp = 0; snp < 2*(nSnps_c - 1); snp++){
-  //  Rprintf("r_c :%.22f\n", r_c[snp]);
-  //}
   
   /////// Start algorithm
   iter = 0;
@@ -441,20 +414,6 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP depth_Ref, SEXP depth_Alt, SEXP OPGP, SEXP noF
       }  
     }
 
-    //for(fam = 0; fam < noFam_c; fam++){
-    //  for(ind = 0; ind < nInd_c[fam]; ind++){
-        indx = ind + indSum[fam];
-        for(snp = 0; snp < nSnps_c-1; snp++){
-          for(s1 = 0; s1 < 4; s1++){
-            //Rprintf("uProbs: %.22f at s1 %i and snp %i and ind %i\n", uProb[s1][indx][snp], s1, snp, ind);
-            for(s2 = 0; s2 < 4; s2++){
-              //Rprintf("vProbs: %.22f at s1 %i and s2 %i and snp %i and ind %i\n", vProb[s1][s2][indx][snp], s1, s2, snp, ind);
-              //Rprintf("vProbs: %.22f at s1 %i and s2 %i and snp %i and ind %i\n", vProb[s1][s2][indx][snp], s1, s2, snp, ind);
-            }
-          }
-        }
-      //}
-   // }
     //////// M-step:
     // The recombination fractions
     if(sexSpec_c){
@@ -630,7 +589,7 @@ SEXP EM_HMM_UP(SEXP r, SEXP ep, SEXP depth_Ref, SEXP depth_Alt, SEXP config, SEX
   // Initialize some more variables
   double alphaTilde[4][nTotal][nSnps_c], alphaDot[4];
   double betaTilde[4][nTotal][nSnps_c], betaDot[4];
-  double w_logcumsum, w_new, log_w[nTotal][nSnps_c];
+  double w_new, log_w[nTotal][nSnps_c];
   double uProb[4][nTotal][nSnps_c], vProb[4][4][nTotal][nSnps_c-1];
   // Define the pointers to the other input R variables
   int *pconfig, *pdepth_Ref, *pdepth_Alt;
