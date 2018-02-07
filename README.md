@@ -66,7 +66,7 @@ supplied in the VCF file.
    | ...     | ...          | ...    | ...    | ...    |
    |O177     | 179          | 2      | 1      | Manuka | 
    
-   Note that a correct pedigree file is located in the package and and the path is:
+   Note that a correct pedigree file is located in the package and the path to this file is:
    
    ```
    MKdata$ped
