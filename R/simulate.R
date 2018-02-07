@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and linkage MAPping
-# Copyright 2017 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
+# Copyright 2017-2018 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,13 +17,9 @@
 #########################################################################
 #### R script contains functions for performing Monte Carlo simulations
 ### Author: Timothy Bilton
-### Date: 20/02/17
-### Edited: 25/08/17
-
+### Date: 06/02/18
 
 ## Function for simulating sequencing data for a single full-sib family
-
-
 #' Simulation of sequencing data for a single full-sib family.
 #' 
 #' Simulate genotypes and sequencing depth for the progeny of a full-sib family
@@ -57,13 +53,12 @@
 #' uninformative (AAxAA), 7 = uninformative (AAxBB), 8 = uninformative (BBxAA)
 #' and 9 = uninformative (BBxBB).
 #' 
-#' @param rVec_frVec_m Numeric vector of true paternal and maternal
+#' @param rVec_f,rVec_m Numeric vector of true paternal and maternal
 #' recombination fractions (in the interval [0,0.5]). If only a single number
 #' is given, then recombination between adjacent loci are equal.
 #' @param epsilon Numeric value of the sequencing error rate.
 #' @param config Numeric vector of the segregation types for all the loci.
 #' @param nInd Positive integer value. The number of individuals.
-#' @param nSnps Positive integer value. The number of SNPs (or loci).
 #' @param meanDepth Positive numeric value. The mean depth of the read depth
 #' distribution.
 #' @param thres Numerical Value. Threshold value for which genotype calls with
@@ -108,10 +103,7 @@
 #' \item rVec_f: Vector of adjacent paternal recombination fractions.
 #' \item rVec_m: Vector of adjacent maternal recombination fractions.
 #' \item nInd: Number of individuals.
-
-# [ This parameter appears to be removed ]
-# \item nSnps: Number of SNPs.
-
+#' \item nSnps: Number of SNPs.
 #' \item config: Vector of segregation types used in the simulation.
 #' \item OPGP: Vector of OPGPs used in the simulation.
 #' \item meanDepth: Mean of the distribution used to simulate the read depths.
@@ -138,8 +130,9 @@
 #' simFS(0.01, config=config, nInd=50, meanDepth=5, formats=list(gusmap=TRUE), filename="simTest")
 #' 
 #' @export simFS
+
 simFS <- function(rVec_f, rVec_m=rVec_f, epsilon=0, config, nInd, meanDepth, thres=NULL, NoDS=1,
-                  formats=list(gusmap=F,onemap=F,lepmap=F,joinmap=F,crimap=F), rd_dist="Neg_Binom",
+                  formats=list(gusmap=F,onemap=F,lepmap=F,joinmap=F,crimap=F), rd_dist="NegBinom",
                   filename="sim", direct="./", seed1=1, seed2=1){
   
   ## perform some checks for data input
@@ -240,12 +233,15 @@ simFS <- function(rVec_f, rVec_m=rVec_f, epsilon=0, config, nInd, meanDepth, thr
   ## Write simulation parameters to a file
   if(writeFiles)
     dput(list(nInd=nInd,nSnps=nSnps,NoDS=NoDS,rVec_f=unlist(lapply(rVec_f,function(x) x[1])),
-              rVec_m=unlist(lapply(rVec_m,function(x) x[1])),
-              config=config,OPGP=OPGP,meanDepth=meanDepth,rd_dist=rd_dist),
+              rVec_m=unlist(lapply(rVec_m,function(x) x[1])), epsilon=epsilon,
+              config=config, OPGP=OPGP, meanDepth=meanDepth, rd_dist=rd_dist, seed1=seed1, seed2=seed2),
          paste0(trim_fn(paste0(direct,"/",filename)),"_info.txt"))
   ## return simulated data and parameter values ued to generate the data
   else
-    return(invisible(list(genon=SEQgeno,depth_Ref=aCountsFinal,depth_Alt=depth-aCountsFinal,trueGeno=geno,
+    return(invisible(list(genon=SEQgeno,
+                          depth_Ref=matrix(as.integer(aCountsFinal), nrow=nInd, ncol=nSnps),
+                          depth_Alt=matrix(as.integer(depth-aCountsFinal), nrow=nInd, ncol=nSnps),
+                          trueGeno=geno,
                           rVec_f=unlist(lapply(rVec_f,function(x) x[1])),
                           rVec_m=unlist(lapply(rVec_m,function(x) x[1])),
                           nInd=nInd,nSnps=nSnps,config=config,OPGP=OPGP,
