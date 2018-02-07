@@ -107,7 +107,7 @@ readRA <- function(RAfile, pedfile, gform = "reference", sampthres = 0.01, filte
     warning("P-value for segregation test is not specified or invalid. Setting a P-value of 0.01:")
     filter$DEPTH <- 5
   }
-  if( (!is.null(excsamp) & !is.vector(excsamp)) || !is.character(excsamp) )
+  if( !is.null(excsamp) & (!is.vector(excsamp) || !is.character(excsamp)) )
     stop("Input for samples which are to be excluded is invalid. Check argument 'excsamp'")
   
   ## separate character between reference and alternate allele count

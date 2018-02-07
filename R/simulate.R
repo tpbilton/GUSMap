@@ -234,13 +234,13 @@ simFS <- function(rVec_f, rVec_m=rVec_f, epsilon=0, config, nInd, meanDepth, thr
   if(writeFiles)
     dput(list(nInd=nInd,nSnps=nSnps,NoDS=NoDS,rVec_f=unlist(lapply(rVec_f,function(x) x[1])),
               rVec_m=unlist(lapply(rVec_m,function(x) x[1])), epsilon=epsilon,
-              config=config, OPGP=OPGP, meanDepth=meanDepth, rd_dist=rd_dist, seed1=see1, seed2=seed2),
+              config=config, OPGP=OPGP, meanDepth=meanDepth, rd_dist=rd_dist, seed1=seed1, seed2=seed2),
          paste0(trim_fn(paste0(direct,"/",filename)),"_info.txt"))
   ## return simulated data and parameter values ued to generate the data
   else
     return(invisible(list(genon=SEQgeno,
-                          depth_Ref=matrix(as.integer(aCountsFinal)),
-                          depth_Alt=matrix(as.integer(depth-aCountsFinal)),
+                          depth_Ref=matrix(as.integer(aCountsFinal), nrow=nInd, ncol=nSnps),
+                          depth_Alt=matrix(as.integer(depth-aCountsFinal), nrow=nInd, ncol=nSnps),
                           trueGeno=geno,
                           rVec_f=unlist(lapply(rVec_f,function(x) x[1])),
                           rVec_m=unlist(lapply(rVec_m,function(x) x[1])),

@@ -97,7 +97,7 @@ infer_OPGP_FS <- function(depth_Ref, depth_Alt, config, epsilon=0.001, method="E
     stop("Starting values for the error parameter needs to be a single numeric value in the interval (0,1) or a NULL object")
   if( !is.numeric(config) || !is.vector(config) || any(!(config == round(config))) || any(config < 1) || any(config > 9) )
     stop("Segregation information needs to be an integer vector equal to the number of SNPs with entires from 1 to 9")
-  if(!(length(method) != 1) || !(method %in% c("EM","optim")) )
+  if(length(method) != 1 || !(method %in% c("EM","optim")) )
     stop("Optimzation method specified is invalid. Please select one of 'EM' or 'optim'")
   
   nSnps <- ncol(depth_Ref); nInd <- nrow(depth_Ref)

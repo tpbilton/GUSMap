@@ -174,7 +174,7 @@ VCFtoRA <- function(infilename, direct="./", makePed=T){
   if(makePed){
     pedfile <- paste0(strsplit(paste0(tail(strsplit(infilename,split=.Platform$file.sep)[[1]],1)),split="\\.")[[1]][1],"_ped.csv")
     pedpath <- file.path(outpath,pedfile)
-    if(!file.exist(pedpath)){
+    if(!file.exists(pedpath)){
       cat("A pedigree file has been initialized.\n")
       cat("Name of pedigree file:     ",pedfile,"\n")
       cat("Location of pedigree file: ",outpath,"/\n\n",sep="")
