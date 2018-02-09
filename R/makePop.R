@@ -23,13 +23,33 @@ makePop <- function(obj, ...){
 }
 
 ### Make a full-sib family population
-makePop.FS <- function(R6obj, famInfo, filter=list(MAF=0.05, MISS=0.2, BIN=0, DEPTH=6, PVALUE=0.05), inferSNPs = FALSE, perInfFam=1){
+makePop.FS <- function(R6obj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0.2, BIN=0, DEPTH=6, PVALUE=0.05), inferSNPs = FALSE, perInfFam=1){
   
   ## Do some checks
   if(is.null(filter$MAF) || filter$MAF<0 || filter$MAF>1 || !is.numeric(filter$MAF))
     stop("Minor allele frequency filter has not be specifies or is invalid.")
   if(perInfFam <=0.5 || perInfFam > 1)
     stop("The of the percentage of families which are informative for each SNP must greater than 50% and leass than equal to 100%.")
+  if(is.null(filter$MAF) || filter$MAF<0 || filter$MAF>1 || !is.numeric(filter$MAF)){
+    warning("Minor allele frequency filter has not be specified or is invalid. Setting to 0.05:")
+    filter$MAF <- 0.05
+  }
+  if(is.null(filter$MISS) || filter$MISS<0 || filter$MISS>1 || !is.numeric(filter$MISS)){
+    warning("Proportion of missing data filter has not be specified or is invalid. Setting to 20%:")
+    filter$MISS <- 0.2
+  }
+  if(is.null(filter$BIN) || filter$BIN<0 || !is.finite(filter$BIN) || !is.numeric(filter$BIN)){
+    warning("Minimum distance between adjacent SNPs is not specified or is invalid. Setting to 0:")
+    filter$BIN <- 0 
+  }
+  if(is.null(filter$DEPTH) || filter$DEPTH<0 || is.infinite(filter$DEPTH) || !is.numeric(filter$DEPTH)){
+    warning("Minimum depth on the parental genotypes filter has not be specified or is invalid. Setting to a depth of 5")
+    filter$DEPTH <- 5
+  }
+  if(is.null(filter$DEPTH) || filter$DEPTH<0 || is.infinite(filter$DEPTH) || !is.numeric(filter$DEPTH)){
+    warning("P-value for segregation test is not specified or invalid. Setting a P-value of 0.01:")
+    filter$DEPTH <- 5
+  }
   
   ## Define variables that will be used.
   noFam <- length(famInfo)
@@ -47,6 +67,53 @@ makePop.FS <- function(R6obj, famInfo, filter=list(MAF=0.05, MISS=0.2, BIN=0, DE
   nSnps <- R6obj$.__enclos_env__$private$nSnps
   
   genon_all <- depth_Ref_all <- depth_Alt_all <- vector(mode="list", length=noFam)
+  
+  ## sort out the pedigree
+  ped <- read.csv(pedfile, stringsAsFactors=F)
+  famInfo = list()
+  ## work out how many families there are
+  parents <- unique(ped[c("Mother","Father")])
+  # check that parents are in the file
+  parents <- parents[which(apply(parents,1, function(x) all(x %in% ped$IndividualID))),]
+  ## find the families to be used
+  if(is.null(family))
+    family <- unique(ped$Family)[!is.na(unique(ped$Family))]
+  else{
+    if(any(!(family %in% unique(ped$Family)[!is.na(unique(ped$Family))])))
+      stop("Family missing from the pedigree file. Please check the family ID suppied or the pedigree file.")
+  }
+  ## Create each family
+  for(fam in family){
+    progIndx <- which(ped$Family == fam)
+    famParents <- unique( ped[progIndx,c("Mother","Father")] )
+    if(nrow(famParents) > 1)
+      stop(paste0("Individuals with the same family name (Family ",fam,") have different different parents. Please check the pedigree file"))
+    if(any(is.na(famParents)))
+      stop(paste0("Family ",fam," has missing parents. Please check the pedigree file"))
+    father <- as.integer(famParents["Father"])
+    mother <- as.integer(famParents["Mother"])
+    ## Create the pedigree
+    famInfo[[as.character(fam)]]$progeny <- ped$SampleID[progIndx]
+    famInfo[[as.character(fam)]]$parents <- list(Father=ped$SampleID[which(ped$IndividualID==father)],
+                                                 Mother=ped$SampleID[which(ped$IndividualID==mother)])
+    ## Check to see if there are any grandparents
+    grandparents = ped[which(ped$IndividualID==father),c("Mother","Father")]
+    if(nrow(grandparents) == 1){
+      famInfo[[as.character(fam)]]$grandparents$paternalGrandFather <- ped$SampleID[which(ped$IndividualID == grandparents[,"Father"])]
+      famInfo[[as.character(fam)]]$grandparents$paternalGrandMother <- ped$SampleID[which(ped$IndividualID == grandparents[,"Mother"])]
+    }
+    else if(nrow(grandparents) > 2)
+      stop("Father of family ",fam," has mutiple parents. Please check the pedigree file.")
+    grandparents = ped[which(ped$IndividualID==mother),c("Mother","Father")]
+    if(nrow(grandparents) == 1){
+      famInfo[[as.character(fam)]]$grandparents$maternalGrandFather <- ped$SampleID[which(ped$IndividualID == grandparents[,"Father"])]
+      famInfo[[as.character(fam)]]$grandparents$maternalGrandMother <- ped$SampleID[which(ped$IndividualID == grandparents[,"Mother"])]
+    }   
+    else if(nrow(grandparents) > 2)
+      stop("Mother of family ",fam," has mutiple parents. Please check the pedigree file.")
+  }
+  
+  noFam <- length(famInfo)
   
   ## extract the data and format correct for each family.
   for(fam in 1:noFam){
@@ -389,7 +456,7 @@ makePop.FS <- function(R6obj, famInfo, filter=list(MAF=0.05, MISS=0.2, BIN=0, DE
     genon = genon_all, depth_Ref = depth_Ref_all, depth_Alt = depth_Alt_all, chrom = chrom_all, pos = pos_all,
     group = group, group_infer = group_infer, config = config_all, config_infer = config_infer_all,
     nInd = nInd_all, nSnps = sum(indx_all), noFam = noFam, indID = indID_all, SNP_Names = SNP_Names,
-    masked=rep(FALSE,sum(indx_all)))
+    masked=rep(FALSE,sum(indx_all)), famInfo=famInfo)
   )
   
   return(R6obj)

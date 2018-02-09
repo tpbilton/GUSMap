@@ -116,6 +116,7 @@ FS <- R6Class("FS",
       private$nInd      <- R6obj$.__enclos_env__$private$nInd
       private$gform     <- R6obj$.__enclos_env__$private$gform
       private$masked    <- rep(TRUE, R6obj$.__enclos_env__$private$nSnps)
+      private$famInfo   <- R6obj$.__enclos_env__$private$famInfo
     },
     #############################################################
     ## Function for removing SNPs from the linkage groups
@@ -221,6 +222,7 @@ FS <- R6Class("FS",
     noFam        = NULL,
     rf           = NULL,
     LOD          = NULL,
+    famInfo      = NULL,
     ## Function for updating the private variables
     updatePrivate = function(List){
       if(!is.null(List$genon))
@@ -257,6 +259,8 @@ FS <- R6Class("FS",
         private$LOD          = List$LOD
       if(!is.null(List$masked))
         private$masked       = List$masked
+      if(!is.null(List$famInfo))
+        private$famInfo      = List$famInfo
     }
   )
 )
