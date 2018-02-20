@@ -254,7 +254,7 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP depth_Ref, SEXP depth_Alt, SEXP OPGP, SEXP noF
     for(ind = 0; ind < nInd_c[fam]; ind++){
       indx = ind + indSum[fam];
       for(snp = 0; snp < nSnps_c; snp++){
-        bin_coef[indx][snp] = binomial(pdepth_Ref[indx + nTotal*snp] + pdepth_Alt[indx + nTotal*snp], pdepth_Ref[indx + nTotal*snp]);
+        bin_coef[indx][snp] = binomial(pdepth_Ref[indx + nTotal*snp], pdepth_Alt[indx + nTotal*snp]);
         pAB[indx][snp] = bin_coef[indx][snp] * powl(0.5,pdepth_Ref[indx + nTotal*snp] + pdepth_Alt[indx + nTotal*snp]);
         for(s1 = 0; s1 < 4; s1++){
           g = Iindx(pOPGP[snp*noFam_c + fam], s1 + 1);
