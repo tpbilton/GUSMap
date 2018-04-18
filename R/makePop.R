@@ -52,9 +52,6 @@ makePop.FS <- function(R6obj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0
   }
   
   ## Define variables that will be used.
-  noFam <- length(famInfo)
-  config_all <- config_infer_all <- nInd_all <- indx <- indID_all <- vector(mode = "list", length = noFam)
-  
   cat("-------------\n")
   cat("Processing Data.\n\n")
   
@@ -65,8 +62,6 @@ makePop.FS <- function(R6obj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0
   ## Extract the private variables we want
   indID <- R6obj$.__enclos_env__$private$indID
   nSnps <- R6obj$.__enclos_env__$private$nSnps
-  
-  genon_all <- depth_Ref_all <- depth_Alt_all <- vector(mode="list", length=noFam)
   
   ## sort out the pedigree
   ped <- read.csv(pedfile, stringsAsFactors=F)
@@ -114,6 +109,8 @@ makePop.FS <- function(R6obj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0
   }
   
   noFam <- length(famInfo)
+  config_all <- config_infer_all <- nInd_all <- indx <- indID_all <- vector(mode = "list", length = noFam)
+  genon_all <- depth_Ref_all <- depth_Alt_all <- vector(mode="list", length=noFam)
   
   ## extract the data and format correct for each family.
   for(fam in 1:noFam){
