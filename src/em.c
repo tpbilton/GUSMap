@@ -36,7 +36,7 @@ int Tcount(int s1, int s2){
     return 1;
 }
 
-/*
+
 // Function for computing binomial coefficients
 // taken  from this website "https://rosettacode.org/wiki/Evaluate_binomial_coefficients#C"
 static unsigned long gcd_ui(unsigned long x, unsigned long y) {
@@ -48,21 +48,22 @@ static unsigned long gcd_ui(unsigned long x, unsigned long y) {
   return x;
 }
 
-unsigned long binomial(unsigned long n, unsigned long k) {
-  unsigned long d, g, r = 1;
-  if (k == 0) return 1;
-  if (k == 1) return n;
-  if (k >= n) return (k == n);
-  if (k > n/2) k = n-k;
-  for (d = 1; d <= k; d++) {
+unsigned long binomial(unsigned long a, unsigned long b) {
+  unsigned long n, d, g, r = 1;
+  n = a + b;
+  if (a == 0) return 1;
+  if (a == 1) return n;
+  if (a >= n) return (a == n);
+  if (a > n/2) a = n-a;
+  for (d = 1; d <= a; d++) {
     if (r >= ULONG_MAX/n) {  // Possible overflow 
-unsigned long nr, dr;  // reduced numerator / denominator 
-g = gcd_ui(n, d);  nr = n/g;  dr = d/g;
-g = gcd_ui(r, dr);  r = r/g;  dr = dr/g;
-if (r >= ULONG_MAX/nr) return 0;  // Unavoidable overflow
-r *= nr;
-r /= dr;
-n--;
+      unsigned long nr, dr;  // reduced numerator / denominator 
+      g = gcd_ui(n, d);  nr = n/g;  dr = d/g;
+      g = gcd_ui(r, dr);  r = r/g;  dr = dr/g;
+      if (r >= ULONG_MAX/nr) return 0;  // Unavoidable overflow
+      r *= nr;
+      r /= dr;
+      n--;
     } else {
       r *= n--;
       r /= d;
@@ -70,13 +71,14 @@ n--;
   }
   return r;
 }
-*/
 
+/*
 double long binomial(int a, int b){
   double long res;
   res = expl(lgammal(a+b+1) - lgammal(b+1) - lgammal(a+1));
   return res;
 }
+*/
 
 // Function for computing the emission probabilities given the true genotypes
 double computeProb(double *ppAA, double *ppBB, double *pbin_coef,
@@ -254,7 +256,7 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP depth_Ref, SEXP depth_Alt, SEXP OPGP, SEXP noF
     for(ind = 0; ind < nInd_c[fam]; ind++){
       indx = ind + indSum[fam];
       for(snp = 0; snp < nSnps_c; snp++){
-        bin_coef[indx][snp] = binomial(pdepth_Ref[indx + nTotal*snp], pdepth_Alt[indx + nTotal*snp]);
+        bin_coef[indx][snp] = 1; //binomial(pdepth_Ref[indx + nTotal*snp], pdepth_Alt[indx + nTotal*snp]);
         pAB[indx][snp] = bin_coef[indx][snp] * powl(0.5,pdepth_Ref[indx + nTotal*snp] + pdepth_Alt[indx + nTotal*snp]);
         for(s1 = 0; s1 < 4; s1++){
           g = Iindx(pOPGP[snp*noFam_c + fam], s1 + 1);
@@ -624,7 +626,7 @@ SEXP EM_HMM_UP(SEXP r, SEXP ep, SEXP depth_Ref, SEXP depth_Alt, SEXP config, SEX
     for(ind = 0; ind < nInd_c[fam]; ind++){
       indx = ind + indSum[fam];
       for(snp = 0; snp < nSnps_c; snp++){
-        bin_coef[indx][snp] = binomial(pdepth_Ref[indx + nTotal*snp] + pdepth_Alt[indx + nTotal*snp], pdepth_Ref[indx + nTotal*snp]);
+        bin_coef[indx][snp] = 1; //binomial(pdepth_Ref[indx + nTotal*snp] + pdepth_Alt[indx + nTotal*snp], pdepth_Ref[indx + nTotal*snp]);
         pAB[indx][snp] = bin_coef[indx][snp] * powl(0.5,pdepth_Ref[indx + nTotal*snp] + pdepth_Alt[indx + nTotal*snp]);
         for(s1 = 0; s1 < 4; s1++){
           g = Iindx_up(pconfig[snp*noFam_c + fam], s1 + 1);

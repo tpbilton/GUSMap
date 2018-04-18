@@ -102,6 +102,9 @@ infer_OPGP_FS <- function(depth_Ref, depth_Alt, config, epsilon=0.001, method="E
   
   nSnps <- ncol(depth_Ref); nInd <- nrow(depth_Ref)
   
+  if(nInd*nSnps > 25000)          # if data set is too large, there are memory issues with R for EM algorithm
+    method = "optim"
+  
   ## Index the informative loci
   Isnps <- which(!(config %in% 6:9))
 

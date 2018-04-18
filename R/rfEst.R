@@ -148,7 +148,7 @@ rf_est_FS <- function(init_r=0.01, epsilon=0.001, depth_Ref, depth_Alt, OPGP,
     sexSpec = FALSE
   if(!(method %in% c("EM","optim")))
      stop("Specified optimization method is unknown. Please select one of 'EM' or 'optim'")
-
+  
   ## Check the read count matrices
   if(any(unlist(lapply(depth_Ref,function(x) !is.numeric(x) || any( x<0 | !is.finite(x)) || any(!(x == round(x)))))))
     stop("At least one read count matrix for the reference allele is missing or invalid")
@@ -159,6 +159,9 @@ rf_est_FS <- function(init_r=0.01, epsilon=0.001, depth_Ref, depth_Alt, OPGP,
      
   nInd <- lapply(depth_Ref,nrow)  # number of individuals
   nSnps <- ncol(depth_Ref[[1]])   # number of SNPs
+  
+  if(nInd*nSnps > 25000)          # if data set is too large, there are memory issues with R for EM algorithm
+    method = "optim"
   
   ## check inputs are of required type for C functions
   if(!is.numeric(init_r)|is.integer(init_r))
@@ -252,11 +255,11 @@ rf_est_FS <- function(init_r=0.01, epsilon=0.001, depth_Ref, depth_Alt, OPGP,
     if(sexSpec)
       return(list(rf_p=inv.logit2(optim.MLE$par[1:npar[1]]),rf_m=inv.logit2(optim.MLE$par[npar[1]+1:npar[2]]),
                   epsilon=ifelse(seqErr,inv.logit(optim.MLE$par[sum(npar)+1]),0),
-                  loglik=optim.MLE$value))
+                  loglik=-optim.MLE$value))
     else
       return(list(rf=inv.logit2(optim.MLE$par[1:(nSnps-1)]), 
                   epsilon=ifelse(seqErr,inv.logit(optim.MLE$par[nSnps]),0),
-                  loglik=optim.MLE$value))
+                  loglik=-optim.MLE$value))
   }
   else{ # EM algorithm approach
     ## Set up the parameter values
@@ -302,7 +305,9 @@ rf_est_FS <- function(init_r=0.01, epsilon=0.001, depth_Ref, depth_Alt, OPGP,
     
     EMout <- .Call("EM_HMM", init_r, epsilon, depth_Ref_mat, depth_Alt_mat, OPGPmat,
                    noFam, unlist(nInd), nSnps, sexSpec, seqErr, EM.arg, as.integer(ss_rf))
-
+    
+    EMout[[3]] = EMout[[3]] + sum(log(choose(depth_Ref_mat+depth_Alt_mat,depth_Ref_mat)))
+    
     if(sexSpec){
       return(list(rf_p=EMout[[1]][ps],rf_m=EMout[[1]][nSnps-1+ms],
                   epsilon=EMout[[2]],
