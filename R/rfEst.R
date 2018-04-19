@@ -160,7 +160,7 @@ rf_est_FS <- function(init_r=0.01, epsilon=0.001, depth_Ref, depth_Alt, OPGP,
   nInd <- lapply(depth_Ref,nrow)  # number of individuals
   nSnps <- ncol(depth_Ref[[1]])   # number of SNPs
   
-  if(nInd*nSnps > 25000)          # if data set is too large, there are memory issues with R for EM algorithm
+  if(sum(unlist(nInd))*nSnps > 25000)          # if data set is too large, there are memory issues with R for EM algorithm
     method = "optim"
   
   ## check inputs are of required type for C functions
