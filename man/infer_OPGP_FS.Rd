@@ -25,7 +25,7 @@ or optim to perform the optimzation.}
 }
 \value{
 Function returns a vector of the inferred OPGP values. These values correspond to those 
-given in Table 1 of Bilton et al. (2017).
+given in Table 1 of Bilton et al. (2018).
 }
 \description{
 Infers the OPGPs for all loci of a single full-sib family.
@@ -41,7 +41,7 @@ uninformative (AAxAA), 7 = uninformative (AAxBB), 8 = uninformative (BBxAA)
 and 9 = uninformative (BBxBB).
 
 The methodology used to infer the OPGP is found in the section "Inferring
-OPGPs" of the manuscript by Bilton et al. (2017). Note that inference is
+OPGPs" of the manuscript by Bilton et al. (2018). Note that inference is
 made on a single full-sib family at a time.
 
 Two different optimzation procedures are available, which are the EM algorithm and optim.
@@ -80,9 +80,9 @@ OPGP <- infer_OPGP_FS(F1data$depth_Ref, F1data$depth_Alt, config, method = "opti
 }
 \references{
 Bilton, T.P., Schofield, M.R., Black, M.A., Chagné, D., Wilcox,
-P.L., Dodds K.G. (2017). Accounting for errors in low coverage high-throughput
+P.L., & Dodds, K.G. (2018). Accounting for errors in low coverage high-throughput
 sequencing data when constructing genetic maps using biparental outcrossed
-populations. Unpublished Manuscript.
+populations. \emph{Genetics}, \emph{209}(1), 65--76. \url{http://www.genetics.org/content/209/1/65}
 }
 \author{
 Timothy P. Bilton

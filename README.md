@@ -2,7 +2,7 @@
 
 Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap).
 
-An R package for constructing genetic linkage maps using low and/or high coverage sequencing data without requiring filtering with respect to read depth. It accounts for errors associated with low sequencing depth and miscalled bases. This release accompanies the paper by Bilton et al. (2017).
+An R package for constructing genetic linkage maps using low and/or high coverage sequencing data without requiring filtering with respect to read depth. It accounts for errors associated with low sequencing depth and miscalled bases. This release accompanies the paper by Bilton et al. (2018).
 
 [![gplv3+](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl.html)
 
@@ -11,7 +11,7 @@ An R package for constructing genetic linkage maps using low and/or high coverag
 The easiest way to install GUSMap in R is using the devtools package.
 
 ```
-install.packages(devtools)
+install.packages("devtools")
 library(devtools)
 install_github("tpbilton/GUSMap")
 ```
@@ -22,7 +22,7 @@ Note: Some of the functions are coded in C and therefore an appropriate C compil
 
 The format of the data required by GUSMap is a matrix of allele counts for the reference and alternate allele and segregation type of each SNP. This data can obtained from a VCF in GUSMap using a couple of key functions. There are three steps in this process which are the following:
 
-1. The VCF file needs to be converted into RA (reference/alternate) format using the function `VCFtoRA()`. The following example (using the chromosome 11 SNPs of the Manuka dataset used by Bilton et al. (2017)) shows how this is done in GUSMap.
+1. The VCF file needs to be converted into RA (reference/alternate) format using the function `VCFtoRA()`. The following example (using the chromosome 11 SNPs of the Manuka dataset used by Bilton et al. (2018)) shows how this is done in GUSMap.
  
    ```
    MKfile <- Manuka11()
@@ -92,7 +92,7 @@ supplied in the VCF file.
 
 ### Analysis in GUSMap:
 
-To show how GUSMap is used to estimate the adjacent recombination fractions, we use the low depth (average read depth below 6) chromosome 11 SNPs from the Manuka data set described in Bilton et al. (2017). First, it was noted that there were a number of SNPs that were erroreously placed on the chromsome. The following code gives the indices of these SNPs.
+To show how GUSMap is used to estimate the adjacent recombination fractions, we use the low depth (average read depth below 6) chromosome 11 SNPs from the Manuka data set described in Bilton et al. (2018). First, it was noted that there were a number of SNPs that were erroreously placed on the chromsome. The following code gives the indices of these SNPs.
 ```
 ## Remove the bad SNPs
 badSnps <- rep(FALSE, ncol(MKdata$genon[[1]])) 
@@ -151,7 +151,7 @@ rf_est_ss <- rf_est_FS(depth_Ref=list(depth_Ref[,ind_rd6]),
 
 ### References:
 
-Bilton, T.P., Schofield, M.R., Black, M.A., Chagn&#233;, D., Wilcox, P.L., Dodds, K.G. (2017). Accounting for errors in low coverage high-throughput sequencing data when constructing genetic maps using biparental outcrossed populations. Unpublished manuscript.
+Bilton, T.P., Schofield, M.R., Black, M.A., Chagn&#233;, D., Wilcox, P.L., & Dodds, K.G. (2018). Accounting for errors in low coverage high-throughput sequencing data when constructing genetic maps using biparental outcrossed populations. *Genetics*, *209*(1), 65--76. doi:[10.1534/genetics.117.300627](http://www.genetics.org/content/209/1/65) 
 
 ### License
 

@@ -59,7 +59,7 @@
 #' @param depth_Alt List object with each element containing a matrix of allele
 #' counts for the alternate allele for each family.
 #' @param OPGP List object with each element containing a numeric vector of
-#' ordered parental genotype pairs (OPGPs) for each family. See Bilton (2017)
+#' ordered parental genotype pairs (OPGPs) for each family. See Bilton (2018)
 #' for a classification of each OPGP.
 #' @param sexSpec Logical value. If TRUE, sex specific recombination fractions
 #' are estimated.
@@ -86,9 +86,9 @@
 #' @author Timothy P. Bilton
 #' @seealso \code{\link{infer_OPGP_FS}}
 #' @references Bilton, T.P., Schofield, M.R., Black, M.A., Chagné, D., Wilcox,
-#' P.L., Dodds K.G. (2017). Accounting for errors in low coverage high-throughput
+#' P.L., & Dodds, K.G. (2018). Accounting for errors in low coverage high-throughput
 #' sequencing data when constructing genetic maps using biparental outcrossed
-#' populations. Unpublished Manuscript.
+#' populations. \emph{Genetics}, \emph{209}(1), 65--76. \url{http://www.genetics.org/content/209/1/65}
 #' @examples
 #' 
 #' ### Case 1: Single family

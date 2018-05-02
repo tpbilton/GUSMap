@@ -20,10 +20,10 @@
 #' 
 #' Package for constructing genetic maps using outcrossed full-sib family
 #' populations that have been sequenced using next generation multiplexing
-#' sequencing methods (see Bilton et al. (2017)).
+#' sequencing methods (see Bilton et al. (2018)).
 #' 
 #' \tabular{ll}{ Package: \tab GUSMap\cr Type: \tab Package\cr Version: \tab
-#' 0.1.1\cr Date: \tab 2018-06-02\cr License: \tab GPL 3\cr }
+#' 0.1.1\cr Date: \tab 2019-02-05\cr License: \tab GPL 3\cr }
 #' 
 #' @name GUSMap-package
 #' @aliases GUSMap
@@ -31,9 +31,9 @@
 #' @author Timothy P. Bilton, Maintainer: Timothy P. Bilton
 #' <tbilton@@maths.otago.ac.nz>
 #' @references Bilton, T.P., Schofield, M.R., Black, M.A., Chagné, D., Wilcox,
-#' P.L., Dodds K.G. (2017). Accounting for errors in low coverage high-throughput
+#' P.L., & Dodds, K.G. (2018). Accounting for errors in low coverage high-throughput
 #' sequencing data when constructing genetic maps using biparental outcrossed
-#' populations. Unpublished Manuscript.
+#' populations. \emph{Genetics}, \emph{209}(1), 65--76. \url{http://www.genetics.org/content/209/1/65}
 #' @keywords package
 NULL
 

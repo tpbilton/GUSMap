@@ -12,7 +12,7 @@ and a pedigree file that goes with the data.
 }
 \description{
 Function for extracting the path to the (VCF) file of the Manuka data used in the publication by Bilton et
-al. (2017) and a pedigree file that goes with the data.
+al. (2018) and a pedigree file that goes with the data.
 }
 \details{
 The data consists of 680 SNPs, genotyped using genotyping-by-sequencing
@@ -35,9 +35,9 @@ Manuka11()
 }
 \references{
 Bilton, T.P., Schofield, M.R., Black, M.A., Chagné, D., Wilcox,
-P.L., Dodds K.G. (2017). Accounting for errors in low coverage high-throughput
+P.L., & Dodds, K.G. (2018). Accounting for errors in low coverage high-throughput
 sequencing data when constructing genetic maps using biparental outcrossed
-populations. Unpublished Manuscript.
+populations. \emph{Genetics}, \emph{209}(1), 65--76. \url{http://www.genetics.org/content/209/1/65}
 }
 \author{
 Timothy P. Bilton
