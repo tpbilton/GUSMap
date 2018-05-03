@@ -35,7 +35,7 @@
 #' and 9 = uninformative (BBxBB).
 #' 
 #' The methodology used to infer the OPGP is found in the section "Inferring
-#' OPGPs" of the manuscript by Bilton et al. (2018). Note that inference is
+#' OPGPs" of the manuscript by \insertCite{bilton2018genetics1;textual}{GUSMap}. Note that inference is
 #' made on a single full-sib family at a time.
 #' 
 #' Two different optimzation procedures are available, which are the EM algorithm and optim.
@@ -65,12 +65,10 @@
 #' or optim to perform the optimzation.
 #' @param \ldots Additional arguments passed to optimization procedure. See details for more information.
 #' @return Function returns a vector of the inferred OPGP values. These values correspond to those 
-#' given in Table 1 of Bilton et al. (2018).
+#' given in Table 1 of \insertCite{bilton2018genetics1;textual}{GUSMap}.
 #' @author Timothy P. Bilton
-#' @references Bilton, T.P., Schofield, M.R., Black, M.A., Chagné, D., Wilcox,
-#' P.L., & Dodds, K.G. (2018). Accounting for errors in low coverage high-throughput
-#' sequencing data when constructing genetic maps using biparental outcrossed
-#' populations. \emph{Genetics}, \emph{209}(1), 65--76. \url{http://www.genetics.org/content/209/1/65}
+#' @references 
+#' \insertAllCited{}
 #' @examples
 #' 
 #' ## simulate full-sib family

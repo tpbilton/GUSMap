@@ -21,7 +21,7 @@ counts for the reference allele for each family.}
 counts for the alternate allele for each family.}
 
 \item{OPGP}{List object with each element containing a numeric vector of
-ordered parental genotype pairs (OPGPs) for each family. See Bilton (2018)
+ordered parental genotype pairs (OPGPs) for each family. See \insertCite{bilton2018genetics1;textual}{GUSMap}
 for a classification of each OPGP.}
 
 \item{sexSpec}{Logical value. If TRUE, sex specific recombination fractions
@@ -122,10 +122,7 @@ rf_est_FS(depth_Ref = list(Fam1$depth_Ref,Fam2$depth_Ref),
 
 }
 \references{
-Bilton, T.P., Schofield, M.R., Black, M.A., Chagné, D., Wilcox,
-P.L., & Dodds, K.G. (2018). Accounting for errors in low coverage high-throughput
-sequencing data when constructing genetic maps using biparental outcrossed
-populations. \emph{Genetics}, \emph{209}(1), 65--76. \url{http://www.genetics.org/content/209/1/65}
+\insertAllCited{}
 }
 \seealso{
 \code{\link{infer_OPGP_FS}}

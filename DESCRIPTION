@@ -11,4 +11,6 @@ License: GPL-3
 LazyData: true
 NeedsCompilation: yes
 RoxygenNote: 6.0.1
+Imports: Rdpack
 Suggests: testthat
+RdMacros: Rdpack
