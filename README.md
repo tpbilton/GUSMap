@@ -25,6 +25,7 @@ The format of the data required by GUSMap is a matrix of allele counts for the r
 1. The VCF file needs to be converted into RA (reference/alternate) format using the function `VCFtoRA()`. The following example (using the chromosome 11 SNPs of the Manuka dataset used by Bilton et al. (2018)) shows how this is done in GUSMap.
  
    ```
+   library(GUSMap)
    MKfile <- Manuka11()
    RAfile <- VCFtoRA(MKfile$vcf)
    ```
