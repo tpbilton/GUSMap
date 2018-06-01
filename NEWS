@@ -1,6 +1,6 @@
 Release of version 0.1.1
 
-  o This verison accompanies the publication by Bilton et al. (2017).
+  o This verison accompanies the publication by Bilton et al. (2018).
 
 ADDED FEATURES
 
@@ -23,4 +23,4 @@ FEATURES
 
 REFERENCES
 
-  o Bilton, T.P., Schofield, M.R., Black, M.A., Chagne, D., Wilcox, P.L., Dodds, K.G. (2017). Accounting for Errors in Low coverage high-throughput sequencing data when constructing genetic maps using biparental outcrossed populations. Unpublished manuscript.
+  o Bilton, T.P., Schofield, M.R., Black, M.A., Chagne, D., Wilcox, P.L., Dodds, K.G. (2018). "Accounting for Errors in Low coverage high-throughput sequencing data when constructing genetic maps using biparental outcrossed populations." Genetics, 209(1), pp. 65-76. doi: 10.1534/genetics.117.300627.

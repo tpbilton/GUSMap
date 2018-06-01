@@ -20,10 +20,10 @@
 #' 
 #' Package for constructing genetic maps using outcrossed full-sib family
 #' populations that have been sequenced using next generation multiplexing
-#' sequencing methods (see \insertCite{bilton2018genetics1;textual}{GUSMap}).
+#' sequencing methods \insertCite{@see @bilton2018genetics1}{GUSMap}.
 #' 
 #' \tabular{ll}{ Package: \tab GUSMap\cr Type: \tab Package\cr Version: \tab
-#' 0.1.1\cr Date: \tab 2019-05-02\cr License: \tab GPL 3\cr }
+#' 0.1.1\cr Date: \tab 2018-06-01\cr License: \tab GPL 3\cr }
 #' 
 #' @name GUSMap-package
 #' @aliases GUSMap

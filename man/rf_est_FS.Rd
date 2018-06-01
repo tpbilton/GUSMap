@@ -98,7 +98,7 @@ rf_est_FS(depth_Ref = list(F1data$depth_Ref), depth_Alt = list(F1data$depth_Alt)
 ## Max number of iterations for the EM algorithm set at 100
 rf_est_FS(depth_Ref = list(F1data$depth_Ref), depth_Alt = list(F1data$depth_Alt), OPGP = list(OPGP),
   noFam = 1, maxit=100)
-## The algorithm will dtop when the difference between the likelihood at sucessive iterations is less
+## The algorithm will stop when the difference between the likelihood at sucessive iterations is less
 ## than 0.00001
 rf_est_FS(depth_Ref = list(F1data$depth_Ref), depth_Alt = list(F1data$depth_Alt), OPGP = list(OPGP),
   noFam = 1, reltol=1e-5)
