@@ -6,9 +6,8 @@
 
 ## Wrapper function for reading in the Manuka data set for chromosome 11
 Manuka11 <- function(){
-  ## Set the parameters required for KGD
-  genofile <- system.file("extdata", "Manuka11.txt.gz", package="GUSMap")
-  return(RAtoCount(genofile,"Tassel"))
+  return(list(vcf=system.file("extdata", "Manuka_chr11.vcf", package="GUSMap"),
+              ped=system.file("extdata", "Manuka_chr11_ped.csv", package="GUSMap")))
 }
 
 

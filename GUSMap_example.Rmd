@@ -1,0 +1,54 @@
+---
+title: "GUSMap_example"
+author: "Timothy Bilton"
+date: "8 June 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Read in the data from VCF format
+
+```{r}
+## get file paths to Manuka data
+MKdata <- Manuka11()
+## Convert VCF to RA
+RAfile <- VCFtoRA(MKdata$vcf)
+## read in the RA fill
+RAdata <- readRA(RAfile, gform = "reference")
+```
+
+
+## Create a mapping population
+
+```{r}
+MK_fs <- createPop(RAdata, pedfile=MKdata$ped)
+```
+
+Now, we need to compute all the pairwise rf estimates between pairs of SNPs.
+```{r}
+MK_fs$rf_2pt(nClust=2)
+```
+
+## Step 1: perform the grouping
+
+```{r}
+MK_fs$createLG("maternal")
+MK_fs$createLG("paternal")
+```
+
+
+
+
+## Step 2: Order the SNPs
+
+
+
+
+## Step 3: Compute the maps
+
+
+
+

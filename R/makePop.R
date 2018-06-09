@@ -71,8 +71,10 @@ makePop.FS <- function(R6obj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0
   # check that parents are in the file
   parents <- parents[which(apply(parents,1, function(x) all(x %in% ped$IndividualID))),]
   ## find the families to be used
-  if(is.null(family))
+  if(is.null(family)){
     family <- unique(ped$Family)[!is.na(unique(ped$Family))]
+    family <- family[-which(nchar(family)==0)]
+  }
   else{
     if(any(!(family %in% unique(ped$Family)[!is.na(unique(ped$Family))])))
       stop("Family missing from the pedigree file. Please check the family ID suppied or the pedigree file.")
