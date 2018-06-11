@@ -1,6 +1,10 @@
 #### Function for plotting linkage groups (or a single linkage group)
 plotLG <- function(mat, LG, filename=NULL, names=NULL, chrS=2, lmai=2, chrom=T){
-
+  
+  if(length(LG) == 1){
+    chrS = 0; lmai = 0
+  }
+  
   b <- ncol(mat) + 1
   if(chrom)
     chrom.ind <- unlist(lapply(LG, function(x) c(x,b)))[-length(unlist(LG))+length(LG)]

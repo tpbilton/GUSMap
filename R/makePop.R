@@ -1,4 +1,4 @@
-
+#' @export createPop
 
 #### Function for creating a particular population structure
 createPop <- function(R6obj, pop = c("full-sib"), ...){
@@ -23,17 +23,15 @@ makePop <- function(obj, ...){
 }
 
 ### Make a full-sib family population
-makePop.FS <- function(R6obj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0.2, BIN=0, DEPTH=6, PVALUE=0.05), inferSNPs = FALSE, perInfFam=1){
+makePop.FS <- function(R6obj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0.2, BIN=0, DEPTH=5, PVALUE=0.05), inferSNPs = FALSE, perInfFam=1){
   
   ## Do some checks
-  if(is.null(filter$MAF) || filter$MAF<0 || filter$MAF>1 || !is.numeric(filter$MAF))
-    stop("Minor allele frequency filter has not be specifies or is invalid.")
-  if(perInfFam <=0.5 || perInfFam > 1)
-    stop("The of the percentage of families which are informative for each SNP must greater than 50% and leass than equal to 100%.")
   if(is.null(filter$MAF) || filter$MAF<0 || filter$MAF>1 || !is.numeric(filter$MAF)){
-    warning("Minor allele frequency filter has not be specified or is invalid. Setting to 0.05:")
+    warning("Minor allele filter has not be specified or is invalid. Setting to 5%:")
     filter$MAF <- 0.05
   }
+  if(perInfFam <= 0.5 || perInfFam > 1)
+    stop("The of the percentage of families which are informative for each SNP must greater than 50% and leass than equal to 100%.")
   if(is.null(filter$MISS) || filter$MISS<0 || filter$MISS>1 || !is.numeric(filter$MISS)){
     warning("Proportion of missing data filter has not be specified or is invalid. Setting to 20%:")
     filter$MISS <- 0.2
@@ -46,9 +44,9 @@ makePop.FS <- function(R6obj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0
     warning("Minimum depth on the parental genotypes filter has not be specified or is invalid. Setting to a depth of 5")
     filter$DEPTH <- 5
   }
-  if(is.null(filter$DEPTH) || filter$DEPTH<0 || is.infinite(filter$DEPTH) || !is.numeric(filter$DEPTH)){
+  if(is.null(filter$PVALUE) || filter$PVALUE<0 || is.infinite(filter$PVALUE) || !is.numeric(filter$PVALUE)){
     warning("P-value for segregation test is not specified or invalid. Setting a P-value of 0.01:")
-    filter$DEPTH <- 5
+    filter$PVALUE <- 0.05
   }
   
   ## Define variables that will be used.
@@ -56,9 +54,10 @@ makePop.FS <- function(R6obj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0
   cat("Processing Data.\n\n")
   
   cat("Filtering criteria for removing SNPs :\n")
-  cat("Minor allele frequency (MAF) < ", filter$MAF,"\n")
-  cat("Percentage of missing genotypes > ", filter$MISS*100,"%\n\n",sep="")
-  
+  cat("Minor allele frequency (MAF) < ", filter$MAF,"\n", sep="")
+  cat("Percentage of missing genotypes > ", filter$MISS*100,"%\n\n", sep="")
+  cat("Read depth associated with at least one parental genotype <= ", filter$DEPTH,"%\n\n", sep="")
+  cat("P-value for segregation test < ", filter$PVALUE,"%\n\n", sep="")
   ## Extract the private variables we want
   indID <- R6obj$.__enclos_env__$private$indID
   nSnps <- R6obj$.__enclos_env__$private$nSnps
@@ -112,7 +111,7 @@ makePop.FS <- function(R6obj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0
   
   noFam <- length(famInfo)
   config_all <- config_infer_all <- nInd_all <- indx <- indID_all <- vector(mode = "list", length = noFam)
-  genon_all <- depth_Ref_all <- depth_Alt_all <- vector(mode="list", length=noFam)
+  genon_all <- ref_all <- alt_all <- vector(mode="list", length=noFam)
   
   ## extract the data and format correct for each family.
   for(fam in 1:noFam){
@@ -146,32 +145,32 @@ makePop.FS <- function(R6obj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0
     indID_all[[fam]] <- indID[progIndx]
     ## Subset the genon and depth matrices
     genon     <- R6obj$.__enclos_env__$private$genon[progIndx,]
-    depth_Ref <- R6obj$.__enclos_env__$private$depth_Ref[progIndx,]
-    depth_Alt <- R6obj$.__enclos_env__$private$depth_Alt[progIndx,]
+    ref <- R6obj$.__enclos_env__$private$ref[progIndx,]
+    alt <- R6obj$.__enclos_env__$private$alt[progIndx,]
 
     ## Determine the segregation types of the loci
     genon_mum <- matrix(R6obj$.__enclos_env__$private$genon[mumIndx,], nrow=length(mumIndx), ncol=nSnps) 
     genon_dad <- matrix(R6obj$.__enclos_env__$private$genon[dadIndx,], nrow=length(mumIndx), ncol=nSnps)
-    depth_mum <- matrix(R6obj$.__enclos_env__$private$depth_Ref[mumIndx,] +
-                          R6obj$.__enclos_env__$private$depth_Alt[mumIndx,], nrow=length(mumIndx), ncol=nSnps)
-    depth_dad <- matrix(R6obj$.__enclos_env__$private$depth_Ref[dadIndx,] +
-                          R6obj$.__enclos_env__$private$depth_Alt[dadIndx,], nrow=length(mumIndx), ncol=nSnps)
+    depth_mum <- matrix(R6obj$.__enclos_env__$private$ref[mumIndx,] +
+                          R6obj$.__enclos_env__$private$alt[mumIndx,], nrow=length(mumIndx), ncol=nSnps)
+    depth_dad <- matrix(R6obj$.__enclos_env__$private$ref[dadIndx,] +
+                          R6obj$.__enclos_env__$private$alt[dadIndx,], nrow=length(mumIndx), ncol=nSnps)
     
     if(patgrandparents){
       genon_patgrandmum <- matrix(R6obj$.__enclos_env__$private$genon[patgrandmumIndx,], nrow=length(patgrandmumIndx), ncol=nSnps) 
-      depth_patgrandmum <- matrix(R6obj$.__enclos_env__$private$depth_Ref[patgrandmumIndx,] +
-                            R6obj$.__enclos_env__$private$depth_Alt[patgrandmumIndx,], nrow=length(patgrandmumIndx), ncol=nSnps)
+      depth_patgrandmum <- matrix(R6obj$.__enclos_env__$private$ref[patgrandmumIndx,] +
+                            R6obj$.__enclos_env__$private$alt[patgrandmumIndx,], nrow=length(patgrandmumIndx), ncol=nSnps)
       genon_patgranddad <- matrix(R6obj$.__enclos_env__$private$genon[patgranddadIndx,], nrow=length(patgranddadIndx), ncol=nSnps) 
-      depth_patgranddad <- matrix(R6obj$.__enclos_env__$private$depth_Ref[patgranddadIndx,] +
-                                    R6obj$.__enclos_env__$private$depth_Alt[patgranddadIndx,], nrow=length(patgranddadIndx), ncol=nSnps)
+      depth_patgranddad <- matrix(R6obj$.__enclos_env__$private$ref[patgranddadIndx,] +
+                                    R6obj$.__enclos_env__$private$alt[patgranddadIndx,], nrow=length(patgranddadIndx), ncol=nSnps)
     }
     if(matgrandparents){
       genon_matgrandmum <- matrix(R6obj$.__enclos_env__$private$genon[matgrandmumIndx,], nrow=length(matgrandmumIndx), ncol=nSnps) 
-      depth_matgrandmum <- matrix(R6obj$.__enclos_env__$private$depth_Ref[matgrandmumIndx,] +
-                                    R6obj$.__enclos_env__$private$depth_Alt[matgrandmumIndx,], nrow=length(matgrandmumIndx), ncol=nSnps)
+      depth_matgrandmum <- matrix(R6obj$.__enclos_env__$private$ref[matgrandmumIndx,] +
+                                    R6obj$.__enclos_env__$private$alt[matgrandmumIndx,], nrow=length(matgrandmumIndx), ncol=nSnps)
       genon_matgranddad <- matrix(R6obj$.__enclos_env__$private$genon[matgranddadIndx,], nrow=length(matgranddadIndx), ncol=nSnps) 
-      depth_matgranddad <- matrix(R6obj$.__enclos_env__$private$depth_Ref[matgranddadIndx,] +
-                                    R6obj$.__enclos_env__$private$depth_Alt[matgranddadIndx,], nrow=length(matgranddadIndx), ncol=nSnps)
+      depth_matgranddad <- matrix(R6obj$.__enclos_env__$private$ref[matgranddadIndx,] +
+                                    R6obj$.__enclos_env__$private$alt[matgranddadIndx,], nrow=length(matgranddadIndx), ncol=nSnps)
     }
     
     parHap_pat <- sapply(1:nSnps,function(x){
@@ -240,7 +239,7 @@ makePop.FS <- function(R6obj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0
       if(is.na(config[x]))
         return(NA)
       else{
-        d = depth_Ref[,x] + depth_Alt[,x]
+        d = ref[,x] + alt[,x]
         g = genon[,x]
         K = sum(1/2^(d[which(d != 0)])*0.5)/sum(d != 0)
         nAA = sum(g==2, na.rm=T)
@@ -282,7 +281,7 @@ makePop.FS <- function(R6obj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0
         if(!toInfer[x])
           return(NA)
         else{
-          d = depth_Ref[,x] + depth_Alt[,x]
+          d = ref[,x] + alt[,x]
           g = genon[,x]
           K = sum(1/2^(d[which(d != 0)])*0.5)/sum(d != 0)
           nAA = sum(g==2, na.rm=T)
@@ -349,8 +348,8 @@ makePop.FS <- function(R6obj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0
     nInd_all[[fam]] <- nInd
     
     genon_all[[fam]] <- genon
-    depth_Ref_all[[fam]] <- depth_Ref
-    depth_Alt_all[[fam]] <- depth_Alt
+    ref_all[[fam]] <- ref
+    alt_all[[fam]] <- alt
   }
   
   if(noFam == 1){
@@ -363,8 +362,8 @@ makePop.FS <- function(R6obj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0
     #indx_all <- apply(indx_all, 2, any)
     
     genon_all[[fam]]     <- genon[,indx_all]
-    depth_Ref_all[[fam]] <- depth_Ref[,indx_all]
-    depth_Alt_all[[fam]] <- depth_Alt[,indx_all]
+    ref_all[[fam]] <- ref[,indx_all]
+    alt_all[[fam]] <- alt[,indx_all]
     chrom_all            <- R6obj$.__enclos_env__$private$chrom[indx_all]
     pos_all              <- R6obj$.__enclos_env__$private$pos[indx_all]
     SNP_Names            <- R6obj$.__enclos_env__$private$SNP_Names[indx_all]
@@ -427,8 +426,8 @@ makePop.FS <- function(R6obj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0
     ## Subset the data
     for(fam in 1:noFam){
       genon_all[[fam]]     <- genon_all[[fam]][,indx_all]
-      depth_Ref_all[[fam]] <- depth_Ref_all[[fam]][,indx_all]
-      depth_Alt_all[[fam]] <- depth_Alt_all[[fam]][,indx_all]
+      ref_all[[fam]] <- ref_all[[fam]][,indx_all]
+      alt_all[[fam]] <- alt_all[[fam]][,indx_all]
       config_all[[fam]] <- config_all[[fam]][indx_all]
     }
     chrom_all     <- R6obj$.__enclos_env__$private$chrom[indx_all]
@@ -452,7 +451,7 @@ makePop.FS <- function(R6obj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0
   
   ## Update the R6 object and return it
   R6obj$.__enclos_env__$private$updatePrivate(list(
-    genon = genon_all, depth_Ref = depth_Ref_all, depth_Alt = depth_Alt_all, chrom = chrom_all, pos = pos_all,
+    genon = genon_all, ref = ref_all, alt = alt_all, chrom = chrom_all, pos = pos_all,
     group = group, group_infer = group_infer, config = config_all, config_infer = config_infer_all,
     nInd = nInd_all, nSnps = sum(indx_all), noFam = noFam, indID = indID_all, SNP_Names = SNP_Names,
     masked=rep(FALSE,sum(indx_all)), famInfo=famInfo)
@@ -505,8 +504,8 @@ makePop.UR <- function(R6obj, filter=list(MAF=0.05, MISS=0.2, HWdis=c(-0.05,1)))
   
   ## Update the data in the R6 object
   genon <- genon[,indx]
-  depth_Ref <- R6obj$.__enclos_env__$private$depth_Ref[,indx]
-  depth_Alt <- R6obj$.__enclos_env__$private$depth_Alt[,indx]
+  ref <- R6obj$.__enclos_env__$private$ref[,indx]
+  alt <- R6obj$.__enclos_env__$private$alt[,indx]
   SNP_Names <- R6obj$.__enclos_env__$private$SNP_Names[indx]
   nSnps = sum(indx)
   if(R6obj$.__enclos_env__$private$gform == "reference"){
@@ -521,7 +520,7 @@ makePop.UR <- function(R6obj, filter=list(MAF=0.05, MISS=0.2, HWdis=c(-0.05,1)))
   
   ## Update the R6 objective 
   R6obj$.__enclos_env__$private$updatePrivate(list(
-    genon = genon, depth_Ref = depth_Ref, depth_Alt = depth_Alt, chrom = chrom, pos = pos,
+    genon = genon, ref = ref, alt = alt, chrom = chrom, pos = pos,
     SNP_Names = SNP_Names, nSnps = nSnps, AFrq = AFrq)
   )
   

@@ -5,20 +5,32 @@
 
 
 ## Function for simulating sequencing data for a single full-sib family
-simFS <- function(rVec_f, rVec_m=rVec_f, epsilon=0, config, nInd, meanDepth, thres=NULL, NoDS=1,
+simFS <- function(rVec_f, rVec_m=rVec_f, epsilon=0, config, nInd, meanDepth, thres=NULL, noFam=1, noChr, NoDS=1,
                   formats=list(gusmap=F,onemap=F,lepmap=F,joinmap=F,crimap=F), rd_dist="Neg_Binom",
                   filename="sim", direct="./", seed1=1, seed2=1){
   
   ## perform some checks for data input
+  if(!is.numeric(noFam) || length(noFam) != 1 || noFam < 1 || is.finite(noFam))
+    stop("Number of families parameter must be a single finite positive numeric number")
+  if(!is.numeric(noChr) || length(noChr) != 1 || noChr < 1 || is.finite(noChr))
+    stop("Number of chromosomes parameter must be a single finite positive numeric number")
   if( !is.numeric(rVec_f) || !is.numeric(rVec_m) || any(rVec_f < 0) || any(rVec_m < 0) ||
       any(rVec_f > 0.5) || any(rVec_m > 0.5) )
     stop("Recombination factions are required to be a numeric number between 0 and 0.5")
   if( !is.numeric(epsilon) || length(epsilon) != 1 || epsilon < 0 || epsilon > 1 )
     stop("Sequencing error parameter is not single numeric number between 0 and 1")
-  if(!is.numeric(nInd) || nInd < 1 || nInd != round(nInd) || !is.finite(nInd) )
+  if(length(nInd) != noFam || any(!is.numeric(nInd)) || any(nInd < 1) || any(nInd != round(nInd)) || any(!is.finite(nInd)) )
     stop("Number of individuals or number of SNPs are not a positive integer")
-  if( !is.numeric(config) || !is.vector(config) || any(!(config == round(config))) || any(config < 1) || any(config > 9) )
-    stop("Segregation information needs to be an integer vector equal to the number of SNPswith entires from 1 to 9")
+  if(length(config) != noChr || !is.list(config))
+    stop("Segregation information needs to be a list equal to the nunber of chromosome.")
+  else{
+    for(chr in 1:onChr){
+      if( length(config[[chr]]) != noFam || !is.list(config[[chr]]))
+        stop(paste0("Segregation information for chromosome ",chr," is not equal to the number of families")
+      if(!is.numeric(config[[chr]]) || !is.vector(config[[chr]]) || any(!(config[[chr]] == round(config[[chr]]))) || any(config[[chr]] < 1) || any(config[[chr]] > 9) )
+        stop(paste0("Segregation information for chromosome ",chr," in familiy ",fam," needs to be an integer vector equal to the number of SNPs with entires from 1 to 9")
+    }
+  }
   if( !is.numeric(meanDepth) || meanDepth <= 0 || !is.finite(meanDepth) )
     stop("The mean of the read depth distribution is not a finitie positive number.")
   if( !is.numeric(NoDS) || NoDS < 1 || NoDS != round(NoDS) || !is.finite(NoDS))
@@ -29,7 +41,7 @@ simFS <- function(rVec_f, rVec_m=rVec_f, epsilon=0, config, nInd, meanDepth, thr
     stop("Seed values for the randomziation need to be numeric values")
   
   ## Compute the number of SNPs
-  nSnps <- as.integer(length(config))
+  nSnps <- lapply(config, function(x) as.integer(length(x)))
   
   ## booleen variable to indicate whether to write out files
   writeFiles <- any(c(isTRUE(formats$gusmap),isTRUE(formats$onemap),isTRUE(formats$lepmap),isTRUE(formats$crimap),isTRUE(formats$joinmap)))
@@ -42,81 +54,99 @@ simFS <- function(rVec_f, rVec_m=rVec_f, epsilon=0, config, nInd, meanDepth, thr
       stop("Name to write data sets to need to be a string of length 1")
   }
   
-  ## Create list of the recombination fraction and 1 minus the recombination fraction
-  ## for each SNP
-  rVec_f <- sapply(rep(rVec_f,length.out=nSnps-1), function(r) c(r,1-r),simplify=F)
-  rVec_m <- sapply(rep(rVec_m,length.out=nSnps-1), function(r) c(r,1-r),simplify=F)
+  OPGP <- replicate(n = noChr, vector(mode = "list", length = noFam), simplify = F)
+  genon <- ref <- alt <- vector(mode = "list", length=noFam)
+  for(chr in 1:noChr){
+    for(fam in 1:noFam){
   
-  ## simulate the parental haplotypes
-  set.seed(seed1)
-  parHap <- matrix(rep(paste0(rep("A",nSnps)),4),nrow=4)
-  parHap[cbind(sample(1:2,size=sum(config %in% c(2,3)),replace=T),which(config%in%c(2,3)))] <- "B"
-  parHap[cbind(sample(3:4,size=sum(config %in% c(4,5)),replace=T),which(config %in% c(4,5)))] <- "B"
-  parHap[cbind(c(rep(3,sum(config %in% c(3,7,9))),rep(4,sum(config %in% c(3,7,9)))),which(config %in% c(3,7,9)))] <- "B"
-  parHap[cbind(c(rep(1,sum(config %in% c(5,8,9))),rep(2,sum(config %in% c(5,8,9)))),which(config %in% c(5,8,9)))] <- "B"
-  parHap[cbind(c(sample(1:2,size=sum(config==1),replace=T),sample(3:4,size=sum(config==1),replace=T)),rep(which(config==1),2))] <- "B"
-  if(any(parHap[1:2,] == "B") && parHap[1,which(apply(parHap[1:2,],2,function(x) !(all(x=='A'))))[1]] == 'B')
-    parHap[1:2,] <- parHap[2:1,]
-  if(any(parHap[3:4,] == "B") && parHap[3,which(apply(parHap[3:4,],2,function(x) !(all(x=='A'))))[1]] == 'B')
-    parHap[3:4,] <- parHap[4:3,]
-  OPGP <- parHapToOPGP(parHap)
-  
-  #### Simulate the data sets
-  set.seed(seed2)
-  for(sim in 1:NoDS){
-    
-    #### Simulate the true Meiosis for each individual at each SNP.
-    mIndx <- matrix(c(sample(c(0,1),size=2*nInd,replace=T)),ncol=1)
-    for(i in 1:(nSnps-1)){
-      newmIndx_f <- numeric(nInd)
-      newmIndx_m <- numeric(nInd)
-      for(j in 1:(nInd)){
-        newmIndx_f[j] <- sample(c(0,1),size=1,prob=c(rVec_f[[i]][(mIndx[j,i]==0)+1],rVec_f[[i]][(mIndx[j,i]==1)+1]))
-        newmIndx_m[j] <- sample(c(0,1),size=1,prob=c(rVec_m[[i]][(mIndx[j+nInd,i]==0)+1],rVec_m[[i]][(mIndx[j+nInd,i]==1)+1]))
-      }
-      mIndx <- cbind(mIndx,c(newmIndx_f,newmIndx_m))
-    }
-    # Determine the true genotype calls
-    geno <- rbind(sapply(1:nSnps,function(x) parHap[mIndx[1:nInd,x]+1,x]),sapply(1:nSnps,function(x) parHap[mIndx[1:nInd+nInd,x]+3,x]))
-    geno <- sapply(1:nSnps,function(y) {
-      tempGeno <- geno[,y]
-      sapply(1:nInd, function(x) paste(sort(c(tempGeno[x],tempGeno[x+nInd])),collapse=""))
-    })
-    geno <- (geno=="AA")*2 + (geno=="AB")*1
-    
-    ### Now generate the sequencing data
-    # 1: Simulate Depths
-    depth <- matrix(0,nrow=nInd, ncol=nSnps)
-    if(rd_dist=="NegBinom")
-      depth[which(!is.na(geno))] <- rnbinom(sum(!is.na(geno)),mu=meanDepth,size=2) 
-    else   
-      depth[which(!is.na(geno))] <- rpois(sum(!is.na(geno)),meanDepth)
-    # 2: simulate sequencing genotypes (with sequencing error rate of epsilon)
-    aCounts <- matrix(rbinom(nInd*nSnps,depth,geno/2),ncol=nSnps)
-    bCounts <- depth - aCounts
-    aCountsFinal <- matrix(rbinom(nInd*nSnps,aCounts,prob=1-epsilon),ncol=nSnps) + matrix(rbinom(nInd*nSnps,bCounts,prob=epsilon),ncol=nSnps)
-    SEQgeno <- aCountsFinal/depth
-    SEQgeno[which(SEQgeno^2-SEQgeno<0)] <- 0.5
-    SEQgeno <- 2* SEQgeno  ## GBS genotype call
+      ## Create list of the recombination fraction and 1 minus the recombination fraction
+      ## for each SNP
+      rVec_f <- sapply(rep(rVec_f,length.out=nSnps[[chr]]-1), function(r) c(r,1-r),simplify=F)
+      rVec_m <- sapply(rep(rVec_m,length.out=nSnps[[chr]]-1), function(r) c(r,1-r),simplify=F)
       
-    ## Write data to file
-    if(writeFiles)
-      genoToOtherFormats(SEQgeno,aCountsFinal,depth-aCountsFinal,config,formats=formats,filename=paste0(filename,sim),direct=direct,thres=thres,sim=sim)
-    
+      ## simulate the parental haplotypes
+      set.seed(seed1)
+      parHap <- matrix(rep(paste0(rep("A",nSnps[[chr]])),4),nrow=4)
+      parHap[cbind(sample(1:2,size=sum(config[[chr]][[fam]] %in% c(2,3)),replace=T),which(config[[chr]][[fam]]%in%c(2,3)))] <- "B"
+      parHap[cbind(sample(3:4,size=sum(config[[chr]][[fam]] %in% c(4,5)),replace=T),which(config[[chr]][[fam]] %in% c(4,5)))] <- "B"
+      parHap[cbind(c(rep(3,sum(config[[chr]][[fam]] %in% c(3,7,9))),rep(4,sum(config[[chr]][[fam]] %in% c(3,7,9)))),which(config[[chr]][[fam]] %in% c(3,7,9)))] <- "B"
+      parHap[cbind(c(rep(1,sum(config[[chr]][[fam]] %in% c(5,8,9))),rep(2,sum(config[[chr]][[fam]] %in% c(5,8,9)))),which(config[[chr]][[fam]] %in% c(5,8,9)))] <- "B"
+      parHap[cbind(c(sample(1:2,size=sum(config[[chr]][[fam]]==1),replace=T),sample(3:4,size=sum(config[[chr]][[fam]]==1),replace=T)),rep(which(config[[chr]][[fam]]==1),2))] <- "B"
+      if(any(parHap[1:2,] == "B") && parHap[1,which(apply(parHap[1:2,],2,function(x) !(all(x=='A'))))[1]] == 'B')
+        parHap[1:2,] <- parHap[2:1,]
+      if(any(parHap[3:4,] == "B") && parHap[3,which(apply(parHap[3:4,],2,function(x) !(all(x=='A'))))[1]] == 'B')
+        parHap[3:4,] <- parHap[4:3,]
+      OPGP[[chr]][[fam]] <- parHapToOPGP(parHap)
+      
+      #### Simulate the data sets
+      set.seed(seed2)
+      for(sim in 1:NoDS){
+        
+        #### Simulate the true Meiosis for each individual at each SNP.
+        mIndx <- matrix(c(sample(c(0,1),size=2*nInd[fam],replace=T)),ncol=1)
+        for(i in 1:(nSnps[[chr]]-1)){
+          newmIndx_f <- numeric(nInd[fam])
+          newmIndx_m <- numeric(nInd[fam])
+          for(j in 1:(nInd[fam])){
+            newmIndx_f[j] <- sample(c(0,1),size=1,prob=c(rVec_f[[i]][(mIndx[j,i]==0)+1],rVec_f[[i]][(mIndx[j,i]==1)+1]))
+            newmIndx_m[j] <- sample(c(0,1),size=1,prob=c(rVec_m[[i]][(mIndx[j+nInd[fam],i]==0)+1],rVec_m[[i]][(mIndx[j+nInd[fam],i]==1)+1]))
+          }
+          mIndx <- cbind(mIndx,c(newmIndx_f,newmIndx_m))
+        }
+        # Determine the true genotype calls
+        geno <- rbind(sapply(1:nSnps[[chr]],function(x) parHap[mIndx[1:nInd[fam],x]+1,x]),sapply(1:nSnps[[chr]],function(x) parHap[mIndx[1:nInd[fam]+nInd[fam],x]+3,x]))
+        geno <- sapply(1:nSnps[[chr]],function(y) {
+          tempGeno <- geno[,y]
+          sapply(1:nInd[fam], function(x) paste(sort(c(tempGeno[x],tempGeno[x+nInd[fam]])),collapse=""))
+        })
+        geno <- (geno=="AA")*2 + (geno=="AB")*1
+        
+        ### Now generate the sequencing data
+        # 1: Simulate Depths
+        depth <- matrix(0,nrow=nInd[fam], ncol=nSnps[[chr]])
+        if(rd_dist=="NegBinom")
+          depth[which(!is.na(geno))] <- rnbinom(sum(!is.na(geno)),mu=meanDepth,size=2) 
+        else   
+          depth[which(!is.na(geno))] <- rpois(sum(!is.na(geno)),meanDepth)
+        # 2: simulate sequencing genotypes (with sequencing error rate of epsilon)
+        aCounts <- matrix(rbinom(nInd[fam]*nSnps[[chr]],depth,geno/2),ncol=nSnps[[chr]])
+        bCounts <- depth - aCounts
+        aCountsFinal <- matrix(rbinom(nInd[fam]*nSnps[[chr]],aCounts,prob=1-epsilon),ncol=nSnps[[chr]]) + matrix(rbinom(nInd[fam]*nSnps[[chr]],bCounts,prob=epsilon),ncol=nSnps[[chr]])
+        SEQgeno <- aCountsFinal/depth
+        SEQgeno[which(SEQgeno^2-SEQgeno<0)] <- 0.5
+        SEQgeno <- 2* SEQgeno  ## GBS genotype call
+          
+        ## Write data to file
+        if(writeFiles)
+          genoToOtherFormats(SEQgeno,aCountsFinal,depth-aCountsFinal,config[[chr]][[fam]],formats=formats,filename=paste0(filename,sim,"_fam",fam,"_chr",chr),direct=direct,thres=thres,sim=sim)
+        
+      }
+      ## Write simulation parameters to a file
+      if(writeFiles)
+        dput(list(nInd=nInd,nSnps=nSnps,NoDS=NoDS,rVec_f=unlist(lapply(rVec_f,function(x) x[1])),
+                  rVec_m=unlist(lapply(rVec_m,function(x) x[1])),
+                  config=config,OPGP=OPGP,meanDepth=meanDepth,rd_dist=rd_dist),
+             paste0(trim_fn(paste0(direct,"/",filename)),"_fam",fam,"_chr",chr,"info.txt"))
+      ## return simulated data and parameter values ued to generate the data
+      else{
+        genon[[fam]] <- cbind(genon[[fam]], SEQgeno)
+        ref[[fam]]   <- cbind(ref[[fam]], aCountsFinal)
+        alt[[fam]]   <- cbind(alt[[fam]], matrix(as.integer(depth-aCountsFinal), nrow=nInd, ncol=nSnps[[chr]]))
+      }
+    }
   }
-  ## Write simulation parameters to a file
-  if(writeFiles)
-    dput(list(nInd=nInd,nSnps=nSnps,NoDS=NoDS,rVec_f=unlist(lapply(rVec_f,function(x) x[1])),
-              rVec_m=unlist(lapply(rVec_m,function(x) x[1])),
-              config=config,OPGP=OPGP,meanDepth=meanDepth,rd_dist=rd_dist),
-         paste0(trim_fn(paste0(direct,"/",filename)),"_info.txt"))
-  ## return simulated data and parameter values ued to generate the data
-  else
-    return(invisible(list(genon=SEQgeno,depth_Ref=aCountsFinal,depth_Alt=depth-aCountsFinal,trueGeno=geno,
-                          rVec_f=unlist(lapply(rVec_f,function(x) x[1])),
-                          rVec_m=unlist(lapply(rVec_m,function(x) x[1])),
-                          nInd=nInd,nSnps=nSnps,config=config,OPGP=OPGP,
-                          meanDepth=meanDepth,rd_dist=rd_dist, epsilon=epsilon)))
+  if(!writeFiles){
+    chrom <- sapply(1:noChr, function(x) rep(x,nSnps[[x]]), simplify = F)
+    pos  <-  sapply(1:noChr, function(x) 1:(nSnps[[x]]), simplify = F)
+    nSnps <- as.integer(unlist(nSnps))
+
+    obj <- RA$new(
+      list(genon = genon, ref = ref, alt = alt, chrom = chrom, pos = pos,
+           SNP_Names = NULL, indID = 1:nSnps, nSnps = nSnps, nInd = lapply(as.list(nInd), as.integer), gform = "simFS", AFrq = NULL)
+    )
+    newObj <- FS$new(obj)
+    return(newObj)
+  }
 }
 
 ### Function for writing simulated sequencing data to various software formats

@@ -16,22 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
- */
-
-#include <R.h>
-#include <Rinternals.h>
-#include <Rdefines.h>
-
-#ifndef _GUSMap
-#define _GUSMap
+*/
 
 
-SEXP ll_fs_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nInd, SEXP nSnps);
-SEXP ll_fs_ss_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nInd, SEXP nSnps);
-SEXP ll_fs_up_ss_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP config, SEXP nInd, SEXP nSnps);
-SEXP score_fs_scaled_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nInd, SEXP nSnps);
-SEXP score_fs_scaled_err_c(SEXP r, SEXP epsilon, SEXP ref, SEXP alt, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nInd, SEXP nSnps);
-SEXP EM_HMM(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam, SEXP nInd, SEXP nSnps, SEXP sexSpec, SEXP seqError, SEXP para, SEXP ss_rf);
-SEXP EM_HMM_UP(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP config, SEXP noFam, SEXP nInd, SEXP nSnps, SEXP seqError, SEXP para, SEXP ss_rf);
+double Qentry(int OPGP,double Kaa,double Kab, double Kbb,int elem);
+double Qentry_up(int config,double Kaa,double Kab, double Kbb,int elem);
+double Tmat_ss(int s1, int s2, double r_f, double r_m);
+double Tmat(int s1, int s2, double rval);
+unsigned long binomial(unsigned long a, unsigned long b);
 
-#endif 

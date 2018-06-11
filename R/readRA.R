@@ -1,3 +1,52 @@
+##########################################################################
+# Genotyping Uncertainty with Sequencing data and linkage MAPping
+# Copyright 2017-2018 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#########################################################################
+### R Function for reading in RA data.
+### Author: Timothy Bilton
+### Date: 6/02/18
+
+#' Read an Reference/Alternate (RA) file.
+#' 
+#' Function which processes an RA file into R.
+#' 
+#' RA format is a tab-delimited with columns, CHROM, POS, SAMPLES
+#' where SAMPLES consists of sampleIDs, which typically consist of a colon-delimited sampleID, flowcellID, lane, seqlibID.
+#' e.g.,
+#' \tabular{llll}{
+#' CHROM \tab  POS  \tab   999220:C4TWKACXX:7:56 \tab  999204:C4TWKACXX:7:56 \cr
+#' 1     \tab  415  \tab   5,0                   \tab  0,3                   \cr
+#' 1     \tab  443  \tab   1,0                   \tab  4,4                   \cr
+#' 1     \tab  448  \tab   0,0                   \tab  0,2
+#' }
+#' 
+#' @param RAfile Character string giving the path to the RA file to be read into R. Typically the required string is
+#' returned from the VCFtoRA function when the VCF file is converted to RA format.
+#' @param gform Character string specifying whether the SNPs in the RA data have been called using Uneak (\code{gform="uneak"})
+#' or using an reference based assembly (\code{gform="reference"}).
+#' @param sampthres A numeric value giving the filtering threshold for which individual samples are removed.
+#' @param excsamp A character vector of the sample IDs that are to be excluded (or discarded). Note that the sample IDs must correspond
+#' to those given in the RA file that is to be processed.
+#' @return An R6 object of class RA.
+#' @author Timothy P. Bilton
+#' @examples
+#' MKfile <- Manuka11()
+#' RAfile <- VCFtoRA(MKfile$vcf, makePed=F)
+#' MKdata <- readRA(RAfile, MKfile$ped)
+#' @export readRA
 
 #### Function for reading in RA data and converting to genon and depth matrices.
 readRA <- function(genofile, gform, sampthres = 0.01, excsamp = NULL){
@@ -35,18 +84,18 @@ readRA <- function(genofile, gform, sampthres = 0.01, excsamp = NULL){
   nInd <- length(ghead) - switch(gform, reference=2, uneak=6)
   
   ## generate the genon and depth matrices
-  depth_Ref <- depth_Alt <- matrix(0, nrow = nInd, ncol = nSnps)
+  ref <- alt <- matrix(as.integer(0), nrow = nInd, ncol = nSnps)
   start.ind <- switch(gform, uneak=1, reference=2)
   for (i in 1:nInd){ 
     depths <- strsplit(genosin[[start.ind+i]], split = gsep, fixed = TRUE)
-    depth_Ref[i, ] <- as.numeric(unlist(lapply(depths,function(z) z[1])))
-    depth_Alt[i, ] <- as.numeric(unlist(lapply(depths,function(z) z[2])))
+    ref[i, ] <- as.integer(unlist(lapply(depths,function(z) z[1])))
+    alt[i, ] <- as.integer(unlist(lapply(depths,function(z) z[2])))
   }
-  genon <- (depth_Ref > 0) + (depth_Alt == 0)
-  genon[which(depth_Ref == 0 & depth_Alt == 0)] <- NA
+  genon <- (ref > 0) + (alt == 0)
+  genon[which(ref == 0 & alt == 0)] <- NA
   
   ## Check that the samples meet the minimum sample treshold
-  sampDepth <- rowMeans(depth_Ref + depth_Alt)
+  sampDepth <- rowMeans(ref + alt)
   badSamp <- which(sampDepth < sampthres)
   if(length(badSamp) > 0){
     cat("Samples removed due to having a minimum sample threshold below ",sampthres,":\n",sep="")
@@ -57,8 +106,8 @@ readRA <- function(genofile, gform, sampthres = 0.01, excsamp = NULL){
   if(!is.null(excsamp)){
     toRemove <- which(indID %in% excsamp)
     if(length(excsamp) > 0){
-      depth_Ref <- depth_Ref[-toRemove,]
-      depth_Alt <- depth_Alt[-toRemove,]
+      ref <- ref[-toRemove,]
+      alt <- alt[-toRemove,]
       genon <- genon[-toRemove,]
       indID <- indID[-toRemove]
       nInd <- length(indID)
@@ -67,8 +116,8 @@ readRA <- function(genofile, gform, sampthres = 0.01, excsamp = NULL){
   
   ## Create the R6 object
   obj <- RA$new(
-    list(genon = genon, depth_Ref = depth_Ref, depth_Alt = depth_Alt, chrom = chrom, pos = pos,
-         SNP_Names = SNP_Names, indID = indID, nSnps = nSnps, nInd = nInd, gform = gform, AFrq = AFrq)
+    list(genon = genon, ref = ref, alt = alt, chrom = chrom, pos = pos,
+         SNP_Names = SNP_Names, indID = indID, nSnps = as.integer(nSnps), nInd = as.integer(nInd), gform = gform, AFrq = AFrq)
   )
   
   return(obj)
@@ -129,17 +178,17 @@ readRA <- function(genofile, gform, sampthres = 0.01, excsamp = NULL){
 #     nInd <- length(progIndx)
 #     indID[[fam]] <- ghead[progIndx]
 #     ## Compute the read count matrices and genon matrix for the offspring
-#     depth_Ref <- depth_Alt <- matrix(0, nrow = nInd, ncol = nSnps)
+#     ref <- alt <- matrix(0, nrow = nInd, ncol = nSnps)
 #     for (i in 1:nInd){ 
 #       depths <- strsplit(genosin[[progIndx[i]]], split = gsep, fixed = TRUE)
-#       depth_Ref[i, ] <- as.numeric(unlist(lapply(depths,function(z) z[1])))
-#       depth_Alt[i, ] <- as.numeric(unlist(lapply(depths,function(z) z[2])))
+#       ref[i, ] <- as.numeric(unlist(lapply(depths,function(z) z[1])))
+#       alt[i, ] <- as.numeric(unlist(lapply(depths,function(z) z[2])))
 #     }
-#     genon <- (depth_Ref > 0) + (depth_Alt == 0)
-#     genon[which(depth_Ref == 0 & depth_Alt == 0)] <- NA
+#     genon <- (ref > 0) + (alt == 0)
+#     genon[which(ref == 0 & alt == 0)] <- NA
 #     
 #     ## Check that samples meet the sample treshold
-#     sampDepth <- rowMeans(depth_Ref + depth_Alt)
+#     sampDepth <- rowMeans(ref + alt)
 #     badSamp <- which(sampDepth < SAMPthres)
 #     if(length(badSamp) > 0){
 #       cat("Removed ",length(badSamp)," samples due to having a minimum sample threshold below ",SAMPthres,".\n\n",sep="")
@@ -149,8 +198,8 @@ readRA <- function(genofile, gform, sampthres = 0.01, excsamp = NULL){
 #     if(!is.null(excSamp)){
 #       toRemove <- which(indID[[fam]] %in% excSamp)
 #       if(length(excSamp) > 0){
-#         depth_Ref <- depth_Ref[-toRemove,]
-#         depth_Alt <- depth_Alt[-toRemove,]
+#         ref <- ref[-toRemove,]
+#         alt <- alt[-toRemove,]
 #         genon <- genon[-toRemove,]
 #         indID[[fam]] <- indID[[fam]][-toRemove]
 #         nInd <- length(indID[[fam]])
@@ -195,7 +244,7 @@ readRA <- function(genofile, gform, sampthres = 0.01, excsamp = NULL){
 #       if(is.na(config[x]))
 #         return(NA)
 #       else{
-#         d = depth_Ref[,x] + depth_Alt[,x]
+#         d = ref[,x] + alt[,x]
 #         g = genon[,x]
 #         K = sum(1/2^(d[which(d != 0)])*0.5)/sum(d != 0)
 #         nAA = sum(g==2, na.rm=T)
@@ -236,7 +285,7 @@ readRA <- function(genofile, gform, sampthres = 0.01, excsamp = NULL){
 #       if(!toInfer[x])
 #         return(NA)
 #       else{
-#         d = depth_Ref[,x] + depth_Alt[,x]
+#         d = ref[,x] + alt[,x]
 #         g = genon[,x]
 #         K = sum(1/2^(d[which(d != 0)])*0.5)/sum(d != 0)
 #         nAA = sum(g==2, na.rm=T)
@@ -280,8 +329,8 @@ readRA <- function(genofile, gform, sampthres = 0.01, excsamp = NULL){
 #   indx_all <- apply(indx_all, 2, any)
 #   
 #   genon_all <- genon[,indx_all]
-#   depth_Ref_all <- depth_Ref[,indx_all]
-#   depth_Alt_all <- depth_Alt[,indx_all]
+#   ref_all <- ref[,indx_all]
+#   alt_all <- alt[,indx_all]
 #   chrom_all <- chrom[indx_all]
 #   pos_all <- pos[indx_all]
 #   
@@ -376,17 +425,17 @@ readRA <- function(genofile, gform, sampthres = 0.01, excsamp = NULL){
 #     nInd <- length(progIndx)
 #     indID[[fam]] <- ghead[progIndx]
 #     ## Compute the read count matrices and genon matrix for the offspring
-#     depth_Ref <- depth_Alt <- matrix(0, nrow = nInd, ncol = nSnps)
+#     ref <- alt <- matrix(0, nrow = nInd, ncol = nSnps)
 #     for (i in 1:nInd){ 
 #       depths <- strsplit(genosin[[progIndx[i]]], split = gsep, fixed = TRUE)
-#       depth_Ref[i, ] <- as.numeric(unlist(lapply(depths,function(z) z[1])))
-#       depth_Alt[i, ] <- as.numeric(unlist(lapply(depths,function(z) z[2])))
+#       ref[i, ] <- as.numeric(unlist(lapply(depths,function(z) z[1])))
+#       alt[i, ] <- as.numeric(unlist(lapply(depths,function(z) z[2])))
 #     }
-#     genon <- (depth_Ref > 0) + (depth_Alt == 0)
-#     genon[which(depth_Ref == 0 & depth_Alt == 0)] <- NA
+#     genon <- (ref > 0) + (alt == 0)
+#     genon[which(ref == 0 & alt == 0)] <- NA
 # 
 #     ## Check that samples meet the sample treshold
-#     sampDepth <- rowMeans(depth_Ref + depth_Alt)
+#     sampDepth <- rowMeans(ref + alt)
 #     badSamp <- which(sampDepth < SAMPthres)
 #     if(length(badSamp) > 0){
 #       cat("Removed ",length(badSamp)," samples due to having a minimum sample threshold below ",SAMPthres,".\n\n",sep="")
@@ -396,8 +445,8 @@ readRA <- function(genofile, gform, sampthres = 0.01, excsamp = NULL){
 #     if(!is.null(excSamp)){
 #       toRemove <- which(indID[[fam]] %in% excSamp)
 #       if(length(excSamp) > 0){
-#         depth_Ref <- depth_Ref[-toRemove,]
-#         depth_Alt <- depth_Alt[-toRemove,]
+#         ref <- ref[-toRemove,]
+#         alt <- alt[-toRemove,]
 #         genon <- genon[-toRemove,]
 #         indID[[fam]] <- indID[[fam]][-toRemove]
 #         nInd <- length(indID[[fam]])
@@ -442,7 +491,7 @@ readRA <- function(genofile, gform, sampthres = 0.01, excsamp = NULL){
 #       if(is.na(config[x]))
 #         return(NA)
 #       else{
-#         d = depth_Ref[,x] + depth_Alt[,x]
+#         d = ref[,x] + alt[,x]
 #         g = genon[,x]
 #         K = sum(1/2^(d[which(d != 0)])*0.5)/sum(d != 0)
 #         nAA = sum(g==2, na.rm=T)
@@ -483,7 +532,7 @@ readRA <- function(genofile, gform, sampthres = 0.01, excsamp = NULL){
 #       if(!toInfer[x])
 #         return(NA)
 #       else{
-#         d = depth_Ref[,x] + depth_Alt[,x]
+#         d = ref[,x] + alt[,x]
 #         g = genon[,x]
 #         K = sum(1/2^(d[which(d != 0)])*0.5)/sum(d != 0)
 #         nAA = sum(g==2, na.rm=T)
@@ -527,8 +576,8 @@ readRA <- function(genofile, gform, sampthres = 0.01, excsamp = NULL){
 #   indx_all <- apply(indx_all, 2, any)
 # 
 #   genon_all <- genon[,indx_all]
-#   depth_Ref_all <- depth_Ref[,indx_all]
-#   depth_Alt_all <- depth_Alt[,indx_all]
+#   ref_all <- ref[,indx_all]
+#   alt_all <- alt[,indx_all]
 #   chrom_all <- chrom[indx_all]
 #   pos_all <- pos[indx_all]
 #   
@@ -561,8 +610,8 @@ readRA <- function(genofile, gform, sampthres = 0.01, excsamp = NULL){
 #   obj <- FS$new(indx_all)
 #   ## Update the private variables
 #   obj$.__enclos_env__$private$genon <- genon_all
-#   obj$.__enclos_env__$private$depth_Ref <- depth_Ref_all
-#   obj$.__enclos_env__$private$depth_Alt <- depth_Alt_all
+#   obj$.__enclos_env__$private$ref <- ref_all
+#   obj$.__enclos_env__$private$alt <- alt_all
 #   obj$.__enclos_env__$private$chrom <- chrom_all
 #   obj$.__enclos_env__$private$pos <- pos_all
 #   obj$.__enclos_env__$private$indID <- indID

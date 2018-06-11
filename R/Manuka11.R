@@ -1,57 +1,58 @@
+##########################################################################
+# Genotyping Uncertainty with Sequencing data and linkage MAPping
+# Copyright 2017-2018 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#########################################################################
 ### R Function for reading in the Manuka data of chromosome 11.
 ### Author: Timothy Bilton
-### Date: 29/08/17
-### Edited: 18/10/17
-
+### Date: 6/02/18
 
 ## Wrapper function for reading in the Manuka data set for chromosome 11
+#' Manuka chromosome 11 SNPs and pedigree file
+#' 
+#' Function for extracting the path to the (VCF) file of the Manuka data used in the publication by Bilton et
+#' al. (2017) and a pedigree file that goes with the data.
+#' 
+#' The data consists of 680 SNPs, genotyped using genotyping-by-sequencing
+#' methods. The data is in VCF format (see this \href{https://samtools.github.io/hts-specs/VCFv4.2.pdf}{page} 
+#' for specification of VCF format). The pedigree file contains five columns, namely
+#' \itemize{
+#' \item SampleID: A unique character string of the sample ID. These correspond to those found in the VCF file
+#' \item IndividualID: A character giving the ID number of the individual for which the sample corresponds to.
+#' Note that some samples can be from the same individual. 
+#' \item Mother: The ID of the mother as given in the IndividualID. Note, if the mother is unknown then this should be left blank.
+#' \item Father: The ID of the father as given in the IndividualID. Note, if the father is unknown then this should be left blank.
+#' \item Family: The name of the Family for a group of progeny with the same parents. Note that this is not necessary but if
+#' given must be the same for all the progeny.
+#' }
+#' 
+#' @return Function outputs a character string of the complete path to the manuka data set contained in the package
+#' and a pedigree file that goes with the data.
+#' @author Timothy P. Bilton
+#' @references Bilton, T.P., Schofield, M.R., Black, M.A., Chagné, D., Wilcox,
+#' P.L., Dodds K.G. (2017). Accounting for errors in low coverage high-throughput
+#' sequencing data when constructing genetic maps using biparental outcrossed
+#' populations. Unpublished Manuscript.
+#' @examples
+#' ## extract the name of the vcf fileand the pedigree file
+#' Manuka11()
+#' 
+#' @export Manuka11
+
 Manuka11 <- function(){
   return(list(vcf=system.file("extdata", "Manuka_chr11.vcf", package="GUSMap"),
               ped=system.file("extdata", "Manuka_chr11_ped.csv", package="GUSMap")))
 }
 
-
-## Function for converting RA data to allele count format
-RAtoCount <- function(genofile, gform){
-  
-  ## separate character between reference and alternate allele count
-  gsep <- switch(gform, uneak = "|", Tassel = ",")
-  
-  ## Process the individuals info
-  ghead <- scan(genofile, what = "", nlines = 1, sep = "\t")
-  nInd <- length(ghead) - switch(gform, uneak = 6, Tassel = 2)
-  indID <- switch(gform, uneak = ghead[2:(nInd + 1)], Tassel = ghead[-(1:2)])
-  
-  ## Read in the data
-  # If reference based
-  if (gform == "Tassel"){
-    genosin <- scan(genofile, skip = 1, sep = "\t", what = c(list(chrom = "", coord = 0), rep(list(""), nInd)))
-    chrom <- genosin[[1]]
-    pos <- genosin[[2]]
-    SNP_Names <- paste(genosin[[1]],genosin[[2]],sep="_")
-  }
-  # Non-reference based 
-  if (gform == "uneak"){
-    genosin <- scan(genofile, skip = 1, sep = "\t", what = c(list(chrom = ""), rep(list(""), nind), list(hetc1 = 0, hetc2 = 0, acount1 = 0, acount2 = 0, p = 0)))
-    SNP_Names <- genosin[[1]]
-  }
-  ## Compute the number of SNPs
-  nSnps <- length(SNP_Names)
-  
-  ## Compute the read count matrices and genon matrix 
-  depth_Ref <- depth_Alt <- matrix(0, nrow = nInd, ncol = nSnps)
-  for (i in 1:nInd){ 
-    depths <- strsplit(genosin[[i + switch(gform, uneak = 1, Tassel = 2)]], split = gsep, fixed = TRUE)
-    depth_Ref[i, ] <- as.numeric(unlist(lapply(depths,function(z) z[1])))
-    depth_Alt[i, ] <- as.numeric(unlist(lapply(depths,function(z) z[2])))
-  }
-  genon <- (depth_Ref > 0) + (depth_Alt == 0)
-  genon[which(depth_Ref == 0 & depth_Alt == 0)] <- NA
-  if (gform == "uneak") 
-    AFrq <- genosin[[length(genosin)]]
-  
-  ## return an object of the type we want
-  return(
-    list(genon=genon, depth_Ref=depth_Ref,depth_Alt=depth_Alt,chrom=chrom,pos=pos,indID=indID,SNP_Names=SNP_Names)
-  )
-}
