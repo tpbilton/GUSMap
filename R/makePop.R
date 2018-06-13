@@ -23,7 +23,7 @@ makePop <- function(obj, ...){
 }
 
 ### Make a full-sib family population
-makePop.FS <- function(R6obj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0.2, BIN=0, DEPTH=5, PVALUE=0.05), inferSNPs = FALSE, perInfFam=1){
+makePop.FS <- function(R6obj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0.2, BIN=0, DEPTH=5, PVALUE=0.01), inferSNPs = FALSE, perInfFam=1){
   
   ## Do some checks
   if(is.null(filter$MAF) || filter$MAF<0 || filter$MAF>1 || !is.numeric(filter$MAF)){
@@ -53,10 +53,10 @@ makePop.FS <- function(R6obj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0
   cat("-------------\n")
   cat("Processing Data.\n\n")
   
-  cat("Filtering criteria for removing SNPs :\n")
+  cat("Filtering criteria for removing SNPs:\n")
   cat("Minor allele frequency (MAF) < ", filter$MAF,"\n", sep="")
-  cat("Percentage of missing genotypes > ", filter$MISS*100,"%\n\n", sep="")
-  cat("Read depth associated with at least one parental genotype <= ", filter$DEPTH,"%\n\n", sep="")
+  cat("Percentage of missing genotypes > ", filter$MISS*100,"%\n", sep="")
+  cat("Read depth associated with at least one parental genotype <= ", filter$DEPTH,"\n", sep="")
   cat("P-value for segregation test < ", filter$PVALUE,"%\n\n", sep="")
   ## Extract the private variables we want
   indID <- R6obj$.__enclos_env__$private$indID

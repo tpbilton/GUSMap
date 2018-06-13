@@ -31,8 +31,8 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
     stop("There are some missing segregation types in the data.")
   
   ## Set up the Clusters
-  cl <- parallel::makeCluster(nClust)
-  doSNOW::registerDoSNOW(cl)
+  cl <- makeCluster(nClust)
+  registerDoSNOW(cl)
   
   cat("\nComputing 2-point recombination fraction estimates ...\n")
   cat("Paternal informative SNPs\n")

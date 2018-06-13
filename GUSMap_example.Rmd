@@ -7,9 +7,12 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+install.packages("devtools")
+install_github("tpbilton/GUSMap", ref="Development")
+install.packages("onemap")
 ```
 
-## Read in the data from VCF format
+## Read in data
 
 ```{r include=FALSE}
 ## get file paths to Manuka data
@@ -19,23 +22,30 @@ RAfile <- VCFtoRA(MKdata$vcf)
 ## read in the RA fill
 RAdata <- readRA(RAfile, gform = "reference")
 ```
+The above functions are merely to read in data. **VCFtoRA** is probably the slowest and can take 5-10 minutes for a large datasets (e.g. 400,000 SNPs).
 
 
 ## Create a mapping population
 
 ```{r include=FALSE}
-MK_fs <- createPop(RAdata, pedfile=MKdata$ped, filter=list(PVALUE=0.01))
+MK_fs <- createPop(RAdata, pedfile=MKdata$ped)
 ```
 
-Now, we need to compute all the pairwise rf estimates between pairs of SNPs.
+Now, we need to compute all the pairwise recombintion fraction estimates between pairs of SNPs.
 ```{r}
-MK_fs$rf_2pt(nClust=3)
-MK_fs$plotChr()
+MK_fs$rf_2pt(nClust=2)
+```
+The above function is very slow because it is taking each pair of SNPs and computing a likelihood to get a point estimate. *nClust* argument specifies the number of cores to use with the parallelization within the function using the *foreach* R package.
+
+Heatmaps of these estimates are
+```{r}
+MK_fs$plotChr(parent = "maternal")
 MK_fs$plotChr(parent = "paternal")
 ```
 
 ## Mask SNPs
 
+The above code is just to mask some SNPs to get the same results as in the paper by Bilton et al. (2018). Heatmaps are again produced to check output.
 ```{r}
 ##Want to mask the SNPs know to be bad
 badSnps <- rep(FALSE, MK_fs$.__enclos_env__$private$nSnps)
@@ -58,10 +68,53 @@ MK_fs$plotChr(parent = "paternal")
 depth <- MK_fs$.__enclos_env__$private$ref[[1]] + MK_fs$.__enclos_env__$private$alt[[1]]
 rd6 <- ((colMeans(depth) > 6) | badSnps)
 MK_fs$maskSNP(which(rd6))
-MK_fs$rf_est()
+## Compute the rf estimates
+## using optim 
+MK_fs$rf_est(method="optim")
+sum(haldane(MK_fs$para$rf_p[[1]])) ## should be 76.09481
+MK_fs$para$ep[[1]]                 ## should be 0.003167973
+## using EM algorithm
+MK_fs$rf_est(method="EM")
+sum(haldane(MK_fs$para$rf_p[[1]])) ## should be 76.09481
+MK_fs$para$ep[[1]]                 ## should be 0.003167973
+
+```
+The *MK_fs$rf_est()* is the main function here and is solving the likelihood for a hidden Markoc model (HMM). The likelihood is written as C functions function in the src folder. There is also two different optimization routiues:
+
+* Direct maximization: Using the *optim* function in R with the C script *likelihoods.c* and *score.c*
+* Expectation-Maximation (EM) algorithm. Uses the "EM.c" C script.
+
+#### With a large data set:
+
+For a larger dataset, I'll simulate some ideal data below
+```{r}
+noChr=2
+nSnps=300
+noFam=1
+set.seed(5721)
+config <- list(sapply(1:noChr, function(x) list(sample(c(1,2,4),size=nSnps, prob=c(1,2,2)/5, replace=T)), simplify=T))
+simData <- simFS(0.0033,epsilon=0.01,config=config,nInd=200, meanDepth=5, noChr=noChr, seed1=687534, seed2=6772)
 ```
 
+Again compute all the pairwise recombintion fraction estimates between all pairs of SNPs.
+```{r}
+simData$rf_2pt(nClust=2)
+simData$plotChr(parent="maternal")
+simData$plotChr(parent="paternal")
+```
 
+Solve the likelihood for the hidden Markov model (HMM) and get recombination fraction estimates
+```{r}
+simData$rf_est(method="optim")
+## Chromosome 1
+sum(haldane(simData$para$rf_p[[1]])) ## Should be 98.41231
+simData$para$ep[[1]]                 ## 0.01010545
+## Chromosome 2
+sum(haldane(simData$para$rf_p[[2]])) ## Should be 103.2207 
+simData$para$ep[[2]]                 ## 0.009815709
+```
 
-
-
+For EM algorithm, there is some issues with running out of memory (at least when I run it on a computer with limited memory). 
+```{r, eval=FASLE}
+simData$rf_est(method="EM")
+```

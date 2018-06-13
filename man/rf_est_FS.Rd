@@ -4,13 +4,13 @@
 \alias{rf_est_FS}
 \title{Estimation of adjacent recombination fractions in full-sib families.}
 \usage{
-rf_est_FS(init_r = 0.01, epsilon = 0.001, ref, alt, OPGP, sexSpec = F,
-  seqErr = T, trace = F, noFam = 1, method = "der", ...)
+rf_est_FS(init_r = 0.01, ep = 0.001, ref, alt, OPGP, sexSpec = F,
+  seqErr = T, trace = F, noFam = 1, method = "optim", ...)
 }
 \arguments{
 \item{init_r}{Vector of starting values for the recombination fractions}
 
-\item{epsilon}{Numeric value of the starting value for the sequencing error
+\item{ep}{Numeric value of the starting value for the sequencing error
 parameter. Default is NULL which means that the sequencing parameter is
 fixed at zero.}
 
@@ -41,7 +41,7 @@ Function returns a list object. If non sex-specific recombination
 fractions are specified, the list contains;
 \itemize{
 \item rf: Vector of recombination fraction estimates.
-\item epsilon: Estimate of the sequencing error parameter.
+\item ep: Estimate of the sequencing error parameter.
 \item loglik: The log-likelihood value at the maximum likelihood estimates.
 }
 else, if sex-specific recombination fractions are
@@ -49,7 +49,7 @@ desired, the list contains;
 \itemize{
 \item rf_p: Vector of the paternal recombination fraction estimates.
 \item rf_m: Vector of the maternal recombination fraction estimates.
-\item epsilon: Estimate of the sequencing error parameter.
+\item ep: Estimate of the sequencing error parameter.
 \item loglik: The log-likelihood value at the maximum likelihood estimates.
 }
 }

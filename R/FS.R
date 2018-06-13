@@ -27,7 +27,7 @@ FS <- R6Class("FS",
                   private$nSnps     <- R6obj$.__enclos_env__$private$nSnps
                   private$nInd      <- R6obj$.__enclos_env__$private$nInd
                   private$gform     <- R6obj$.__enclos_env__$private$gform
-                  private$masked    <- rep(TRUE, R6obj$.__enclos_env__$private$nSnps)
+                  private$masked    <- rep(FALSE, R6obj$.__enclos_env__$private$nSnps)
                   private$famInfo   <- R6obj$.__enclos_env__$private$famInfo
                 },
                 #############################################################
@@ -104,7 +104,7 @@ FS <- R6Class("FS",
                   return(invisible())
                 },
                 ## Function for plotting linkage groups
-                plotLG = function(mat=c("rf","LOD"), LG, filename=NULL, names=NULL, chrS=2, lmai=2, chrom=T){
+                plotLG = function(mat=c("rf"), LG, filename=NULL, names=NULL, chrS=2, lmai=2, chrom=T){
                   
                   if(mat == "rf")
                     plotLG(mat=private$rf, LG=LG, filename=filename, names=names, chrS=chrS, lmai=lmai, chrom=chrom)
@@ -115,7 +115,7 @@ FS <- R6Class("FS",
                   return(invisible())
                 },
                 ## Function for plotting chromosome ordering
-                plotChr = function(mat=c("rf","LOD"), parent = "maternal", filename=NULL, chrS=2, lmai=2){
+                plotChr = function(mat=c("rf"), parent = "maternal", filename=NULL, chrS=2, lmai=2){
                   if(private$noFam == 1){
                     ## workout the indices for the chromosomes
                     names <- unique(private$chrom)
@@ -149,7 +149,7 @@ FS <- R6Class("FS",
                       stop("Chromosomes names must be a character vector.")
                     if(is.null(chr)) # compute distances for all chromosomes
                       chr <- unique(private$chrom)
-                    else if(!(any(chr %in% private$chrom[!masked])))
+                    else if(!(any(chr %in% private$chrom[!private$masked])))
                       stop("At least one chromosome not found in the data set.")
                     else
                       chr <- as.character(chr) # ensure that the chromsome names are characters
@@ -164,7 +164,8 @@ FS <- R6Class("FS",
                         !is.null(self$para$OPGP[i][[x]]) && (length(self$para$OPGP[i][[x]]) != ncol(ref_temp[[x]])))){
                         tempOPGP <- list()
                         for(fam in 1:private$noFam){
-                          tempOPGP <- c(tempOPGP,list(as.integer(infer_OPGP_FS(ref_temp[[fam]],alt_temp[[fam]],private$config[[fam]][indx_chr], method="EM"))))                        }
+                          tempOPGP <- c(tempOPGP,list(as.integer(infer_OPGP_FS(ref_temp[[fam]],alt_temp[[fam]],private$config[[fam]][indx_chr], method="EM"))))                        
+                          }
                         self$para$OPGP[i] <- tempOPGP
                       }
                       ## estimate the rf's

@@ -4,7 +4,7 @@
 \alias{infer_OPGP_FS}
 \title{Inference of the OPGPs (or parental phase) for a single full-sub family.}
 \usage{
-infer_OPGP_FS(ref, alt, config, epsilon = 0.001, method = "optim", ...)
+infer_OPGP_FS(ref, alt, config, ep = 0.001, method = "optim", ...)
 }
 \arguments{
 \item{ref}{Numeric matrix of allele counts for the reference allele.}
@@ -13,7 +13,7 @@ infer_OPGP_FS(ref, alt, config, epsilon = 0.001, method = "optim", ...)
 
 \item{config}{Numeric vector of the segregation types for all the loci.}
 
-\item{epsilon}{Numeric value of the starting value for the sequencing error
+\item{ep}{Numeric value of the starting value for the sequencing error
 parameter. Default is NULL which means that the sequencing parameter is
 fixed at zero.}
 
