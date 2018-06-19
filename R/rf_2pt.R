@@ -1,5 +1,5 @@
 
-
+registerDoParallel(max(strtoi(Sys.getenv('OMP_NUM_THREADS')), 1))
 
 ## function needed for foreach loop
 comb <- function(...){
@@ -31,9 +31,15 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
     stop("There are some missing segregation types in the data.")
   
   ## Set up the Clusters
-  cl <- makeCluster(nClust)
-  registerDoSNOW(cl)
-  
+#  cl <- makeCluster(nClust)
+  ## NOTE: doSNOW not supported with MPI on Pan
+#  cat("Setting up the cluster 2:", max(strtoi(Sys.getenv('SLURM_CPUS_PER_TASK')), 1), "\n")
+#  cl <- makeSOCKcluster(max(strtoi(Sys.getenv('SLURM_CPUS_PER_TASK')), 1))
+#  registerDoSNOW(cl)
+  cat("Using doParallel instead of doSNOW - nClust is ignored, set number of threads with `OMP_NUM_THREADS` environment variable\n")
+ 
+
+
   cat("\nComputing 2-point recombination fraction estimates ...\n")
   cat("Paternal informative SNPs\n")
   ## Paternal informative SNPs
@@ -295,7 +301,7 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
     }
     return(rf)
   }
-  stopCluster(cl) 
+#  stopCluster(cl) 
   
   ## Build the rf and LOD matrices
   origOrder <- order(c(indx_BI,indx_PI,indx_MI))
@@ -325,8 +331,13 @@ rf_2pt_multi <- function(ref, alt, config, group, nClust, noFam, init_r = 0.25){
   nSnps_PI = length(indx_PI)
   
   ## Set up the Clusters
-  cl <- makeCluster(nClust)
-  registerDoSNOW(cl)
+#  cl <- makeCluster(nClust)
+  ## NOTE: doSNOW not supported with MPI on Pan
+#  cat("Setting up the cluster:", max(strtoi(Sys.getenv('SLURM_CPUS_PER_TASK')), 1), "\n")
+#  cl <- makeSOCKcluster(max(strtoi(Sys.getenv('SLURM_CPUS_PER_TASK')), 1))
+#  registerDoSNOW(cl)
+  cat("Using doParallel instead of doSNOW - nClust is ignored, set number of threads with `OMP_NUM_THREADS` environment variable\n")
+
   
   cat("\nComputing 2-point recombination fraction estimates ...\n")
   cat("Paternal informative SNPs\n")
@@ -605,7 +616,7 @@ rf_2pt_multi <- function(ref, alt, config, group, nClust, noFam, init_r = 0.25){
   }
   
   #rf.MI.PI <- replicate(2, matrix(NA, nrow=nSnps_MI, ncol=nSnps_PI),simplify=FALSE)
-  stopCluster(cl) 
+#  stopCluster(cl) 
   
   ## Build the rf and LOD matrices
   origOrder <- order(c(indx_BI,indx_PI,indx_MI))
