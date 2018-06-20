@@ -30,6 +30,7 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
   
   ## Set up the Clusters
   cl <- makeCluster(nClust)
+  registerDoParallel(cl)
 
   cat("\nComputing 2-point recombination fraction estimates ...\n")
   cat("Paternal informative SNPs\n")
@@ -323,6 +324,7 @@ rf_2pt_multi <- function(ref, alt, config, group, nClust, noFam, init_r = 0.25){
   
   ## Set up the Clusters
   cl <- makeCluster(nClust)
+  registerDoParallel(cl)
   
   cat("\nComputing 2-point recombination fraction estimates ...\n")
   cat("Paternal informative SNPs\n")
