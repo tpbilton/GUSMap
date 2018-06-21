@@ -1,3 +1,7 @@
+**Note**: doSNOW wasn't playing nice on the cluster under Slurm. We have a 
+patched version of doParallel so I used that instead. It shouldn't make any
+difference to performance.
+
 # Example 1
 
 ## Run times for different numbers of threads
