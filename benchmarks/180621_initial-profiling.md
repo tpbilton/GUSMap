@@ -2,9 +2,14 @@
 
 ## Run times for different numbers of threads
 
-1 thread : 9m22.936s
-4 threads: 4m48.240s
-8 threads: 3m36.044s
+| Number of threads | Wall time (s) |
+| 1                 | 562.9         |
+| 4                 | 288.2         |
+| 8                 | 216.0         |
+
+## Slurm profiling results
+
+![Example 1 with 8 threads](slurmprof_example1_8cpus.png)
 
 ## Hot Paths analysis
 
@@ -84,7 +89,12 @@
 
 ## Run times for different numbers of threads
 
-8 threads: 41m39.344s
+| Number of threads | Wall time (s) |
+| 8                 | 2499.3        |
+
+## Slurm profiling results
+
+![Example 1 with 8 threads](slurmprof_example2_8cpus.png)
 
 ## Hot Paths analysis
 
