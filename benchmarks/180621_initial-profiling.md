@@ -150,3 +150,11 @@ difference to performance.
  . . . . . . . . . tryCatchOne     2.33      2.33
 ```
 
+# What next?
+
+* Check Rprof profiling results when running on >1 thread
+* Look at functions under `rf_est` and `rf_2pt`
+  - Different options for parallelisation?
+  - Any other optimisations (in the C code)
+* Also, try to profile the C functions, to see where the time is spent there.
+
