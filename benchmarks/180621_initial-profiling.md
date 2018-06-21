@@ -16,6 +16,22 @@ difference to performance.
 
 ![Example 1 with 8 threads](slurmprof_example1_8cpus.png)
 
+## Profiling with Rprof
+
+```
+options(keep.source=TRUE)
+Rprof("profile.out", line.profiling = TRUE)
+
+# code to profile goes here...
+
+Rprof(NULL)
+
+# output html file of profiling results
+library(profvis)
+p <- profvis(prof_input = "profile.out")
+htmlwidgets::saveWidget(p, "profile.html")
+```
+
 ## Hot Paths analysis
 
 ### 1 thread
