@@ -3,6 +3,7 @@
 ## Run times for different numbers of threads
 
 | Number of threads | Wall time (s) |
+|-------------------|---------------|
 | 1                 | 562.9         |
 | 4                 | 288.2         |
 | 8                 | 216.0         |
@@ -90,6 +91,7 @@
 ## Run times for different numbers of threads
 
 | Number of threads | Wall time (s) |
+|-------------------|---------------|
 | 8                 | 2499.3        |
 
 ## Slurm profiling results
