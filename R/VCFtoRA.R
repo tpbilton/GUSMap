@@ -118,6 +118,7 @@ VCFtoRA <- function(infilename, direct="./", makePed=T){
     if (ref == "." || alt == "." || length(alt) > 1)
       next
     else{
+      ad_pos <- ro_pos <- ao_pos <- dp4_pos <- NULL 
       ## Check that there is allelic depth in the VCF file
       format = strsplit(line[9], split= ":")[[1]]
       if("AD" %in% format)
@@ -129,26 +130,25 @@ VCFtoRA <- function(infilename, direct="./", makePed=T){
       else if("DP4" %in% format)
         dp4_pos = which(format == "DP4")
       else
-        stop("We can't use this vcf file. AD (alleleic depth or RO (Reference allele observation count) and AO (Alternate allele observation count) information is needed.\n")
+        stop("We can't use this vcf file. AD (alleleic depth) or RO (Reference allele observation count) and AO (Alternate allele observation count) information is needed.\n")
       ## Extract the alleles depths
       newline = c()
-      #for(j in line[10:length(line)]){
       for(j in line[10:length(line)]){
         if (j %in% empty_genotypes)
           newline = c(newline,"0,0")
         else{
           j = strsplit(j, split = ":")[[1]]
-          if( length(ad_pos) > 0 ){              #If ad_pos is not null, i.e., there is a value for it, append it to outlist
+          if(!is.null(ad_pos) && (length(ad_pos) > 0) ){              #If ad_pos is not null, i.e., there is a value for it, append it to outlist
             if( j[ad_pos] %in% empty_genotypes ) #gatk vcf4.2 will fill out genotype fields, even for uncovered data
               newline = c(newline,"0,0")
             else
               newline = c(newline, j[ad_pos])
           }
-          else if(length(ro_pos) > 0 && length(ao_pos) > 0){ #ELSE IF ro_pos and ao_pos are not null or are equal to 0
+          else if(!is.null(ro_pos) && !is.null(ao_pos) && (length(ro_pos) > 0) && (length(ao_pos) > 0)){ #ELSE IF ro_pos and ao_pos are not null or are equal to 0
             ad = paste0(j[ro_pos], ",", j[ao_pos])
             newline = c(newline, ad)
           }
-          else if( dp4_pos ){
+          else if(!is.null(dp4_pos) && (length(dp4_pos) > 0) ){
             counts = strsplit(j[dp4_pos], split=",")
             allele1 = as.integer(counts[1]) + as.integer(counts[2])
             allele2 = as.integer(counts[3]) + as.integer(counts[4])
