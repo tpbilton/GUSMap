@@ -149,7 +149,7 @@ VCFtoRA <- function(infilename, direct="./", makePed=T){
             newline = c(newline, ad)
           }
           else if(!is.null(dp4_pos) && (length(dp4_pos) > 0) ){
-            counts = strsplit(j[dp4_pos], split=",")
+            counts = strsplit(j[dp4_pos], split=",")[[1]]
             allele1 = as.integer(counts[1]) + as.integer(counts[2])
             allele2 = as.integer(counts[3]) + as.integer(counts[4])
             ad = paste0(allele1, ",", allele2)
