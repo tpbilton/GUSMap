@@ -169,6 +169,7 @@ FS <- R6Class("FS",
                         self$para$OPGP[i] <- tempOPGP
                       }
                       ## estimate the rf's
+                      cat(">>> Calling rf_est_FS\n")
                       MLE <- rf_est_FS(init_r=init_r, ep=ep, ref=ref_temp, alt=alt_temp, OPGP=self$para$OPGP[i],
                                          sexSpec=sexSpec, seqErr=seqErr, method=method)
                       if(sexSpec){

@@ -369,8 +369,12 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
     ref_mat = do.call(what = "rbind",ref)
     alt_mat = do.call(what = "rbind",alt)
     
+    cat(">>> Calling EM_HMM\n")
+    library(tictoc)
+    tic("RTIME: call to EM_HMM")
     EMout <- .Call("EM_HMM", init_r, ep, ref_mat, alt_mat, OPGPmat,
                    noFam, unlist(nInd), nSnps, sexSpec, seqErr, EM.arg, as.integer(ss_rf))
+    toc()
     
     EMout[[3]] = EMout[[3]] + sum(log(choose(ref_mat+alt_mat,ref_mat)))
     
