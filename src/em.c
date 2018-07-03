@@ -76,6 +76,28 @@ double computeProb(double *ppAA, double *ppBB, double *pbin_coef,
   return -1;
 }
 
+// Function for computing the emission probabilities given the true genotypes (parallel)
+double computeProbParallel(int nInd, int nSnps, double pAA[nInd][nSnps], double pBB[nInd][nSnps], double bin_coef[nInd][nSnps],
+                        double epsilon, int *pref, int *palt){
+  int ind;
+  #pragma omp parallel for
+  for(ind = 0; ind < nInd; ind++){
+    int snp;
+    for(snp = 0; snp < nSnps; snp++){
+      int indx = ind + nInd * snp;
+      if( (pref[indx] + palt[indx]) == 0){
+        pAA[ind][snp] = 1;
+        pBB[ind][snp] = 1;
+      }
+      else{
+        pAA[ind][snp] = bin_coef[ind][snp] * powl(1 - epsilon, pref[indx]) * powl(epsilon, palt[indx]);
+        pBB[ind][snp] = bin_coef[ind][snp] * powl(epsilon, pref[indx]) * powl(1 - epsilon, palt[indx]);
+      }
+    }
+  }
+  return -1;
+}
+
 // Function for extracting entries of the emission probability matrix
 // when the OPGPs are known
 int Iindx(int OPGP, int elem){
@@ -170,6 +192,7 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam, SEXP nIn
   double sum, sumA, sumB, a, b, delta;
 
 #ifdef DEBUG_OPENMP
+  Rprintf("CDEBUG: in EM_HMM\n");
   double init_time = omp_get_wtime();
 #endif
   // Copy values of R input into C objects
@@ -188,8 +211,9 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam, SEXP nIn
   nTotal = 0;
   for(fam = 0; fam < noFam_c; fam++){
     nInd_c[fam] = INTEGER(nInd)[fam];
+    indSum[fam] = nTotal;
     nTotal = nTotal + nInd_c[fam];
-    indSum[fam] = nTotal - nInd_c[fam];
+    //indSum[fam] = nTotal - nInd_c[fam];
   }
   nIter = REAL(para)[0];
   delta = REAL(para)[1];
@@ -283,7 +307,7 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam, SEXP nIn
   double t_fwdbwd = 0.0;
   double t_recomb = 0.0;
   double t_err = 0.0;
-  Rprintf("CDEBUG: nFam/Ind/Snp: %d %d %d\n", noFam_c, nInd_c, nSnps_c);
+  Rprintf("CDEBUG: nFam/Ind/Snp: %d %d %d\n", noFam_c, nInd_c[0], nSnps_c);
 #endif
   
   /////// Start algorithm
@@ -297,7 +321,7 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam, SEXP nIn
 #ifdef DEBUG_OPENMP
     tmp = omp_get_wtime();
 #endif
-    computeProb(ppAA, ppBB, pbin_coef, ep_c, pref, palt, nTotal, nSnps_c);
+    computeProbParallel(nTotal, nSnps_c, pAA, pBB, bin_coef, ep_c, pref, palt);
 #ifdef DEBUG_OPENMP
     t_computeProb += omp_get_wtime() - tmp;
 #endif
@@ -435,6 +459,7 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam, SEXP nIn
 #endif
     if(sexSpec_c){
       //Rprintf("Sex-Specific rf's\n");
+      #pragma omp parallel for private(sum, fam, ind, s1, s2)
       for(snp = 0; snp < nSnps_c-1; snp++){
         // Paternal
         if(pss_rf[snp] == 1){
@@ -470,6 +495,7 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam, SEXP nIn
     }
     else{ // non sex-specific
       //Rprintf("non Sex-Specific rf's\n");
+      #pragma omp parallel for private(sum, fam, ind, s1, s2)
       for(snp = 0; snp < nSnps_c-1; snp++){
         sum = 0;
         for(fam = 0; fam < noFam_c; fam++){
@@ -606,6 +632,11 @@ SEXP EM_HMM_UP(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP config, SEXP noFam, SEX
   // Initialize variables
   int s1, s2, fam, ind, snp, g, iter, nIter, indx, parent, noFam_c, nSnps_c, seqError_c;
   double sum, sumA, sumB, a, b, delta;
+
+#ifdef DEBUG_OPENMP
+  Rprintf("CDEBUG: in EM_HMM_UP\n");
+#endif
+
   // Copy values of R input into C objects
   nSnps_c = INTEGER(nSnps)[0];
   double r_c[(nSnps_c-1)*2], ep_c;
