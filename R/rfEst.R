@@ -372,6 +372,9 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
     cat(">>> Calling EM_HMM\n")
     library(tictoc)
     tic("RTIME: call to EM_HMM")
+    cat("RDEBUG: NUMS:", noFam, nSnps, "\n")
+    cat("RDEBUG: nInd:", class(unlist(nInd)), typeof(unlist(nInd)), "\n")
+    cat("RDEBUG:", dim(unlist(nInd)), unlist(nInd)[1], "\n")
     EMout <- .Call("EM_HMM", init_r, ep, ref_mat, alt_mat, OPGPmat,
                    noFam, unlist(nInd), nSnps, sexSpec, seqErr, EM.arg, as.integer(ss_rf))
     toc()
@@ -514,8 +517,11 @@ rf_est_FS_UP <- function(ref, alt, config, ep, method="optim", trace=F, ...){
     ## Are we estimating the error parameters?
     seqErr=!is.null(ep)
     
+    library(tictoc)
+    tic("RTIME: call to EM_HMM_UP")
     EMout <- .Call("EM_HMM_UP", rep(0.5,(nSnps-1)*2), ep, ref, alt, config,
                    as.integer(1), nInd, nSnps, seqErr, EM.arg, as.integer(ss_rf))
+    toc()
     return(list(rf_p=EMout[[1]][ps],rf_m=EMout[[1]][nSnps-1+ms],
                 ep=EMout[[2]],
                 loglik=EMout[[3]]))
