@@ -182,6 +182,7 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
     noFam <- as.integer(noFam)
   
   if(method=="optim"){
+    cat(">>> In rfEst optim section...\n")
     # Arguments for the optim function
     optim.arg <- list(...)
     if(length(optim.arg) == 0)
@@ -238,12 +239,15 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
       if(seqErr)
         para <- c(para,logit(ep))
       
+      cat(">>> calling optim...\n")
+      tic("RTIME: call to optim")
       ## Find MLE
       optim.MLE <- optim(para, fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err,
                          method="BFGS", control=optim.arg,
                          ref=ref,alt=alt,bcoef_mat=bcoef_mat,Kab=Kab,
                          nInd=nInd,nSnps=nSnps,OPGP=OPGP,noFam=noFam,
                          seqErr=seqErr,extra=ep)
+      toc()
     }
     # Print out the output from the optim procedure (if specified)
     if(trace){

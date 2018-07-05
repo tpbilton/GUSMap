@@ -52,32 +52,8 @@ double long binomial(int a, int b){
 }
 */
 
-// Function for computing the emission probabilities given the true genotypes
-double computeProb(double *ppAA, double *ppBB, double *pbin_coef,
-                        double epsilon, int *pref, int *palt,
-                        int nInd, int nSnps){
-  int snp, ind, indx;
-  for(ind = 0; ind < nInd; ind++){
-    for(snp = 0; snp < nSnps; snp++){
-      indx = ind + nInd * snp;
-      if( (pref[indx] + palt[indx]) == 0){
-        *ppAA = 1;
-        *ppBB = 1;
-      }
-      else{
-        *ppAA = *pbin_coef * powl(1 - epsilon, pref[indx]) * powl(epsilon, palt[indx]);
-        *ppBB = *pbin_coef * powl(epsilon, pref[indx]) * powl(1 - epsilon, palt[indx]);
-      }
-      ppAA++;
-      ppBB++;
-      pbin_coef++;
-    }
-  }
-  return -1;
-}
-
 // Function for computing the emission probabilities given the true genotypes (parallel)
-double computeProbParallel(int nInd, int nSnps, double pAA[nInd][nSnps], double pBB[nInd][nSnps], double bin_coef[nInd][nSnps],
+double computeProb(int nInd, int nSnps, double pAA[nInd][nSnps], double pBB[nInd][nSnps], double bin_coef[nInd][nSnps],
                         double epsilon, int *pref, int *palt){
   int ind;
   #pragma omp parallel for
@@ -251,11 +227,7 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam, SEXP nIn
   double pAB[nTotal][nSnps_c];
   double pBB[nTotal][nSnps_c];
   double bin_coef[nTotal][nSnps_c];
-  double *ppAA, *ppBB, *pbin_coef;
   int Iaa[4][nTotal][nSnps_c], Ibb[4][nTotal][nSnps_c];
-  ppAA = &pAA[0][0];
-  ppBB = &pBB[0][0];
-  pbin_coef = &bin_coef[0][0];
   //double (*pbin_coef)[nSnps_c] = &bin_coef;
   // Compute the probs for the heterozygous calls
   for(fam = 0; fam < noFam_c; fam++){
@@ -321,7 +293,7 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam, SEXP nIn
 #ifdef DEBUG_OPENMP
     tmp = omp_get_wtime();
 #endif
-    computeProbParallel(nTotal, nSnps_c, pAA, pBB, bin_coef, ep_c, pref, palt);
+    computeProb(nTotal, nSnps_c, pAA, pBB, bin_coef, ep_c, pref, palt);
 #ifdef DEBUG_OPENMP
     t_computeProb += omp_get_wtime() - tmp;
 #endif
@@ -523,6 +495,7 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam, SEXP nIn
     if(seqError_c){
       sumA = 0;
       sumB = 0;
+      #pragma omp parallel for reduction(+:sumA,sumB) private(fam, ind, a, b, s1)
       for(snp = 0; snp < nSnps_c; snp++){
         for(fam = 0; fam < noFam_c; fam++){
           for(ind = 0; ind < nInd_c[fam]; ind++){
@@ -652,8 +625,8 @@ SEXP EM_HMM_UP(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP config, SEXP noFam, SEX
   nTotal = 0;
   for(fam = 0; fam < noFam_c; fam++){
     nInd_c[fam] = INTEGER(nInd)[fam];
+    indSum[fam] = nTotal;
     nTotal = nTotal + nInd_c[fam];
-    indSum[fam] = nTotal - nInd_c[fam];
   }
   nIter = REAL(para)[0];
   delta = REAL(para)[1];
@@ -684,11 +657,7 @@ SEXP EM_HMM_UP(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP config, SEXP noFam, SEX
   double pAB[nTotal][nSnps_c];
   double pBB[nTotal][nSnps_c];
   double bin_coef[nTotal][nSnps_c];
-  double *ppAA, *ppBB, *pbin_coef;
   int Iaa[4][nTotal][nSnps_c], Ibb[4][nTotal][nSnps_c];
-  ppAA = &pAA[0][0];
-  ppBB = &pBB[0][0];
-  pbin_coef = &bin_coef[0][0];
   //double (*pbin_coef)[nSnps_c] = &bin_coef;
   // Compute the probs for the heterozygous calls
   for(fam = 0; fam < noFam_c; fam++){
@@ -734,10 +703,11 @@ SEXP EM_HMM_UP(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP config, SEXP noFam, SEX
     llval = 0;
     
     // unpdate the probabilites for pAA and pBB given the parameter values and data.
-    computeProb(ppAA, ppBB, pbin_coef, ep_c, pref, palt, nTotal, nSnps_c);
+    computeProb(nTotal, nSnps_c, pAA, pBB, bin_coef, ep_c, pref, palt);
     
     // Compute the forward and backward probabilities for each individual
     for(fam = 0; fam < noFam_c; fam++){
+      #pragma omp parallel for reduction(+:llval) private(indx, sum, s1, s2, alphaDot, snp, w_new, betaDot)
       for(ind = 0; ind < nInd_c[fam]; ind++){
         indx = ind + indSum[fam];
         //Rprintf("indSum %i\n", indSum[fam]);
@@ -852,6 +822,7 @@ SEXP EM_HMM_UP(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP config, SEXP noFam, SEX
       }  
     }
     // The recombination fractions
+    #pragma omp parallel for private(sum, fam, ind, indx, s1, s2)
     for(snp = 0; snp < nSnps_c-1; snp++){
       // Paternal
       if(pss_rf[snp] == 1){
@@ -888,6 +859,7 @@ SEXP EM_HMM_UP(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP config, SEXP noFam, SEX
     if(seqError_c){
       sumA = 0;
       sumB = 0;
+      #pragma omp parallel for reduction(+:sumA,sumB) private(fam, ind, indx, a, b, s1)
       for(snp = 0; snp < nSnps_c; snp++){
         for(fam = 0; fam < noFam_c; fam++){
           for(ind = 0; ind < nInd_c[fam]; ind++){
