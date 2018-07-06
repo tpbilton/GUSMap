@@ -240,6 +240,7 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
         para <- c(para,logit(ep))
       
       cat(">>> calling optim...\n")
+      cat(">>> seqErr", seqErr, "\n")
       tic("RTIME: call to optim")
       ## Find MLE
       optim.MLE <- optim(para, fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err,

@@ -66,6 +66,7 @@ SEXP ll_fs_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nI
   double llval = 0;
   
   // Now compute the likelihood
+  #pragma omp parallel for reduction(+:llval) private(sum, s1, alphaDot, alphaTilde, snp, s2, w_new)
   for(ind = 0; ind < nInd_c; ind++){
     // Compute forward probabilities at snp 1
     sum = 0;
