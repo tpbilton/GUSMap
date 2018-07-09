@@ -12,6 +12,7 @@ Loops in the following C functions were parallelised with OpenMP:
 * `ll_fs_scaled_err_c`
 * `score_fs_scaled_err_c`
 
-After making these changes the code was benchmarked:
+After making these changes the code was benchmarked (note: timings are just
+for the call to `MK_fs$rf_est`):
 
 ![benchmark results](gusmap-smaller-openmp-compare.png)
