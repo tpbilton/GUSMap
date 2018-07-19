@@ -23,6 +23,12 @@
 #include <Rmath.h>
 #include <math.h>
 #include "probFun.h"
+#ifdef _OPENMP
+    #include <omp.h>
+#else
+    inline int omp_get_max_threads() { return 1; }
+    inline void omp_set_num_threads(n) { return; }
+#endif
 
 
 // Derivative function for rf's
@@ -141,13 +147,15 @@ double der_epsilon(int OPGP, double epsilon, int a, int b, int elem){
 }
 
 // rf's are equal and error parameter
-SEXP score_fs_scaled_err_c(SEXP r, SEXP epsilon, SEXP ref, SEXP alt, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nInd, SEXP nSnps){
+SEXP score_fs_scaled_err_c(SEXP r, SEXP epsilon, SEXP ref, SEXP alt, SEXP Kaa, SEXP Kab, SEXP Kbb,
+        SEXP OPGP, SEXP nInd, SEXP nSnps, SEXP parallel){
   // Initialize variables
-  int ind, snp, snp_der, nInd_c, nSnps_c, *pOPGP, *pref, *palt;
+  int ind, snp, snp_der, nInd_c, nSnps_c, parallel_c, *pOPGP, *pref, *palt;
   double *pscore, *pr, *pKaa, *pKab, *pKbb, epsilon_c;
   // Load R input variables into C
   nInd_c = INTEGER(nInd)[0];
   nSnps_c = INTEGER(nSnps)[0];
+  parallel_c = asLogical(parallel);
   // Define the pointers to the other input R variables
   pOPGP = INTEGER(OPGP);
   pref = INTEGER(ref);
@@ -165,6 +173,13 @@ SEXP score_fs_scaled_err_c(SEXP r, SEXP epsilon, SEXP ref, SEXP alt, SEXP Kaa, S
   double llval = 0, score_c[nSnps_c];
   for(snp = 0; snp < nSnps_c; snp++){
     score_c[snp] = 0;
+  }
+
+  // if required, temporarily disable openmp
+  int num_threads_orig = 0;
+  if (!parallel_c) {
+    num_threads_orig = omp_get_max_threads();
+    omp_set_num_threads(1);
   }
   
   // Now compute the likelihood and score function
@@ -257,6 +272,11 @@ SEXP score_fs_scaled_err_c(SEXP r, SEXP epsilon, SEXP ref, SEXP alt, SEXP Kaa, S
   // Compute the score for each parameter
   for(snp_der=0; snp_der < nSnps_c; snp_der++){
     pscore[snp_der] = score_c[snp_der];
+  }
+  
+  // revert to original num threads
+  if (!parallel_c) {
+    omp_set_num_threads(num_threads_orig);
   }
   
   // Clean up and return likelihood value

@@ -23,7 +23,12 @@
 #include <Rmath.h>
 #include <math.h>
 #include "probFun.h"
-
+#ifdef _OPENMP
+    #include <omp.h>
+#else
+    inline int omp_get_max_threads() { return 1; }
+    inline void omp_set_num_threads(n) { return; }
+#endif
 
 //////////// likelihood functions for multipoint likelihood in full sib-families using GBS data /////////////////////
 // Input variables for likelihoods
@@ -45,14 +50,15 @@
 // r.f constrainted to range [0,1/2].
 // OPGP's (or phase) are assumed to be known
 // Include error parameters
-SEXP ll_fs_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nInd, SEXP nSnps){
+SEXP ll_fs_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nInd, SEXP nSnps, SEXP parallel){
   // Initialize variables
-  int s1, s2, ind, snp, nInd_c, nSnps_c, *pOPGP;
+  int s1, s2, ind, snp, nInd_c, nSnps_c, parallel_c, *pOPGP;
   double *pll, *pr, *pKaa, *pKab, *pKbb;
   double alphaTilde[4], alphaDot[4], sum, w_new;
   // Load R input variables into C
   nInd_c = INTEGER(nInd)[0];
   nSnps_c = INTEGER(nSnps)[0];
+  parallel_c = asLogical(parallel);
   // Define the pointers to the other input R variables
   pOPGP = INTEGER(OPGP);
   pKaa = REAL(Kaa);
@@ -64,6 +70,13 @@ SEXP ll_fs_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nI
   PROTECT(ll = allocVector(REALSXP, 1));
   pll = REAL(ll);
   double llval = 0;
+
+  // if required, temporarily disable openmp
+  int num_threads_orig = 0;
+  if (!parallel_c) {
+    num_threads_orig = omp_get_max_threads();
+    omp_set_num_threads(1);
+  }
   
   // Now compute the likelihood
   #pragma omp parallel for reduction(+:llval) private(sum, s1, alphaDot, alphaTilde, snp, s2, w_new)
@@ -109,6 +122,11 @@ SEXP ll_fs_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nI
         alphaTilde[s2] = alphaDot[s2]/w_new;
       }
     }
+  }
+
+  // revert to original num threads
+  if (!parallel_c) {
+    omp_set_num_threads(num_threads_orig);
   }
   
   pll[0] = -1*llval;
