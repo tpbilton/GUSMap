@@ -29,7 +29,7 @@ given must be the same for all the progeny.
 }
 }
 \examples{
-## extract the name of the vcf fileand the pedigree file
+## extract the name of the vcf file and the pedigree file
 Manuka11()
 
 }

@@ -16,18 +16,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
 #
-#' Genotyping Uncertainty with Sequencing data (GUSbase)
+#' Genotyping Uncertainty with Sequencing data for linkage MAPping(GUSMap) 
 #'
-#' Package for analyzing high-throughput sequencing data generated using genotying-by-sequencing (GBS),
-#' exome capture sequencing, restriction site-associated DNA sequencing (RADseq) or whole genome sequencing (WGS).
-#' The methods for analyzing the sequencing data in this package are all based on using the number of reads for
-#' reference and alternate allele.
+#' Package for (to complete)
 #'
-#' \tabular{ll}{ Package: \tab GUSbase\cr Type: \tab Package\cr Version: \tab
-#' 0.1.0\cr Date: \tab 2018-06-23\cr License: \tab GPL 3\cr }
+#' \tabular{ll}{ Package: \tab GUSMap\cr Type: \tab Package\cr Version: \tab
+#' 1.0.0\cr Date: \tab 2018-08-03\cr License: \tab GPL 3\cr }
 #'
-#' @name GUSbase-package
-#' @aliases GUSbase
+#' @name GUSMap-package
+#' @aliases GUSMap
 #' @docType package
 #' @author Timothy P. Bilton, Maintainer: Timothy P. Bilton
 #' <tbilton@@maths.otago.ac.nz>
@@ -36,6 +33,10 @@
 #' @keywords package
 #' @importFrom Rdpack reprompt
 #' @importFrom R6 R6Class
+#' @importFrom GUSbase logit
+#' @importFrom GUSbase inv.logit
+#' @importFrom GUSbase logit2
+#' @importFrom GUSbase inv.logit2
 NULL
 
 

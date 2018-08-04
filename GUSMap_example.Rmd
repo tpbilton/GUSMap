@@ -106,12 +106,12 @@ nSnps=300
 noFam=1
 set.seed(5721)
 config <- list(sapply(1:noChr, function(x) list(sample(c(1,2,4),size=nSnps, prob=c(1,2,2)/5, replace=T)), simplify=T))
-simData <- simFS(0.0033,epsilon=0.01,config=config,nInd=200, meanDepth=5, noChr=noChr, seed1=687534, seed2=6772)
+simData <- simFS(1/100,epsilon=0.01,config=config,nInd=200, meanDepth=5, noChr=noChr, seed1=687534, seed2=6772)
 ```
 
 Again compute the pairwise recombination fraction estimates between all pairs of SNPs.
 ```{r}
-simData$rf_2pt(nClust=2)
+simData$rf_2pt(nClust=3)
 ## plot the results
 simData$plotChr(parent="maternal")
 simData$plotChr(parent="paternal")

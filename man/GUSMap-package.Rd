@@ -4,15 +4,13 @@
 \name{GUSMap-package}
 \alias{GUSMap-package}
 \alias{GUSMap}
-\title{Genotyping Uncertainty with Sequencing data for linkage Mapping (GUSMap)}
+\title{Genotyping Uncertainty with Sequencing data for linkage MAPping(GUSMap)}
 \description{
-Package for constructing genetic maps using outcrossed full-sib family
-populations that have been sequenced using next generation multiplexing
-sequencing methods \insertCite{@see @bilton2018genetics1}{GUSMap}.
+Package for (to complete)
 }
 \details{
 \tabular{ll}{ Package: \tab GUSMap\cr Type: \tab Package\cr Version: \tab
-1.0.0\cr Date: \tab 2018-06-11\cr License: \tab GPL 3\cr }
+1.0.0\cr Date: \tab 2018-08-03\cr License: \tab GPL 3\cr }
 }
 \references{
 \insertAllCited{}

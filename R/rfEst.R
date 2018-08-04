@@ -206,16 +206,16 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
       
       # Determine the initial values
       if(length(init_r)==1) 
-        para <- logit2(rep(init_r,sum(npar)))
+        para <- GUSbase::logit2(rep(init_r,sum(npar)))
       else if(length(init_r) != sum(npar)) 
-        para <- logit2(rep(0.1,sum(npar)))
+        para <- GUSbase::logit2(rep(0.1,sum(npar)))
       else
         para <- init_r
       # sequencing error
       if(length(ep) != 1 & !is.null(ep))
-        para <- c(para,logit(0.001))
+        para <- c(para,GUSbase::logit(0.001))
       else if(!is.null(ep))
-        para <- c(para,logit(ep))
+        para <- c(para,GUSbase::logit(ep))
       
       ## Are we estimating the error parameters?
       seqErr=!is.null(ep)
@@ -229,14 +229,14 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
     else{
       # Determine the initial values
       if(length(init_r)==1) 
-        para <- logit2(rep(init_r,nSnps-1))
+        para <- GUSbase::logit2(rep(init_r,nSnps-1))
       else if(length(init_r) != nSnps-1) 
-        para <- logit2(rep(0.1,nSnps-1))
+        para <- GUSbase::logit2(rep(0.1,nSnps-1))
       else
         para <- init_r
       # sequencing error
       if(seqErr)
-        para <- c(para,logit(ep))
+        para <- c(para,GUSbase::logit(ep))
       
       ## Find MLE
       optim.MLE <- optim(para, fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err,
@@ -254,12 +254,12 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
       warning(paste0('Optimization failed to converge properly with error ',optim.MLE$convergence,'\n smallest MLE estimate is: ', round(min(optim.MLE$par),6)))
     # Return the MLEs
     if(sexSpec)
-      return(list(rf_p=inv.logit2(optim.MLE$par[1:npar[1]]),rf_m=inv.logit2(optim.MLE$par[npar[1]+1:npar[2]]),
-                  ep=ifelse(seqErr,inv.logit(optim.MLE$par[sum(npar)+1]),0),
+      return(list(rf_p=GUSbase::inv.logit2(optim.MLE$par[1:npar[1]]),rf_m=GUSbase::inv.logit2(optim.MLE$par[npar[1]+1:npar[2]]),
+                  ep=ifelse(seqErr,GUSbase::inv.logit(optim.MLE$par[sum(npar)+1]),0),
                   loglik=-optim.MLE$value))
     else
-      return(list(rf=inv.logit2(optim.MLE$par[1:(nSnps-1)]), 
-                  ep=ifelse(seqErr,inv.logit(optim.MLE$par[nSnps]),0),
+      return(list(rf=GUSbase::inv.logit2(optim.MLE$par[1:(nSnps-1)]), 
+                  ep=ifelse(seqErr,GUSbase::inv.logit(optim.MLE$par[nSnps]),0),
                   loglik=-optim.MLE$value))
   }
   if(method=="optim_old"){
@@ -286,14 +286,14 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
       
       # Determine the initial values
       if(length(init_r)==1) 
-        para <- logit2(rep(init_r,sum(npar)))
+        para <- GUSbase::logit2(rep(init_r,sum(npar)))
       else if(length(init_r) != sum(npar)) 
-        para <- logit2(rep(0.1,sum(npar)))
+        para <- GUSbase::logit2(rep(0.1,sum(npar)))
       else
         para <- init_r
       # sequencing error
       if(seqErr)
-        para <- c(para,logit(ep))
+        para <- c(para,GUSbase::logit(ep))
       
       ## Find MLE
       optim.MLE <- optim(para,ll_fs_ss_mp_scaled_err,method="BFGS",control=optim.arg,
@@ -304,14 +304,14 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
     else{
       # Determine the initial values
       if(length(init_r)==1) 
-        para <- logit2(rep(init_r,nSnps-1))
+        para <- GUSbase::logit2(rep(init_r,nSnps-1))
       else if(length(init_r) != nSnps-1) 
-        para <- logit2(rep(0.1,nSnps-1))
+        para <- GUSbase::logit2(rep(0.1,nSnps-1))
       else
         para <- init_r
       # sequencing error
       if(seqErr)
-        para <- c(para,logit(ep))
+        para <- c(para,GUSbase::logit(ep))
       
       ## Find MLE
       optim.MLE <- optim(para,ll_fs_mp_scaled_err,method="BFGS",control=optim.arg,
@@ -328,12 +328,13 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
       warning(paste0('Optimization failed to converge properly with error ',optim.MLE$convergence,'\n smallest MLE estimate is: ', round(min(optim.MLE$par),6)))
     # Return the MLEs
     if(sexSpec)
-      return(list(rf_p=inv.logit2(optim.MLE$par[1:npar[1]]),rf_m=inv.logit2(optim.MLE$par[npar[1]+1:npar[2]]),
-                  ep=ifelse(seqErr,inv.logit(optim.MLE$par[sum(npar)+1]),0),
+      return(list(rf_p=GUSbase::inv.logit2(optim.MLE$par[1:npar[1]]),
+                  rf_m=GUSbase::inv.logit2(optim.MLE$par[npar[1]+1:npar[2]]),
+                  ep=ifelse(seqErr,GUSbase::inv.logit(optim.MLE$par[sum(npar)+1]),0),
                   loglik=-optim.MLE$value))
     else
-      return(list(rf=inv.logit2(optim.MLE$par[1:(nSnps-1)]), 
-                  ep=ifelse(seqErr,inv.logit(optim.MLE$par[nSnps]),0),
+      return(list(rf=GUSbase::inv.logit2(optim.MLE$par[1:(nSnps-1)]), 
+                  ep=ifelse(seqErr,GUSbase::inv.logit(optim.MLE$par[nSnps]),0),
                   loglik=-optim.MLE$value))
   }
   else{ # EM algorithm approach
@@ -431,12 +432,12 @@ rf_est_FS_UP <- function(ref, alt, config, ep, method="optim", trace=F, ...){
     ## Are we estimating the error parameters?
     seqErr=!is.null(ep)
     
-    para <- logit(rep(0.5,sum(npar)))
+    para <- GUSbase::logit(rep(0.5,sum(npar)))
     # sequencing error
     if(length(ep) != 1 & !is.null(ep))
-      para <- c(para,logit(0.01))
+      para <- c(para,GUSbase::logit(0.01))
     else if(!is.null(ep))
-      para <- c(para,logit(ep))
+      para <- c(para,GUSbase::logit(ep))
     
     if(nSnps > 2){
       ## Find MLE
@@ -454,8 +455,8 @@ rf_est_FS_UP <- function(ref, alt, config, ep, method="optim", trace=F, ...){
         warning(paste0('Optimization failed to converge properly with error ',optim.MLE$convergence,'\n smallest MLE estimate is: ', round(min(optim.MLE$par),6)))
       
       # Return the MLEs
-      return(list(rf_p=inv.logit(optim.MLE$par[1:npar[1]]),rf_m=inv.logit(optim.MLE$par[npar[1]+1:npar[2]]),
-                  ep=inv.logit(optim.MLE$par[sum(npar)+1])))
+      return(list(rf_p=GUSbase::inv.logit(optim.MLE$par[1:npar[1]]),rf_m=GUSbase::inv.logit(optim.MLE$par[npar[1]+1:npar[2]]),
+                  ep=GUSbase::inv.logit(optim.MLE$par[sum(npar)+1])))
     } 
     else if(nSnps == 2){
       ## If both SNPs are informative, need to use the Nelder-Mead to distinguish between the two sexes.

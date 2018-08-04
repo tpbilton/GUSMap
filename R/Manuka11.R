@@ -46,7 +46,7 @@
 #' sequencing data when constructing genetic maps using biparental outcrossed
 #' populations. Unpublished Manuscript.
 #' @examples
-#' ## extract the name of the vcf fileand the pedigree file
+#' ## extract the name of the vcf file and the pedigree file
 #' Manuka11()
 #' 
 #' @export Manuka11
