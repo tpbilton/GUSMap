@@ -28,7 +28,7 @@ createLG <- function(group, LOD, parent, LODthres, nComp, masked){
     compLOD <- LOD[newLG,unmapped]
     meanLOD <- apply(compLOD,2,function(x) mean(sort(x,decreasing = T)[1:nComp], na.rm=T))
     maxMeanLOD <- max(meanLOD)
-    while(maxMeanLOD > LODthres ){
+    while(maxMeanLOD > LODthres & length(unmapped) > 0){
       newSNP <- which(meanLOD == maxMeanLOD)
       newLG <- c(newLG,unmapped[newSNP])
       unmapped <- unmapped[-newSNP]
