@@ -29,7 +29,7 @@ for the call to `MK_fs$rf_est`):
 
 ## OpenMP notes
 
-OpenMP is an API for shared memory multiprocessing (i.e. within a node)
+OpenMP is an API for shared memory parallelisation (i.e. within a node)
 
 ### Setting the number of threads to use
 
@@ -187,3 +187,15 @@ for (int i = 0; i < size1; i++) {
 Here, multiple processes, which are running the `i` loop in parallel, could
 try to access the same element of the `score` array at the same time. The
 `atomic` clause ensures this does not happen.
+
+# Scaling for rf_2pt smaller case
+
+Also ran benchmarks on Mahuika for the `rf_2pt` call (smaller case).
+
+![Mahuika benchmark results](gusmap-smaller-rf_2pt-mahuika.png)
+
+* No changes from us here
+  - Using R parallel for loops that were already there
+  - Disable OpenMP parallelisation when calling from the R parallel for loop
+* ~440s (1 core) down to ~25s (36 cores) - around 18x faster!
+
