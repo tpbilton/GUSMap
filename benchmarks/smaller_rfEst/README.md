@@ -15,7 +15,17 @@ Loops in the following C functions were parallelised with OpenMP:
 After making these changes the code was benchmarked (note: timings are just
 for the call to `MK_fs$rf_est`):
 
-![benchmark results](gusmap-smaller-openmp-compare.png)
+### Benchmarks on Pan
+
+![Pan benchmark results](gusmap-smaller-openmp-compare.png)
+
+### Benchmarks on Mahuika
+
+![Mahuika benchmark results](gusmap-smaller-mahuika.png)
+
+* More cores available on Mahuika
+* "EM" version is significantly faster on Mahuika
+* At high core counts, EM and optim perform about the same
 
 ## OpenMP notes
 
