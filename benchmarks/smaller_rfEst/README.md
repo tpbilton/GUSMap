@@ -96,15 +96,15 @@ for (int i = 0; i < size; i++) {
 
 If we added the OpenMP `pragma` then, by default, both `my_array` and `my_value`
 would be shared between parallel
-processes. This is fine for `my_array`; we want it to be shared so that
-multiple processes can populate its values at the same time (note, however,
-that at each iteration a different element will be populated, no two processes
+threads. This is fine for `my_array`; we want it to be shared so that
+multiple threads can populate its values at the same time (note, however,
+that at each iteration a different element will be populated, no two threads
 will ever try to populate the same element of the array).
 
-However, `my_value` is also shared. This is bad, because multiple processes
+However, `my_value` is also shared. This is bad, because multiple threads
 will be writing to that value at the same time and the result will probably be
 wrong. There are (at least) two ways around this. First, one could declare the
-variable as `private`, meaning that each process will have its own copy of
+variable as `private`, meaning that each thread will have its own copy of
 that variable:
 
 ```c
@@ -162,16 +162,16 @@ Here, each thread will have its own copy of `my_sum`, initialised to zero. At
 the end of the loop the values from each thread will be reduced to one value
 using the operator specified in the `reduction` clause (`+` here).
 
-Note, without the `reduction` clause, multiple processes could
+Note, without the `reduction` clause, multiple threads could
 write to `my_sum` at the same time and cause the result to be wrong.
 
 ### Atomic operations
 
-When an operation is marked as `atomic` it is guaranteed that only one process
+When an operation is marked as `atomic` it is guaranteed that only one thread
 will perform that operation at a given time. Therefore it is best to try to
-avoid `atomic` operations if possible, since they can result in a process
-spending time waiting for other processes to complete an operation before that
-process can proceed. However, sometimes `atomic` operations are required.
+avoid `atomic` operations if possible, since they can result in a thread
+spending time waiting for other threads to complete an operation before that
+thread can proceed. However, sometimes `atomic` operations are required.
 
 ```c
 #pragma omp parallel for
@@ -184,7 +184,7 @@ for (int i = 0; i < size1; i++) {
 }
 ```
 
-Here, multiple processes, which are running the `i` loop in parallel, could
+Here, multiple threads, which are running the `i` loop in parallel, could
 try to access the same element of the `score` array at the same time. The
 `atomic` clause ensures this does not happen.
 
@@ -198,4 +198,3 @@ Also ran benchmarks on Mahuika for the `rf_2pt` call (smaller case).
   - Using R parallel for loops that were already there
   - Disable OpenMP parallelisation when calling from the R parallel for loop
 * ~440s (1 core) down to ~25s (36 cores) - around 18x faster!
-
