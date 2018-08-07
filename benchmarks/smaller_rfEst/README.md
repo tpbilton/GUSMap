@@ -25,7 +25,7 @@ OpenMP is an API for shared memory multiprocessing (i.e. within a node)
 
 * using an environment variable: `export OMP_NUM_THREADS=8`
 * in Slurm:
-  ```
+  ```sh
   #!/bin/bash
   #SBATCH --cpus-per-task=8
   # other SBATCH directives
@@ -84,7 +84,8 @@ for (int i = 0; i < size; i++) {
 }
 ```
 
-By default, both `my_array` and `my_value` are shared between parallel
+If we added the OpenMP `pragma` then, by default, both `my_array` and `my_value`
+would be shared between parallel
 processes. This is fine for `my_array`; we want it to be shared so that
 multiple processes can populate its values at the same time (note, however,
 that at each iteration a different element will be populated, no two processes
@@ -93,7 +94,8 @@ will ever try to populate the same element of the array).
 However, `my_value` is also shared. This is bad, because multiple processes
 will be writing to that value at the same time and the result will probably be
 wrong. There are (at least) two ways around this. First, one could declare the
-variable as `private`:
+variable as `private`, meaning that each process will have its own copy of
+that variable:
 
 ```c
 int my_array[size];
@@ -135,7 +137,7 @@ for (int i = 0; i < size; i++) {
 
 ### Reductions
 
-OpenMP support doing parallel reductions; a common operation is summing some
+OpenMP supports doing parallel reductions; a common operation is summing some
 values in a loop. This is achieved with the `reduction` clause, which supports
 a number of operators.
 
@@ -151,7 +153,7 @@ Here, each thread will have its own copy of `my_sum`, initialised to zero. At
 the end of the loop the values from each thread will be reduced to one value
 using the operator specified in the `reduction` clause (`+` here).
 
-Note, if you did not use the `reduction` clause, then multiple processes could
+Note, without the `reduction` clause, multiple processes could
 write to `my_sum` at the same time and cause the result to be wrong.
 
 ### Atomic operations
@@ -159,8 +161,8 @@ write to `my_sum` at the same time and cause the result to be wrong.
 When an operation is marked as `atomic` it is guaranteed that only one process
 will perform that operation at a given time. Therefore it is best to try to
 avoid `atomic` operations if possible, since they can result in a process
-spending time waiting for other processes to complete the operation before it
-can proceed. However, sometimes `atomic` operations are required.
+spending time waiting for other processes to complete an operation before that
+process can proceed. However, sometimes `atomic` operations are required.
 
 ```c
 #pragma omp parallel for
