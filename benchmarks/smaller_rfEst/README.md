@@ -147,8 +147,7 @@ for (int i = 0; i < size; i++) {
 
 ### Reductions
 
-OpenMP supports doing parallel reductions; a common operation is summing some
-values in a loop. This is achieved with the `reduction` clause, which supports
+OpenMP supports doing parallel reductions; a common operation is computing a sum within a loop. This is achieved with the `reduction` clause, which supports
 a number of operators.
 
 ```c
