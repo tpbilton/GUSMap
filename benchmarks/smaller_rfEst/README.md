@@ -82,8 +82,9 @@ wrong result (it may not fail though).
 
 ### Private vs shared variables
 
-Variables that are inside a parallel loop are either `shared` or `private` and
-the default is for them to be `shared`. Consider the following loop:
+Variables that are used inside a parallel loop are either `shared` or `private`
+and the default is for them to be `shared` (the loop variable, `i` in this
+example, is always private). Consider the following loop:
 
 ```c
 int my_array[size];
@@ -133,7 +134,8 @@ for (int i = 0; i < size; i++) {
 If you want to be really safe, or you have lots of variables and it is
 difficult to work out which should be private, you can make it so that all
 variables must be explicitly declared as private or shared (excluding those
-variables that are defined only within the scope of the loop):
+variables that are defined only within the scope of the loop), using
+`default(none)`:
 
 ```c
 int my_array[size];
@@ -147,8 +149,9 @@ for (int i = 0; i < size; i++) {
 
 ### Reductions
 
-OpenMP supports doing parallel reductions; a common operation is computing a sum within a loop. This is achieved with the `reduction` clause, which supports
-a number of operators.
+OpenMP supports doing parallel reductions; a common operation is computing a
+sum within a loop. This is achieved with the `reduction` clause, which
+supports a number of operators.
 
 ```c
 int my_sum = 0;
@@ -164,6 +167,10 @@ using the operator specified in the `reduction` clause (`+` here).
 
 Note, without the `reduction` clause, multiple threads could
 write to `my_sum` at the same time and cause the result to be wrong.
+
+Also note, that parallel reductions can break bit compatibility of results, as
+the order in which local copies of `my_sum` are added up can different each
+time the program is run, leading to different results due to roundoff errors.
 
 ### Atomic operations
 
