@@ -27,7 +27,6 @@
 
 #ifdef _OPENMP
     #include <omp.h>
-    #define DEBUG_OPENMP
 #else
     #define omp_num_threads() 1
     #define omp_get_thread_num() 0
@@ -167,10 +166,6 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam, SEXP nIn
   int s1, s2, fam, ind, snp, g, iter, nIter, parent, noFam_c, nSnps_c, sexSpec_c, seqError_c;
   double sum, sumA, sumB, a, b, delta;
 
-#ifdef DEBUG_OPENMP
-  Rprintf("CDEBUG: in EM_HMM\n");
-  double init_time = omp_get_wtime();
-#endif
   // Copy values of R input into C objects
   nSnps_c = INTEGER(nSnps)[0];
   double r_c[(nSnps_c-1)*2], ep_c;
@@ -216,12 +211,6 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam, SEXP nIn
       }
     }
   } 
-#ifdef DEBUG_OPENMP
-  Rprintf("CDEBUG: nTotal: %d\n", nTotal);
-  init_time = omp_get_wtime() - init_time;
-  Rprintf("CTIME: init: %f\n", init_time);
-  double probmetrics_time = omp_get_wtime();
-#endif
   // Probability matrics
   double pAA[nTotal][nSnps_c];
   double pAB[nTotal][nSnps_c];
@@ -254,11 +243,6 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam, SEXP nIn
       }
     }
   }
-#ifdef DEBUG_OPENMP
-  probmetrics_time = omp_get_wtime() - probmetrics_time;
-  Rprintf("CTIME: probmetrics: %f\n", probmetrics_time);
-  double defineoutput_time = omp_get_wtime();
-#endif
   // Define the output variable
   double *prout, *pepout, *pllout;
   SEXP rout = PROTECT(allocVector(REALSXP, 2*(nSnps_c-1)));
@@ -270,18 +254,6 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam, SEXP nIn
   SEXP pout = PROTECT(allocVector(VECSXP, 3));
   double llval = 0, prellval = 0;
 
-#ifdef DEBUG_OPENMP
-  defineoutput_time = omp_get_wtime() - defineoutput_time;
-  Rprintf("CTIME: defineoutput: %f\n", defineoutput_time);
-  double algorithm_time = omp_get_wtime();
-  double tmp;
-  double t_computeProb = 0.0;
-  double t_fwdbwd = 0.0;
-  double t_recomb = 0.0;
-  double t_err = 0.0;
-  Rprintf("CDEBUG: nFam/Ind/Snp: %d %d %d\n", noFam_c, nInd_c[0], nSnps_c);
-#endif
-  
   /////// Start algorithm
   iter = 0;
   while( (iter < 2) || ((iter < nIter) & ((llval - prellval) > delta))){
@@ -290,18 +262,9 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam, SEXP nIn
     llval = 0;
     
     // unpdate the probabilites for pAA and pBB given the parameter values and data.
-#ifdef DEBUG_OPENMP
-    tmp = omp_get_wtime();
-#endif
     computeProb(nTotal, nSnps_c, pAA, pBB, bin_coef, ep_c, pref, palt);
-#ifdef DEBUG_OPENMP
-    t_computeProb += omp_get_wtime() - tmp;
-#endif
   
     // Compute the forward and backward probabilities for each individual
-#ifdef DEBUG_OPENMP
-    tmp = omp_get_wtime();
-#endif
     for(fam = 0; fam < noFam_c; fam++){
       #pragma omp parallel for reduction(+:llval) private(sum, s1, s2, alphaDot, snp, w_new, betaDot)
       for(ind = 0; ind < nInd_c[fam]; ind++){
@@ -420,15 +383,9 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam, SEXP nIn
         }
       }  
     }
-#ifdef DEBUG_OPENMP
-    t_fwdbwd += omp_get_wtime() - tmp;
-#endif
 
     //////// M-step:
     // The recombination fractions
-#ifdef DEBUG_OPENMP
-    tmp = omp_get_wtime();
-#endif
     if(sexSpec_c){
       //Rprintf("Sex-Specific rf's\n");
       #pragma omp parallel for private(sum, fam, ind, s1, s2)
@@ -487,10 +444,6 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam, SEXP nIn
         r_c[snp + nSnps_c-1] = 1.0/(2.0*nTotal) * sum;
       }
     }
-#ifdef DEBUG_OPENMP
-    t_recomb += omp_get_wtime() - tmp;
-    tmp = omp_get_wtime();
-#endif
     // Error parameter:
     if(seqError_c){
       sumA = 0;
@@ -516,9 +469,6 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam, SEXP nIn
       }
       ep_c = sumA/(sumA + sumB);
     }
-#ifdef DEBUG_OPENMP
-    t_err += omp_get_wtime() - tmp;
-#endif
     //Rprintf("llvalue :%.8f at iter %i\n", llval, iter);
     //Rprintf("prellval :%.8f at iter %i\n", prellval, iter);
     //Rprintf("diff in lik :%.8f at iter %i\n", (llval - prellval) , iter);
@@ -529,18 +479,6 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam, SEXP nIn
     //}
   }
 
-#ifdef DEBUG_OPENMP
-  algorithm_time = omp_get_wtime() - algorithm_time;
-  Rprintf("CTIME: algorithm: %f\n", algorithm_time);
-
-  Rprintf("CTIME:     computeProb: %f\n", t_computeProb);
-  Rprintf("CTIME:     fwdbwd     : %f\n", t_fwdbwd);
-  Rprintf("CTIME:     recomb     : %f\n", t_recomb);
-  Rprintf("CTIME:     err        : %f\n", t_err);
-
-  double routput_time = omp_get_wtime();
-#endif
-  
   // Set up the R output object.
   for(snp = 0; snp < nSnps_c - 1; snp++){
     for(parent = 0; parent < 2; parent++){
@@ -554,10 +492,6 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam, SEXP nIn
   SET_VECTOR_ELT(pout, 2, llout);
   // Return the parameter estimates of log-likelihood value
   UNPROTECT(4);
-#ifdef DEBUG_OPENMP
-  routput_time = omp_get_wtime() - routput_time;
-  Rprintf("CTIME: routput: %f\n", routput_time);
-#endif
   return pout;
 }
 
@@ -605,10 +539,6 @@ SEXP EM_HMM_UP(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP config, SEXP noFam, SEX
   // Initialize variables
   int s1, s2, fam, ind, snp, g, iter, nIter, indx, parent, noFam_c, nSnps_c, seqError_c;
   double sum, sumA, sumB, a, b, delta;
-
-#ifdef DEBUG_OPENMP
-  Rprintf("CDEBUG: in EM_HMM_UP\n");
-#endif
 
   // Copy values of R input into C objects
   nSnps_c = INTEGER(nSnps)[0];
