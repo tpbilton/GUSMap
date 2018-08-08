@@ -61,7 +61,7 @@ PKG_CFLAGS = $(SHLIB_OPENMP_CFLAGS)
 ### Setting the number of threads to use
 
 * using an environment variable: `export OMP_NUM_THREADS=8`
-* in Slurm:
+* in Slurm with an environment variable:
   ```sh
   #!/bin/bash
   #SBATCH --cpus-per-task=8
@@ -69,6 +69,21 @@ PKG_CFLAGS = $(SHLIB_OPENMP_CFLAGS)
 
   export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
   srun <my_program>
+  ```
+* in the `pragma` statement using the `num_threads` clause (this applies
+  only to this loop):
+  ```c
+  int nthreads = 8;
+  #pragma omp parallel for num_threads(nthreads)
+  for (...) {...}
+  ```
+* using a library call (this applies to all subsequent OpenMP loops):
+  ```c
+  // must include OpenMP header if call omp_* functions
+  #include <omp.h>
+  
+  int nthreads = 8;
+  omp_set_num_threads(nthreads);
   ```
 
 ### Simple parallel loop
