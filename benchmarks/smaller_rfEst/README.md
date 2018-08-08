@@ -48,6 +48,16 @@ for the call to `MK_fs$rf_est`):
 
 OpenMP is an API for shared memory parallelisation (i.e. within a node)
 
+### Compiling R package with OpenMP
+
+Adding the file `src/Makevars` with the following content should enable
+OpenMP at compile time:
+
+```
+PKG_LIBS = $(SHLIB_OPENMP_CFLAGS)
+PKG_CFLAGS = $(SHLIB_OPENMP_CFLAGS)
+```
+
 ### Setting the number of threads to use
 
 * using an environment variable: `export OMP_NUM_THREADS=8`
