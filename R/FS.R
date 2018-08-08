@@ -5,6 +5,7 @@ FS <- R6Class("FS",
               inherit = RA,
               public = list(
                 ## variables
+                LG        = NULL,
                 LG_mat    = NULL,
                 LG_mat_temp = NULL,
                 LG_pat    = NULL,
@@ -34,6 +35,23 @@ FS <- R6Class("FS",
                   private$AFrq      <- R6obj$.__enclos_env__$private$AFrq
                   private$infilename<- R6obj$.__enclos_env__$private$infilename
                 },
+                ###
+                # print = function(...){
+                #   
+                #   sumtab <- matrix(nrow=private$noFam,ncol=5)
+                #   sum
+                #   
+                #   unlist(lapply(simData$.__enclos_env__$private$group,length))
+                #   snpTab <- unlist(lapply(private$group,length))
+                #   snpTab
+                #   cat("Data summary:\n\n")
+                #   cat("Data file:\t",private$infilename,"\n\n")
+                #   cat("Number of Progeny:\t",private$nInd)
+                #   cat("number of SNPs\n")
+                #   print(snpTab)
+                #   
+                #   invisible(self)
+                # },
                 #############################################################
                 ## Function for removing SNPs from the linkage groups
                 removeSNP = function(indx){
@@ -109,7 +127,7 @@ FS <- R6Class("FS",
                   return(invisible())
                 },
                 ## function for adding the unmapped (or inferred SNPs) to the linkage groups
-                addSNPs = function(LOD=10, nComp=10){
+                addSNPs = function(LODthres=10, nComp=10){
 
                   if(length(self$LG_mat) == 0 || length(self$LG_pat) == 0)
                     stop("There are no linkage groups. Please use 'createLG' function to create the linkage groups first")
@@ -146,7 +164,7 @@ FS <- R6Class("FS",
                         LODvalue = numeric(nLG)
                         for(lg in 1:nLG)
                           LODvalue[lg] <- mean(sort(private$LOD[snp,newLGlist[[lg]]],decreasing=T)[1:nComp],na.rm=T)
-                        if(max(LODvalue) >= LOD & sort(LODvalue, decreasing = T)[2] < LOD){
+                        if(max(LODvalue) >= LODthres & sort(LODvalue, decreasing = T)[2] < LODthres){
                           count = count + 1
                           newLG <- which.max(LODvalue)
                           newLGlist[[newLG]] <- c(newLGlist[[newLG]], snp)
@@ -157,7 +175,7 @@ FS <- R6Class("FS",
                     }
                   }
                   ## Check to see if any SNPs were added
-                  if(count = 0){
+                  if(count == 0){
                     stop("No SNPs were added to the Linkage Groups")
                   } else{ ## else set the new LGs
                     self$LG_mat_temp <- newLGlist[1:length(self$LG_mat)]
@@ -166,11 +184,18 @@ FS <- R6Class("FS",
                   return(invisible())
                 },
                 ## Function for adding the informative SNPs to the LGs
-                addBIsnps = function(LODthres=10, nComp=10){
+                addBIsnps = function(parent = "maternal", LODthres=10, nComp=10){
 
                   ## Do some checks
-                  if(length(self$LG_mat) == 0 || length(self$LG_pat) == 0)
-                    stop("There are no linkage groups. Please use 'createLG' function to create the linkage groups first")
+                  if(!is.character(parent) || length(parent) != 1 || !(parent %in% c("maternal","paternal")))
+                    stop("parent argument is not a string of of length one or is incorrect:
+                         Please select one of the following:
+                         maternal: Only MI SNPs
+                         paternal: Only PI SNPs")
+                  if(parent == "maternal" && length(self$LG_mat) == 0)
+                    stop("There are no maternal linkage groups. Please use 'createLG' function to create the linkage groups first")
+                  else if(parent == "paternal" && length(self$LG_pat) == 0)
+                    stop("There are no paternal linkage groups. Please use 'createLG' function to create the linkage groups first")
                   if(!is.numeric(LODthres) || !is.vector(LODthres) || length(LODthres) != 1 || LODthres < 0 || !is.finite(LODthres))
                     stop("The LOD threshold (argument 1) needs to be a finite positive numeric number.")
                   if(!is.numeric(nComp) || !is.vector(nComp) || length(nComp) != 1 || nComp < 0 || !is.finite(nComp) ||
@@ -178,12 +203,18 @@ FS <- R6Class("FS",
                     stop("The number of comparsion points (argument 2) needs to be a finite positive integer number.")
                   
                   ## new LGs for adding BI snps to
-                  newLGlist <- c(self$LG_mat, self$LG_pat)
+                  if(parent == "maternal")
+                    newLGlist <- self$LG_mat
+                  else
+                    newLGlist <- self$LG_pat
                   ## count the number of LGs
                   nLG <- length(newLGlist)
 
                   ## Find the unmapped loci
                   unmapped <- sort(unlist(private$group$BI,private$group_infer$BI))
+                  ## Remove masked SNPs
+                  unmapped <- unmapped[which(!private$masked[unmapped])]
+                  ## check that there are SNPs to map
                   if(length(unmapped) == 0)
                     stop("There are no SNPs remaining that are unmapped")
 
@@ -201,7 +232,7 @@ FS <- R6Class("FS",
                         LODvalue = numeric(nLG)
                         for(lg in 1:nLG)
                           LODvalue[lg] <- mean(sort(private$LOD[snp,newLGlist[[lg]]],decreasing=T)[1:nComp],na.rm=T)
-                        if(max(LODvalue) >= LODthres & sort(LODvalue, decreasing = T)[2] < LOD){
+                        if(max(LODvalue) >= LODthres & sort(LODvalue, decreasing = T)[2] < LODthres){
                           count = count + 1
                           newLG <- which.max(LODvalue)
                           newLGlist[[newLG]] <- c(newLGlist[[newLG]], snp)
@@ -211,13 +242,63 @@ FS <- R6Class("FS",
                       }
                     }
                   }
-                  if(count = 0){
+                  if(count == 0){
                     stop("No SNPs were added to the Linkage Groups")
                   } else{
-                    self$LG_mat_temp <- newLGlist[1:length(self$LG_mat)]
-                    self$LG_pat_temp <- newLGlist[length(self$LG_mat) + 1:length(self$LG_pat)]
+                    if(parent == "maternal")
+                      self$LG_mat_temp <- newLGlist
+                    else
+                      self$LG_pat_temp <- newLGlist
                   }
                   return(invisible())
+                },
+                ## Function for ordering linkage groups
+                orderLG = function(chrom = NULL, mapfun = "morgan", weight="LOD2", ndim=2, spar=NULL){
+                  ## do some checks
+                  if((length(self$LG_mat) != length(self$LG_pat)))
+                    stop("The number of linkage groups for the two parental meiosis are not the same")
+                  if(is.null(chrom))
+                    chrom <- 1:length(self$LG_mat)
+                  else if(!is.vector(chrom) && !is.numeric(chrom) && any(chrom < 0) && chrom > length(self$LG_mat))
+                    stop("invalid chromosome input")
+                  if(!(mapfun %in% c("morgan","haldane","kosambi")))
+                    stop("Unknown mapping function")
+                  if(!(weight %in% c("LOD","LOD2","none")))
+                     stop("Unknown weighting function")
+                  nChr = length(chrom)
+                  LG <- vector(mode='list', length=nChr)
+                  ## order the linkage groups
+                  for(chr in chrom){
+                    ind <- unique(c(self$LG_mat[[chr]], self$LG_pat[[chr]]))
+                    ind_mi <- which(ind %in% private$group$MI)
+                    ind_pi <- which(ind %in% private$group$PI)
+                    ## set up the weighting matrix
+                    if(weight == "LOD")
+                      wmat <- matrix(private$LOD,nrow=length(ind), ncol=length(ind))
+                    else if (weight == "LOD2")
+                      wmat <- matrix((private$LOD)^2,nrow=length(ind), ncol=length(ind))
+                    else if (weight == "none")
+                      wmat <- matrix(1,nrow=length(ind), ncol=length(ind))
+                    ## set the weights of the PI and MI combinations to zero.
+                    wmat[ind_mi, ind_pi] <- 0
+                    wmat[ind_pi, ind_mi] <- 0
+                    ## set of the distance matrix
+                    dmat <- mfun(private$rf[ind,ind], fun = mapfun)
+                    dmat[which(is.infinite(dmat))] <- 18.3684
+                    ## unconstrainted MDS
+                    MDS <- smacof::smacofSym(delta=dmat, ndim=ndim, weightmat = wmat, itmax = 1e+05)
+                    ## principal curve
+                    pcurve <- princurve::principal_curve(MDS$conf, maxit = 150, spar = spar)
+                    ## plot the results
+                    par(mfrow = c(1,2))
+                    graphics::plot(MDS$conf[,1],MDS$conf[,2], ylab="Dimension 2", xlab="Dimension 1", type="n")
+                    text(MDS$conf, labels=ind)
+                    lines(pcurve)
+                    graphics::image(private$rf[ind,ind][pcurve$ord,pcurve$ord], axes=F)
+                    ## Set the new order
+                    self$LG[[chr]] <- ind[pcurve$ord]
+                  }
+                  return(invisible)
                 },
                 ## Function for setting temp LGs to new LGs
                 setLG = function(parent="both"){
@@ -226,17 +307,17 @@ FS <- R6Class("FS",
                     self$LG_mat_temp <- NULL
                     self$LG_pat <- self$LG_pat_temp
                     self$LG_pat_temp <- NULL
-                    cat("Temporary linkage groups now set as new linkage groups")
+                    cat("Temporary linkage groups now set as new linkage groups\n")
                   }
                   else if(parent == "maternal"){
                     self$LG_mat <- self$LG_mat_temp
                     self$LG_mat_temp <- NULL
-                    cat("Temporary maternal linkage groups now set as new linkage groups")
+                    cat("Temporary maternal linkage groups now set as new linkage groups\n")
                   }
                   else if(parent == "paternal"){
                     self$LG_pat <- self$LG_pat_temp
                     self$LG_pat_temp <- NULL
-                    cat("Temporary paternal linkage groups now set as new linkage groups")
+                    cat("Temporary paternal linkage groups now set as new linkage groups\n")
                   }
                   return(invisible())
                 },
@@ -252,14 +333,26 @@ FS <- R6Class("FS",
                   return(invisible())
                 },
                 ## Function for plotting chromosome ordering
-                plotChr = function(mat=c("rf"), parent = "maternal", filename=NULL, chrS=2, lmai=2){
+                plotChr = function(mat=c("rf"), parent = "maternal", ordering = "original", filename=NULL, chrS=2, lmai=2){
                   if(private$noFam == 1){
                     ## workout the indices for the chromosomes
                     names <- unique(private$chrom)
-                    if(parent == "maternal")
-                      LG <- sapply(names, function(x) which((private$chrom == x) & !private$masked & (private$config[[1]] %in% c(1,4,5))), simplify=F)
-                    if(parent == "paternal")
-                      LG <- sapply(names, function(x) which((private$chrom == x) & !private$masked & (private$config[[1]] %in% c(1,2,3))), simplify=F)
+                    if(parent == "maternal"){
+                      if(ordering == "original")
+                        LG <- sapply(names, function(x) which((private$chrom == x) & !private$masked & (private$config[[1]] %in% c(1,4,5))), simplify=F)
+                      else if(ordering == "LG")
+                        LG <- self$LG_mat
+                      else if(ordering == "tempLG")
+                        LG <- self$LG_mat_temp
+                    }
+                    if(parent == "paternal"){
+                      if(ordering == "original")
+                        LG <- sapply(names, function(x) which((private$chrom == x) & !private$masked & (private$config[[1]] %in% c(1,2,3))), simplify=F)
+                      else if(ordering == "LG")
+                        LG <- self$LG_pat
+                      else if(ordering == "tempLG")
+                        LG <- self$LG_pat_temp
+                    }
                     ## plot the chromsomes rf info
                     if(mat == "rf")
                       plotLG(mat=private$rf, LG=LG, filename=filename, names=names, chrS=chrS, lmai=lmai, chrom=T)
@@ -283,7 +376,7 @@ FS <- R6Class("FS",
                   if( (length(ep) != 1 || !is.numeric(ep) || (ep <= 0 | ep >= 1)) )
                     stop("Value for the error parameters needs to be a single numeric value in the interval (0,1) or a NULL object")
                   ## for existing chromosome orders
-                  if((length(self$LG_mat) == 0) && length(is.null(self$LG_pat)==0)){
+                  if((length(self$LG_mat) == 0) && length(is.null(self$LG_pat) == 0)){
                     if(!is.null(chr) && !is.vector(chr))
                       stop("Chromosomes names must be a character vector.")
                     if(is.null(chr)) # compute distances for all chromosomes
@@ -322,7 +415,36 @@ FS <- R6Class("FS",
                     }
                   }
                   else{
-                    stop("Yet to be implemented with grouping present")
+                    if(!is.null(chr) && (!is.vector(chr) || chr < 0 || chr > length(self$LG) || round(chr) != chr))
+                      stop("Chromosomes input must be an integer vector between 1 and the number of linkage groups")
+                    cat("Computing recombination fractions:\n")
+                    for(i in chr){
+                      cat("Chromosome: ",i,"\n")
+                      indx_chr <- self$LG[[chr]]
+                      ref_temp <- lapply(private$ref, function(x) x[,indx_chr])
+                      alt_temp <- lapply(private$alt, function(x) x[,indx_chr])
+                      ## estimate OPGP's
+                      if(!any(names(self$para$OPGP) != i) || sapply(1:private$noFam, function(x)
+                        !is.null(self$para$OPGP[i][[x]]) && (length(self$para$OPGP[i][[x]]) != ncol(ref_temp[[x]])))){
+                        tempOPGP <- list()
+                        for(fam in 1:private$noFam){
+                          tempOPGP <- c(tempOPGP,list(as.integer(infer_OPGP_FS(ref_temp[[fam]],alt_temp[[fam]],private$config[[fam]][indx_chr], method="EM"))))                        
+                        }
+                        self$para$OPGP[i] <- tempOPGP
+                      }
+                      ## estimate the rf's
+                      MLE <- rf_est_FS(init_r=init_r, ep=ep, ref=ref_temp, alt=alt_temp, OPGP=self$para$OPGP[i],
+                                       sexSpec=sexSpec, seqErr=seqErr, method=method)
+                      if(sexSpec){
+                        self$para$rf_p[i]   <- MLE$rf_p
+                        self$para$rf_m[i]   <- MLE$rf_m
+                      } else{
+                        self$para$rf_p[i]   <- MLE$rf
+                        self$para$rf_m[i]   <- MLE$rf
+                      }
+                      self$para$ep[i]     <- MLE$ep
+                      self$para$loglik[i] <- MLE$loglik
+                    }
                   }
                   return(invisible())
                 },
@@ -336,7 +458,6 @@ FS <- R6Class("FS",
                   }
                   cometPlot(ref, alt, model=model, alpha=alpha, filename=filename, cex=cex, maxdepth=maxdepth)
                 }
-                
                 ##############################################################
               ),
               private = list(
