@@ -19,9 +19,26 @@ for the call to `MK_fs$rf_est`):
 
 ![Pan benchmark results](gusmap-smaller-openmp-compare.png)
 
+| Num CPUs |  rfEst_em time (s) |  rfEst_optim time (s) |
+|----------|------------------------|---------------------------|
+| 1        |  115.6 ± 2.7 |  30.9 ± 0.6     |
+| 2        |  63.1 ± 1.0  |  17.4 ± 0.3     |
+| 4        |  39.9 ± 0.1  |  10.9 ± 0.0     |
+| 8        |  24.3 ± 0.1  |  6.6 ± 0.0      |
+| 16       |  14.3 ± 0.0  |  4.3 ± 0.0      |
+
 ### Benchmarks on Mahuika
 
 ![Mahuika benchmark results](gusmap-smaller-mahuika.png)
+
+| Num CPUs |  rfEst_em time (s) |  rfEst_optim time (s) |
+|----------|----------------------------|-------------------------------|
+| 1        |  50.6 ± 0.0      |  24.0 ± 0.0         |
+| 2        |  26.5 ± 0.0      |  12.7 ± 0.1         |
+| 4        |  16.2 ± 0.0      |  7.4 ± 0.0          |
+| 8        |  9.0 ± 0.0       |  4.6 ± 0.0          |
+| 16       |  5.2 ± 0.0       |  3.2 ± 0.0          |
+| 36       |  3.2 ± 0.0       |  2.4 ± 0.0          |
 
 * More cores available on Mahuika
 * "EM" version is significantly faster on Mahuika
