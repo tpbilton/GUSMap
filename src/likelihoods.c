@@ -50,15 +50,15 @@
 // r.f constrainted to range [0,1/2].
 // OPGP's (or phase) are assumed to be known
 // Include error parameters
-SEXP ll_fs_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nInd, SEXP nSnps, SEXP parallel){
+SEXP ll_fs_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nInd, SEXP nSnps, SEXP nThreads){
   // Initialize variables
-  int s1, s2, ind, snp, nInd_c, nSnps_c, parallel_c, *pOPGP;
+  int s1, s2, ind, snp, nInd_c, nSnps_c, nThreads_c, *pOPGP;
   double *pll, *pr, *pKaa, *pKab, *pKbb;
   double alphaTilde[4], alphaDot[4], sum, w_new;
   // Load R input variables into C
   nInd_c = INTEGER(nInd)[0];
   nSnps_c = INTEGER(nSnps)[0];
-  parallel_c = asLogical(parallel);
+  nThreads_c = asInteger(nThreads);
   // Define the pointers to the other input R variables
   pOPGP = INTEGER(OPGP);
   pKaa = REAL(Kaa);
@@ -71,15 +71,14 @@ SEXP ll_fs_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nI
   pll = REAL(ll);
   double llval = 0;
 
-  // if required, temporarily disable openmp
-  int num_threads_orig = 0;
-  if (!parallel_c) {
-    num_threads_orig = omp_get_max_threads();
-    omp_set_num_threads(1);
+  // if nThreads is set to zero then use everything
+  if (nThreads_c <= 0) {
+    nThreads_c = omp_get_max_threads();
   }
   
   // Now compute the likelihood
-  #pragma omp parallel for reduction(+:llval) private(sum, s1, alphaDot, alphaTilde, snp, s2, w_new)
+  #pragma omp parallel for reduction(+:llval) num_threads(nThreads_c) \
+                           private(sum, s1, alphaDot, alphaTilde, snp, s2, w_new)
   for(ind = 0; ind < nInd_c; ind++){
     // Compute forward probabilities at snp 1
     sum = 0;
@@ -124,11 +123,6 @@ SEXP ll_fs_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nI
     }
   }
 
-  // revert to original num threads
-  if (!parallel_c) {
-    omp_set_num_threads(num_threads_orig);
-  }
-  
   pll[0] = -1*llval;
   // Clean up and return likelihood value
   UNPROTECT(1);

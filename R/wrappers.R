@@ -25,7 +25,7 @@
 #' @useDynLib GUSMap
 
 ## r.f.'s are equal
-ll_fs_mp_scaled_err <- function(para,ref,alt,bcoef_mat,Kab,OPGP,nInd,nSnps,noFam,seqErr,extra=0,parallel=TRUE){
+ll_fs_mp_scaled_err <- function(para,ref,alt,bcoef_mat,Kab,OPGP,nInd,nSnps,noFam,seqErr,extra=0,nThreads=0){
   ## untransform the parameters
   r <- inv.logit2(para[1:(nSnps-1)])
   if(seqErr)
@@ -41,7 +41,7 @@ ll_fs_mp_scaled_err <- function(para,ref,alt,bcoef_mat,Kab,OPGP,nInd,nSnps,noFam
     Kbb[[fam]] <- bcoef_mat[[fam]]*(1-ep)^alt[[fam]]*ep^ref[[fam]]
   }
   for(fam in 1:noFam)
-    llval = llval + .Call("ll_fs_scaled_err_c",r,Kaa[[fam]],Kab[[fam]],Kbb[[fam]],OPGP[[fam]],nInd[[fam]],nSnps,parallel)
+    llval = llval + .Call("ll_fs_scaled_err_c",r,Kaa[[fam]],Kab[[fam]],Kbb[[fam]],OPGP[[fam]],nInd[[fam]],nSnps,nThreads)
   return(llval)
 }
 
@@ -86,7 +86,7 @@ ll_fs_up_ss_scaled_err <- function(para,ref,alt,bcoef_mat,Kab,config,nInd,nSnps,
 
 #### Score functions written in C in the file 'score.c'
 ## r.f.'s are equal
-score_fs_mp_scaled_err <- function(para,ref,alt,bcoef_mat,Kab,OPGP,nInd,nSnps,noFam,seqErr=T,extra=0,parallel=TRUE){
+score_fs_mp_scaled_err <- function(para,ref,alt,bcoef_mat,Kab,OPGP,nInd,nSnps,noFam,seqErr=T,extra=0,nThreads=0){
   ## untransform the parameters
   r <- GUSMap:::inv.logit2(para[1:(nSnps-1)])
   if(seqErr)
@@ -105,7 +105,7 @@ score_fs_mp_scaled_err <- function(para,ref,alt,bcoef_mat,Kab,OPGP,nInd,nSnps,no
     score = numeric(nSnps)
     for(fam in 1:noFam)
       score = score + .Call("score_fs_scaled_err_c",r,ep,ref[[fam]],alt[[fam]],
-                            Kaa[[fam]],Kab[[fam]],Kbb[[fam]],OPGP[[fam]],nInd[[fam]],nSnps,parallel)
+                            Kaa[[fam]],Kab[[fam]],Kbb[[fam]],OPGP[[fam]],nInd[[fam]],nSnps,nThreads)
   } else{
     score = numeric(nSnps - 1)
     for(fam in 1:noFam)

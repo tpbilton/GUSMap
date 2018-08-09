@@ -55,23 +55,23 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
       rf.est1 <- optim(logit2(0.2), fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err, method="BFGS",
                        ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
                        nInd=nInd,nSnps=nSnps,noFam=noFam,
-                       OPGP=list(as.integer(c(5,5) + 2*(config[ind]==3))), seqErr=F, parallel=F)
+                       OPGP=list(as.integer(c(5,5) + 2*(config[ind]==3))), seqErr=F, nThreads=1)
       rf.est2 <- optim(logit2(0.2), fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err, method="BFGS",
                        ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
                        nInd=nInd,nSnps=nSnps,noFam=noFam,
-                       OPGP=list(as.integer(c(5,6) + 2*(config[ind]==3))), seqErr=F, parallel=F)
+                       OPGP=list(as.integer(c(5,6) + 2*(config[ind]==3))), seqErr=F, nThreads=1)
       rf.ind1 <- switch(which.min(c(rf.est1$value,rf.est2$value)), TRUE, FALSE)
       if(rf.ind1){
         rf[[1]][snp2] <- inv.logit2(rf.est1$par)
         rf[[2]][snp2] <-  -(rf.est1$value - 
                               ll_fs_mp_scaled_err(1000,ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-                                                nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,parallel=F,
+                                                nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,nThreads=1,
                                                 OPGP=list(as.integer(c(5,5) + 2*(config[ind]==3)))))
       } else{
         rf[[1]][snp2] <- inv.logit2(rf.est2$par)
         rf[[2]][snp2] <-  -(rf.est2$value - 
                               ll_fs_mp_scaled_err(1000,ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-                                                  nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,parallel=F,
+                                                  nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,nThreads=1,
                                                   OPGP=list(as.integer(c(5,6) + 2*(config[ind]==3)))))
       }
     }
@@ -95,23 +95,23 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
       rf.est1 <- optim(logit2(0.2), fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err, method="BFGS",
                        ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
                        nInd=nInd,nSnps=nSnps,noFam=noFam,
-                       OPGP=list(as.integer(c(9,9) + 2*(config[ind]==5))), seqErr=F, parallel=F)
+                       OPGP=list(as.integer(c(9,9) + 2*(config[ind]==5))), seqErr=F, nThreads=1)
       rf.est2 <- optim(logit2(0.2), fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err, method="BFGS",
                        ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
                        nInd=nInd,nSnps=nSnps,noFam=noFam,
-                       OPGP=list(as.integer(c(9,10) + 2*(config[ind]==5))), seqErr=F, parallel=F)
+                       OPGP=list(as.integer(c(9,10) + 2*(config[ind]==5))), seqErr=F, nThreads=1)
       rf.ind1 <- switch(which.min(c(rf.est1$value,rf.est2$value)), TRUE, FALSE)
       if(rf.ind1){
         rf[[1]][snp2] <- inv.logit2(rf.est1$par)
         rf[[2]][snp2] <-  -(rf.est1$value - 
                               ll_fs_mp_scaled_err(1000,ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-                                                  nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,parallel=F,
+                                                  nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,nThreads=1,
                                                   OPGP=list(as.integer(c(9,9) + 2*(config[ind]==5)))))
       } else{
         rf[[1]][snp2] <- inv.logit2(rf.est2$par)
         rf[[2]][snp2] <-  -(rf.est2$value - 
                               ll_fs_mp_scaled_err(1000,ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-                                                  nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,parallel=F,
+                                                  nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,nThreads=1,
                                                   OPGP=list(as.integer(c(9,10) + 2*(config[ind]==5)))))
       }
     }
@@ -136,31 +136,31 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
       temp1 <- optim(logit2(0.1), fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err, method="BFGS",
                        ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
                        nInd=nInd,nSnps=nSnps,noFam=noFam,
-                       OPGP=list(as.integer(c(1,1))), seqErr=F, parallel=F)
+                       OPGP=list(as.integer(c(1,1))), seqErr=F, nThreads=1)
       temp2 <- optim(logit2(0.4), fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err, method="BFGS",
                      ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
                      nInd=nInd,nSnps=nSnps,noFam=noFam,
-                     OPGP=list(as.integer(c(1,1))), seqErr=F, parallel=F)
+                     OPGP=list(as.integer(c(1,1))), seqErr=F, nThreads=1)
       rf.est1 <- switch(which.min(c(temp1$value,temp2$value)),temp1,temp2) 
       # phase 2
       temp1 <- optim(logit2(0.1), fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err, method="BFGS",
                      ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
                      nInd=nInd,nSnps=nSnps,noFam=noFam,
-                     OPGP=list(as.integer(c(1,2))), seqErr=F, parallel=F)
+                     OPGP=list(as.integer(c(1,2))), seqErr=F, nThreads=1)
       temp2 <- optim(logit2(0.4), fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err, method="BFGS",
                      ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
                      nInd=nInd,nSnps=nSnps,noFam=noFam,
-                     OPGP=list(as.integer(c(1,2))), seqErr=F, parallel=F)
+                     OPGP=list(as.integer(c(1,2))), seqErr=F, nThreads=1)
       rf.est2 <- switch(which.min(c(temp1$value,temp2$value)),temp1,temp2) 
       # phase 3
       temp1 <- optim(logit2(0.1), fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err, method="BFGS",
                      ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
                      nInd=nInd,nSnps=nSnps,noFam=noFam,
-                     OPGP=list(as.integer(c(1,4))), seqErr=F, parallel=F)
+                     OPGP=list(as.integer(c(1,4))), seqErr=F, nThreads=1)
       temp2 <- optim(logit2(0.4), fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err, method="BFGS",
                      ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
                      nInd=nInd,nSnps=nSnps,noFam=noFam,
-                     OPGP=list(as.integer(c(1,4))), seqErr=F, parallel=F)
+                     OPGP=list(as.integer(c(1,4))), seqErr=F, nThreads=1)
       rf.est4 <- switch(which.min(c(temp1$value,temp2$value)),temp1,temp2) 
       ## work out which is best
       rf.ind <- switch(which.min(c(rf.est1$value,rf.est2$value,rf.est4$value)), 1, 2, 3)
@@ -168,19 +168,19 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
         rf[[1]][snp2] <- inv.logit2(rf.est1$par)
         rf[[2]][snp2] <-  -(rf.est1$value - 
                               ll_fs_mp_scaled_err(1000,ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-                                                  nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,parallel=F,
+                                                  nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,nThreads=1,
                                                   OPGP=list(as.integer(c(1,1)))))
       } else if(rf.ind == 2){
         rf[[1]][snp2] <- inv.logit2(rf.est2$par)
         rf[[2]][snp2] <-  -(rf.est2$value - 
                               ll_fs_mp_scaled_err(1000,ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-                                                  nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,parallel=F,
+                                                  nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,nThreads=1,
                                                   OPGP=list(as.integer(c(1,2)))))
       } else{
         rf[[1]][snp2] <- inv.logit2(rf.est4$par)
         rf[[2]][snp2] <-  -(rf.est4$value - 
                               ll_fs_mp_scaled_err(1000,ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-                                                  nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,parallel=F,
+                                                  nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,nThreads=1,
                                                   OPGP=list(as.integer(c(1,4)))))
       }
     }
@@ -204,23 +204,23 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
       rf.est1 <- optim(logit2(0.2), fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err, method="BFGS",
                        ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
                        nInd=nInd,nSnps=nSnps,noFam=noFam,
-                       OPGP=list(as.integer(c(5,1) + 2*c(config[ind[[1]]]==3,0))), seqErr=F,parallel=F)
+                       OPGP=list(as.integer(c(5,1) + 2*c(config[ind[[1]]]==3,0))), seqErr=F,nThreads=1)
       rf.est2 <- optim(logit2(0.2), fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err, method="BFGS",
                        ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
                        nInd=nInd,nSnps=nSnps,noFam=noFam,
-                       OPGP=list(as.integer(c(5,2) + 2*c(config[ind[[1]]]==3,0))), seqErr=F,parallel=F)
+                       OPGP=list(as.integer(c(5,2) + 2*c(config[ind[[1]]]==3,0))), seqErr=F,nThreads=1)
       rf.ind1 <- switch(which.min(c(rf.est1$value,rf.est2$value)), TRUE, FALSE)
       if(rf.ind1){
         rf[[1]][snp.bi] <- inv.logit2(rf.est1$par)
         rf[[2]][snp.bi] <-  -(rf.est1$value - 
                               ll_fs_mp_scaled_err(1000,ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-                                                  nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,parallel=F,
+                                                  nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,nThreads=1,
                                                   OPGP=list(as.integer(c(5,1) + 2*c(config[ind[[1]]]==3,0)))))
       } else{
         rf[[1]][snp.bi] <- inv.logit2(rf.est2$par)
         rf[[2]][snp.bi] <-  -(rf.est2$value - 
                               ll_fs_mp_scaled_err(1000,ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-                                                  nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,parallel=F,
+                                                  nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,nThreads=1,
                                                   OPGP=list(as.integer(c(5,2) + 2*c(config[ind[[1]]]==3,0)))))
       }
     }
@@ -241,23 +241,23 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
       rf.est1 <- optim(logit2(0.2), fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err, method="BFGS",
                        ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
                        nInd=nInd,nSnps=nSnps,noFam=noFam,
-                       OPGP=list(as.integer(c(9,1) + 2*c(config[ind[[1]]]==5,0))), seqErr=F, parallel=F)
+                       OPGP=list(as.integer(c(9,1) + 2*c(config[ind[[1]]]==5,0))), seqErr=F, nThreads=1)
       rf.est2 <- optim(logit2(0.2), fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err, method="BFGS",
                        ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
                        nInd=nInd,nSnps=nSnps,noFam=noFam,
-                       OPGP=list(as.integer(c(9,3) + 2*c(config[ind[[1]]]==5,0))), seqErr=F, parallel=F)
+                       OPGP=list(as.integer(c(9,3) + 2*c(config[ind[[1]]]==5,0))), seqErr=F, nThreads=1)
       rf.ind1 <- switch(which.min(c(rf.est1$value,rf.est2$value)), TRUE, FALSE)
       if(rf.ind1){
         rf[[1]][snp.bi] <- inv.logit2(rf.est1$par)
         rf[[2]][snp.bi] <-  -(rf.est1$value - 
                               ll_fs_mp_scaled_err(1000,ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-                                                  nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,parallel=F,
+                                                  nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,nThreads=1,
                                                   OPGP=list(as.integer(c(9,1) + 2*c(config[ind[[1]]]==5,0)))))
       } else{
         rf[[1]][snp.bi] <- inv.logit2(rf.est2$par)
         rf[[2]][snp.bi] <-  -(rf.est2$value - 
                               ll_fs_mp_scaled_err(1000,ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-                                                  nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,parallel=F,
+                                                  nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,nThreads=1,
                                                   OPGP=list(as.integer(c(9,3) + 2*c(config[ind[[1]]]==5,0)))))
       }
     }
@@ -279,23 +279,23 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
       rf.est1 <- optim(logit2(0.2), fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err, method="BFGS",
                        ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
                        nInd=nInd,nSnps=nSnps,noFam=noFam,
-                       OPGP=list(as.integer(c(9,9) + 2*c(config[ind] %in% c(3,5)))), seqErr=F, parallel=F)
+                       OPGP=list(as.integer(c(9,9) + 2*c(config[ind] %in% c(3,5)))), seqErr=F, nThreads=1)
       rf.est2 <- optim(logit2(0.2), fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err, method="BFGS",
                        ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
                        nInd=nInd,nSnps=nSnps,noFam=noFam,
-                       OPGP=list(as.integer(c(9,10) + 2*(config[ind] %in% c(3,5)))), seqErr=F, parallel=F)
+                       OPGP=list(as.integer(c(9,10) + 2*(config[ind] %in% c(3,5)))), seqErr=F, nThreads=1)
       rf.ind1 <- switch(which.min(c(rf.est1$value,rf.est2$value)), TRUE, FALSE)
       if(rf.ind1){
         rf[[1]][snp.pi] <- inv.logit2(rf.est1$par)
         rf[[2]][snp.pi] <-  -(rf.est1$value - 
                               ll_fs_mp_scaled_err(1000,ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-                                                  nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,parallel=F,
+                                                  nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,nThreads=1,
                                                   OPGP=list(as.integer(c(9,9) + 2*c(config[ind] %in% c(3,5))))))
       } else{
         rf[[1]][snp.pi] <- inv.logit2(rf.est2$par)
         rf[[2]][snp.pi] <-  -(rf.est2$value - 
                               ll_fs_mp_scaled_err(1000,ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-                                                  nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,parallel=F,
+                                                  nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,nThreads=1,
                                                   OPGP=list(as.integer(c(5,2) + 2*c(config[ind] %in% c(3,5))))))
       }
     }

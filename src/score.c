@@ -148,14 +148,14 @@ double der_epsilon(int OPGP, double epsilon, int a, int b, int elem){
 
 // rf's are equal and error parameter
 SEXP score_fs_scaled_err_c(SEXP r, SEXP epsilon, SEXP ref, SEXP alt, SEXP Kaa, SEXP Kab, SEXP Kbb,
-        SEXP OPGP, SEXP nInd, SEXP nSnps, SEXP parallel){
+        SEXP OPGP, SEXP nInd, SEXP nSnps, SEXP nThreads){
   // Initialize variables
-  int ind, snp, snp_der, nInd_c, nSnps_c, parallel_c, *pOPGP, *pref, *palt;
+  int ind, snp, snp_der, nInd_c, nSnps_c, nThreads_c, *pOPGP, *pref, *palt;
   double *pscore, *pr, *pKaa, *pKab, *pKbb, epsilon_c;
   // Load R input variables into C
   nInd_c = INTEGER(nInd)[0];
   nSnps_c = INTEGER(nSnps)[0];
-  parallel_c = asLogical(parallel);
+  nThreads_c = asInteger(nThreads);
   // Define the pointers to the other input R variables
   pOPGP = INTEGER(OPGP);
   pref = INTEGER(ref);
@@ -170,20 +170,20 @@ SEXP score_fs_scaled_err_c(SEXP r, SEXP epsilon, SEXP ref, SEXP alt, SEXP Kaa, S
   PROTECT(score = allocVector(REALSXP, nSnps_c));
   pscore = REAL(score);
   //SEXP pout = PROTECT(allocVector(VECSXP, 3));
+
+  // if nThreads is set to zero then use everything
+  if (nThreads_c <= 0) {
+    nThreads_c = omp_get_max_threads();
+  }
+  
   double llval = 0, score_c[nSnps_c];
   for(snp = 0; snp < nSnps_c; snp++){
     score_c[snp] = 0;
   }
 
-  // if required, temporarily disable openmp
-  int num_threads_orig = 0;
-  if (!parallel_c) {
-    num_threads_orig = omp_get_max_threads();
-    omp_set_num_threads(1);
-  }
-  
   // Now compute the likelihood and score function
-  #pragma omp parallel for reduction(+:llval) private(snp, snp_der)
+  #pragma omp parallel for reduction(+:llval) num_threads(nThreads_c) \
+                           private(snp, snp_der)
   for(ind = 0; ind < nInd_c; ind++){
     int s1, s2;
     double phi[4][nSnps_c], phi_prev[4][nSnps_c];
@@ -272,11 +272,6 @@ SEXP score_fs_scaled_err_c(SEXP r, SEXP epsilon, SEXP ref, SEXP alt, SEXP Kaa, S
   // Compute the score for each parameter
   for(snp_der=0; snp_der < nSnps_c; snp_der++){
     pscore[snp_der] = score_c[snp_der];
-  }
-  
-  // revert to original num threads
-  if (!parallel_c) {
-    omp_set_num_threads(num_threads_orig);
   }
   
   // Clean up and return likelihood value
