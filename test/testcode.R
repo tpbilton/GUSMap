@@ -25,8 +25,11 @@ simData$plotChr(parent="paternal", ordering = "tempLG")
 
 simData$setLG()
 
-simData$orderLG(chrom=1, weight = "none", ndim=5)
-simData$orderLG(chrom=2, mapfun="morgan", weight = "none")
+simData$orderLG(chrom=1, weight = "none", ndim=30)
+simData$orderLG(chrom=2, mapfun="morgan", weight = "none", ndim=5)
+
+simData$rf_est(chrom=1, mapped = F)
+
 
 
 ind <- c(simData$LG_mat[[1]],simData$LG_pat[[1]])
