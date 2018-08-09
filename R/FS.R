@@ -369,14 +369,14 @@ FS <- R6Class("FS",
                 ## Function for ordering the SNPs in each linkage group
                 
                 ## Function for computing the rf's for each chromosome 
-                rf_est = function(chr=NULL, init_r=0.01, ep=0.001, method="optim", sexSpec=F, seqErr=T){
+                rf_est = function(chr=NULL, init_r=0.01, ep=0.001, method="optim", sexSpec=F, seqErr=T, mapped=T){
                   ## do some checks
                   if( !is.null(init_r) & !is.numeric(init_r) )
                     stop("Starting values for the recombination fraction needs to be a numeric vector or integer or a NULL object")
                   if( (length(ep) != 1 || !is.numeric(ep) || (ep <= 0 | ep >= 1)) )
                     stop("Value for the error parameters needs to be a single numeric value in the interval (0,1) or a NULL object")
                   ## for existing chromosome orders
-                  if((length(self$LG_mat) == 0) && length(is.null(self$LG_pat) == 0)){
+                  if(!mapped){
                     if(!is.null(chr) && !is.vector(chr))
                       stop("Chromosomes names must be a character vector.")
                     if(is.null(chr)) # compute distances for all chromosomes
@@ -398,23 +398,25 @@ FS <- R6Class("FS",
                         for(fam in 1:private$noFam){
                           tempOPGP <- c(tempOPGP,list(as.integer(infer_OPGP_FS(ref_temp[[fam]],alt_temp[[fam]],private$config[[fam]][indx_chr], method="EM"))))                        
                           }
-                        self$para$OPGP[i] <- tempOPGP
+                        self$para$OPGP <- tempOPGP
                       }
                       ## estimate the rf's
-                      MLE <- rf_est_FS(init_r=init_r, ep=ep, ref=ref_temp, alt=alt_temp, OPGP=self$para$OPGP[i],
+                      MLE <- rf_est_FS(init_r=init_r, ep=ep, ref=ref_temp, alt=alt_temp, OPGP=self$para$OPGP,
                                          sexSpec=sexSpec, seqErr=seqErr, method=method)
                       if(sexSpec){
-                        self$para$rf_p[i]   <- MLE$rf_p
-                        self$para$rf_m[i]   <- MLE$rf_m
+                        self$para$rf_p[i]   <- list(MLE$rf_p)
+                        self$para$rf_m[i]   <- list(MLE$rf_m)
                       } else{
                         self$para$rf_p[i]   <- list(MLE$rf)
                         self$para$rf_m[i]   <- list(MLE$rf)
                       }
-                      self$para$ep[i]     <- MLE$ep
-                      self$para$loglik[i] <- MLE$loglik
+                      self$para$ep[i]    <- list(list(MLE$ep))
+                      self$para$loglik[i]<- list(MLE$loglik)
                     }
                   }
                   else{
+                    if((length(self$LG) == 0) && length(is.null(self$LG) == 0))
+                      stop("No linkage groups have been formed.")
                     if(!is.null(chr) && (!is.vector(chr) || chr < 0 || chr > length(self$LG) || round(chr) != chr))
                       stop("Chromosomes input must be an integer vector between 1 and the number of linkage groups")
                     cat("Computing recombination fractions:\n")
@@ -436,14 +438,14 @@ FS <- R6Class("FS",
                       MLE <- rf_est_FS(init_r=init_r, ep=ep, ref=ref_temp, alt=alt_temp, OPGP=self$para$OPGP[i],
                                        sexSpec=sexSpec, seqErr=seqErr, method=method)
                       if(sexSpec){
-                        self$para$rf_p[i]   <- MLE$rf_p
-                        self$para$rf_m[i]   <- MLE$rf_m
+                        self$para$rf_p[i]   <- list(MLE$rf_p)
+                        self$para$rf_m[i]   <- list(MLE$rf_m)
                       } else{
-                        self$para$rf_p[i]   <- MLE$rf
-                        self$para$rf_m[i]   <- MLE$rf
+                        self$para$rf_p[i]   <- list(MLE$rf)
+                        self$para$rf_m[i]   <- list(MLE$rf)
                       }
-                      self$para$ep[i]     <- MLE$ep
-                      self$para$loglik[i] <- MLE$loglik
+                      self$para$ep[i]     <- list(MLE$ep)
+                      self$para$loglik[i] <- list(MLE$loglik)
                     }
                   }
                   return(invisible())

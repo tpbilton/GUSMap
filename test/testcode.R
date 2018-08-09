@@ -25,8 +25,8 @@ simData$plotChr(parent="paternal", ordering = "tempLG")
 
 simData$setLG()
 
-simData$orderLG(chrom=1)
-
+simData$orderLG(chrom=1, weight = "none", ndim=5)
+simData$orderLG(chrom=2, mapfun="morgan", weight = "none")
 
 
 ind <- c(simData$LG_mat[[1]],simData$LG_pat[[1]])
