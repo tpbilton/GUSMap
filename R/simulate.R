@@ -271,7 +271,7 @@ simFS <- function(rVec_f, rVec_m=rVec_f, epsilon=0, config, nInd, meanDepth, thr
     
     temp <- matrix(unlist(lapply(config, unlist)), nrow=noFam, byrow=T)
     
-    group <- vector(mode = "list", length=noFam)
+    group <- list()
     group$BI <- which(apply(temp,2,function(x) all(x==1)))
     group$PI <- which(apply(temp,2,function(x) all(x %in% c(2,3))))
     group$MI <- which(apply(temp,2,function(x) all(x %in% c(4,5))))
@@ -287,7 +287,8 @@ simFS <- function(rVec_f, rVec_m=rVec_f, epsilon=0, config, nInd, meanDepth, thr
 
     obj <- RA$new(
       list(genon = genon, ref = ref, alt = alt, chrom = unlist(chrom)[temp], pos = unlist(pos)[temp],
-           SNP_Names = NULL, indID = 1:nInd, nSnps = nSnps, nInd = lapply(as.list(nInd), as.integer), gform = "simFS", AFrq = NULL)
+           SNP_Names = NULL, indID = 1:nInd, nSnps = nSnps, nInd = lapply(as.list(nInd), as.integer), 
+           gform = "simFS", AFrq = NULL, infilename="Simulated dataset")
     )
     newObj <- FS$new(obj)
     
