@@ -1,6 +1,6 @@
 
 
-noChr=2
+noChr=5
 nSnps=100
 noFam=1
 set.seed(5721)
@@ -12,8 +12,7 @@ simData$rf_2pt(nClust=3)
 simData$plotChr(parent="maternal")
 simData$plotChr(parent="paternal")
 
-simData$createLG(parent="maternal")
-simData$createLG(parent="paternal")
+simData$createLG(parent="both")
 simData$plotChr(parent="maternal", ordering = "LG")
 simData$plotChr(parent="paternal", ordering = "LG")
 

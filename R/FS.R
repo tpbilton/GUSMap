@@ -1,6 +1,6 @@
 #' @export FS
 
-### R6 class for creating a data format for a full-sib families
+### R6 class for creating a data format for full-sib families
 FS <- R6Class("FS",
               inherit = RA,
               public = list(
@@ -31,7 +31,7 @@ FS <- R6Class("FS",
                      temp <- private$ref[[1]] + private$alt[[1]]
                      cat("Mean Depth:\t", mean(temp),"\n")
                      cat("Mean Call Rate:\t",sum(temp!=0)/length(temp),"\n")
-                     cat("Number of ...")
+                     cat("Number of ...\n")
                      cat("  Progeny:\t",unlist(private$nInd),"\n")
                      cat("  MI SNPs:\t",length(private$group$MI),"\n")
                      cat("  PI SNPs:\t",length(private$group$PI),"\n")
@@ -39,20 +39,22 @@ FS <- R6Class("FS",
                      cat("  Total SNPs:\t",length(unlist(private$group)),"\n\n")
                      ## linkage group information (if any)
                      if(is.null(private$LG)){
+                       cat("Linkage Group Summary:")
                        MI <- unlist(lapply(private$LG_mat, function(x) sum(x %in% private$group$MI)))
                        PI <- unlist(lapply(private$LG_pat, function(x) sum(x %in% private$group$PI)))
                        tab <- cbind(LG=1:(length(MI)+length(PI)),MI=c(MI,rep(0,length(PI))),PI=c(rep(0,length(MI)),PI))
                        prmatrix(tab, rowlab = rep("",nrow(tab)))
                      }
                      else{
+                       cat("Linkage Group Summary:")
                        MI <- unlist(lapply(private$LG, function(x) sum(x %in% private$group$MI)))
                        PI <- unlist(lapply(private$LG, function(x) sum(x %in% private$group$PI)))
                        BI <- unlist(lapply(private$LG, function(x) sum(x %in% private$group$BI)))
                        TOTAL <- unlist(lapply(private$LG, length))
                        tab <- cbind(LG=1:(length(private$LG)),MI,PI,BI,TOTAL)
                        if(!is.null(private$para)){
-                        DIST_MAT <- extendVec(unlist(lapply(private$para$rf_m, function(x) round(sum(mfun(x, fun="haldane", centiM = T)),2)), nrow(tab))
-                        DIST_PAT <- extendVec(unlist(lapply(private$para$rf_p, function(x) round(sum(mfun(x, fun="haldane", centiM = T)),2)), nrow(tab))
+                        DIST_MAT <- extendVec(unlist(lapply(private$para$rf_m, function(x) round(sum(mfun(x, fun="haldane", centiM = T)),2)), nrow(tab)))
+                        DIST_PAT <- extendVec(unlist(lapply(private$para$rf_p, function(x) round(sum(mfun(x, fun="haldane", centiM = T)),2)), nrow(tab)))
                         ERR <- extendVec(round(unlist(private$para$ep),5), nrow(tab))
                         tab <- cbind(tab,DIST_MAT,DIST_PAT,ERR)
                         prmatrix(tab, rowlab = rep("",nrow(tab)))
@@ -206,9 +208,9 @@ Please select one of the following:
                   ## Do some checks
                   if(is.null(private$rf) || is.null(private$LOD))
                     stop("Recombination fractions and LOD scores have not been computed.\nUse rf_2pt() to compute the recombination fractions and LOD scores.")
-                  if((parent == "maternal" || parent == "both") && is.null(LG_mat))
+                  if((parent == "maternal" || parent == "both") && is.null(private$LG_mat))
                     stop("There are no maternal linkage groups. Use createLG(parent='maternal') to form maternal linkage groups.")
-                  if((parent == "paternal" || parent == "both") && is.null(LG_pat))
+                  if((parent == "paternal" || parent == "both") && is.null(private$LG_pat))
                     stop("There are no maternal linkage groups. Use createLG(parent='maternal') to form maternal linkage groups.")
                   if(!is.character(parent) || length(parent) != 1 || !(parent %in% c("maternal","paternal","both")))
                     stop("parent argument is not a string of length one or is invalid:
@@ -227,13 +229,13 @@ Please select one of the following:
                     stop("The number of comparsion points (argument 2) needs to be a finite positive integer number.")
                   
                   ## new LGs for adding BI snps to
-                  if(parent == "maternal")
-                    newLGlist <- private$LG_mat
-                  else
-                    newLGlist <- private$LG_pat
+                  #if(parent == "maternal")
+                  #  newLGlist <- private$LG_mat
+                  #else
+                  #  newLGlist <- private$LG_pat
                   ## count the number of LGs
-                  nLG <- length(newLGlist)
-
+                  #nLG <- length(newLGlist)
+                  
                   ## Find the unmapped loci
                   unmapped <- sort(unlist(private$group$BI,private$group_infer$BI))
                   ## Remove masked SNPs
@@ -241,38 +243,52 @@ Please select one of the following:
                   ## check that there are SNPs to map
                   if(length(unmapped) == 0)
                     stop("There are no SNPs remaining that are unmapped")
-
+                  
+                  if(!is.null(private$LG_mat))
+                    newLGlist_mat <- private$mapBISnps(unmapped, parent="maternal", LODthres=LODthres, nComp=nComp)
+                  
+                  if(!is.null(private$LG_pat))
+                    newLGlist_pat <- private$mapBISnps(unmapped, parent="paternal", LODthres=LODthres, nComp=nComp)
+                  
+                  ## work out which LGs go together
+                  indx_mat <- sapply(unmapped, function(x){ which(unlist(lapply(newLGlist_mat, function(y) any(x == y))))})
+                  indx_pat <- sapply(unmapped, function(x){ which(unlist(lapply(newLGlist_pat, function(y) any(x == y))))})
+                  indx_new <- clue::solve_LSAP(table(indx_mat,indx_pat), maximum=T)
+                  indx_mat <- car::recode(indx_mat, paste(paste(1:5,indx_new,sep="="),collapse = ";"))
+                  
+                  ## remove any BI SNPs that are problematic
+                  
                   ## Run algorithm for generating the linkage groups
-                  noneMapped = FALSE
-                  count = 0
-                  while(!noneMapped){
-                    noneMapped = TRUE
-                    ## check that there are still SNPs remaining that need to be mapped
-                    if(length(unmapped) == 0)
-                      next
-                    ## run the algorithm to map the SNPs
-                    else{
-                      for(snp in unmapped){
-                        LODvalue = numeric(nLG)
-                        for(lg in 1:nLG)
-                          LODvalue[lg] <- mean(sort(private$LOD[snp,newLGlist[[lg]]],decreasing=T)[1:nComp],na.rm=T)
-                        if(max(LODvalue) >= LODthres & sort(LODvalue, decreasing = T)[2] < LODthres){
-                          count = count + 1
-                          newLG <- which.max(LODvalue)
-                          newLGlist[[newLG]] <- c(newLGlist[[newLG]], snp)
-                          unmapped <- unmapped[-which(unmapped == snp)]
-                          noneMapped = FALSE
-                        }
-                      }
-                    }
-                  }
+                  # noneMapped = FALSE
+                  # count = 0
+                  # while(!noneMapped){
+                  #   noneMapped = TRUE
+                  #   ## check that there are still SNPs remaining that need to be mapped
+                  #   if(length(unmapped) == 0)
+                  #     next
+                  #   ## run the algorithm to map the SNPs
+                  #   else{
+                  #     for(snp in unmapped){
+                  #       LODvalue = numeric(nLG)
+                  #       for(lg in 1:nLG)
+                  #         LODvalue[lg] <- mean(sort(private$LOD[snp,newLGlist[[lg]]],decreasing=T)[1:nComp],na.rm=T)
+                  #       if(max(LODvalue) >= LODthres & sort(LODvalue, decreasing = T)[2] < LODthres){
+                  #         count = count + 1
+                  #         newLG <- which.max(LODvalue)
+                  #         newLGlist[[newLG]] <- c(newLGlist[[newLG]], snp)
+                  #         unmapped <- unmapped[-which(unmapped == snp)]
+                  #         noneMapped = FALSE
+                  #       }
+                  #     }
+                  #   }
+                  #}
                   if(count == 0){
                     stop("No SNPs were added to the Linkage Groups")
                   } else{
                     if(parent == "maternal")
-                      private$LG_mat_temp <- newLGlist
+                      private$LG_mat_temp <- newLGlist_mat
                     else
-                      private$LG_pat_temp <- newLGlist
+                      private$LG_pat_temp <- newLGlist_pat
                   }
                   return(invisible())
                 },
@@ -327,20 +343,20 @@ Please select one of the following:
                 ## Function for setting temp LGs to new LGs
                 setLG = function(parent="both"){
                   if(parent == "both"){
-                    self$LG_mat <- self$LG_mat_temp
-                    self$LG_mat_temp <- NULL
-                    self$LG_pat <- self$LG_pat_temp
-                    self$LG_pat_temp <- NULL
+                    private$LG_mat <- private$LG_mat_temp
+                    private$LG_mat_temp <- NULL
+                    private$LG_pat <- private$LG_pat_temp
+                    private$LG_pat_temp <- NULL
                     cat("Temporary linkage groups now set as new linkage groups\n")
                   }
                   else if(parent == "maternal"){
-                    self$LG_mat <- self$LG_mat_temp
-                    self$LG_mat_temp <- NULL
+                    private$LG_mat <- private$LG_mat_temp
+                    private$LG_mat_temp <- NULL
                     cat("Temporary maternal linkage groups now set as new linkage groups\n")
                   }
                   else if(parent == "paternal"){
-                    self$LG_pat <- self$LG_pat_temp
-                    self$LG_pat_temp <- NULL
+                    private$LG_pat <- private$LG_pat_temp
+                    private$LG_pat_temp <- NULL
                     cat("Temporary paternal linkage groups now set as new linkage groups\n")
                   }
                   return(invisible())
@@ -365,17 +381,17 @@ Please select one of the following:
                       if(ordering == "original")
                         LG <- sapply(names, function(x) which((private$chrom == x) & !private$masked & (private$config[[1]] %in% c(1,4,5))), simplify=F)
                       else if(ordering == "LG")
-                        LG <- self$LG_mat
+                        LG <- private$LG_mat
                       else if(ordering == "tempLG")
-                        LG <- self$LG_mat_temp
+                        LG <- private$LG_mat_temp
                     }
                     if(parent == "paternal"){
                       if(ordering == "original")
                         LG <- sapply(names, function(x) which((private$chrom == x) & !private$masked & (private$config[[1]] %in% c(1,2,3))), simplify=F)
                       else if(ordering == "LG")
-                        LG <- self$LG_pat
+                        LG <- private$LG_pat
                       else if(ordering == "tempLG")
-                        LG <- self$LG_pat_temp
+                        LG <- private$LG_pat_temp
                     }
                     ## plot the chromsomes rf info
                     if(mat == "rf")
@@ -483,7 +499,7 @@ Please select one of the following:
                   cometPlot(ref, alt, model=model, alpha=alpha, filename=filename, cex=cex, maxdepth=maxdepth)
                 },
                 ###### Function for extracting variables from the FS object
-                extractVar <- function(nameList){
+                extractVar = function(nameList){
                   if(!is.character(nameList) || !is.vector(nameList) || any(is.na(nameList)))
                   res <- NULL
                   for(name in nameList){
@@ -491,7 +507,7 @@ Please select one of the following:
                   }
                   names(res) <- nameList
                   return(res)
-                },
+                }
                 ##############################################################
               ),
               private = list(
@@ -510,44 +526,39 @@ Please select one of the following:
                 LG_mat_temp  = NULL,
                 LG_pat       = NULL,
                 LG_pat_temp  = NULL,
-                ## Function for updating the private variables
-                updatePrivate = function(List){
-                  if(!is.null(List$genon))
-                    private$genon        = List$genon
-                  if(!is.null(List$ref))
-                    private$ref          = List$ref
-                  if(!is.null(List$alt))
-                    private$alt          = List$alt
-                  if(!is.null(List$chrom))
-                    private$chrom        = List$chrom
-                  if(!is.null(List$pos))
-                    private$pos          = List$pos
-                  if(!is.null(List$SNP_Names))
-                    private$SNP_Names    = List$SNP_Names
-                  if(!is.null(List$indID))
-                    private$indID        = List$indID
-                  if(!is.null(List$nSnps))
-                    private$nSnps        = List$nSnps
-                  if(!is.null(List$nInd))
-                    private$nInd         = List$nInd
-                  if(!is.null(List$config))
-                    private$config       = List$config
-                  if(!is.null(List$config_infer))
-                    private$config_infer = List$config_infer
-                  if(!is.null(List$group))
-                    private$group        = List$group
-                  if(!is.null(List$group_infer))
-                    private$group_infer  = List$group_infer
-                  if(!is.null(List$noFam))
-                    private$noFam        = List$noFam
-                  if(!is.null(List$rf))
-                    private$rf           = List$rf
-                  if(!is.null(List$LOD))
-                    private$LOD          = List$LOD
-                  if(!is.null(List$masked))
-                    private$masked       = List$masked
-                  if(!is.null(List$famInfo))
-                    private$famInfo      = List$famInfo
+                ############################################
+                ## function for mapping BI SNPs to maternal or paternal LGs
+                mapBISnps = function(unmapped, parent, LODthres, nComp){
+                  if(parent == "maternal")
+                    newLGlist <- private$LG_mat
+                  else if(parent == "paternal")
+                    newLGlist <- private$LG_pat
+                  nLG <- length(newLGlist)
+                  ## Run algorithm for generating the linkage groups
+                  noneMapped = FALSE
+                  count = 0
+                  while(!noneMapped){
+                    noneMapped = TRUE
+                    ## check that there are still SNPs remaining that need to be mapped
+                    if(length(unmapped) == 0)
+                      next
+                    ## run the algorithm to map the SNPs
+                    else{
+                      for(snp in unmapped){
+                        LODvalue = numeric(nLG)
+                        for(lg in 1:nLG)
+                          LODvalue[lg] <- mean(sort(private$LOD[snp,newLGlist[[lg]]],decreasing=T)[1:nComp],na.rm=T)
+                        if(max(LODvalue) >= LODthres & sort(LODvalue, decreasing = T)[2] < LODthres){
+                          count = count + 1
+                          newLG <- which.max(LODvalue)
+                          newLGlist[[newLG]] <- c(newLGlist[[newLG]], snp)
+                          unmapped <- unmapped[-which(unmapped == snp)]
+                          noneMapped = FALSE
+                        }
+                      }
+                    }
+                  }
+                  return(newLGlist)
                 }
               )
 )
