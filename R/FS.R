@@ -137,7 +137,7 @@ FS <- R6Class("FS",
                   }
                 },
                 ## Function for computing the rf's for each chromosome 
-                rf_est = function(chr=NULL, init_r=0.01, ep=0.001, method="optim", sexSpec=F, seqErr=T){
+                rf_est = function(chr=NULL, init_r=0.01, ep=0.001, method="optim", sexSpec=F, seqErr=T, nThreads=0){
                   ## do some checks
                   if( !is.null(init_r) & !is.numeric(init_r) )
                     stop("Starting values for the recombination fraction needs to be a numeric vector or integer or a NULL object")
@@ -169,9 +169,9 @@ FS <- R6Class("FS",
                         self$para$OPGP[i] <- tempOPGP
                       }
                       ## estimate the rf's
-                      cat(">>> Calling rf_est_FS\n")
+                      cat(">>> Calling rf_est_FS", nThreads, "\n")
                       MLE <- rf_est_FS(init_r=init_r, ep=ep, ref=ref_temp, alt=alt_temp, OPGP=self$para$OPGP[i],
-                                         sexSpec=sexSpec, seqErr=seqErr, method=method)
+                                         sexSpec=sexSpec, seqErr=seqErr, method=method, nThreads=nThreads)
                       if(sexSpec){
                         self$para$rf_p[i]   <- MLE$rf_p
                         self$para$rf_m[i]   <- MLE$rf_m

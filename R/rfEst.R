@@ -100,11 +100,13 @@
 #' OPGP <- infer_OPGP_FS(F1data$ref, F1data$alt, config)
 #' 
 #' ## Estimate the recombination fractions
+#' ## Use all available OpenMP threads
 #' rf_est_FS(ref = list(F1data$ref), alt = list(F1data$alt), OPGP = list(OPGP), noFam = 1)
 #' ## To change the optimzation parameters 
 #' ## Max number of iterations for the EM algorithm set at 100
+#' ## Use 2 OpenMP threads
 #' rf_est_FS(ref = list(F1data$ref), alt = list(F1data$alt), OPGP = list(OPGP),
-#'   noFam = 1, maxit=100)
+#'   noFam = 1, nThreads=2, maxit=100)
 #' ## The algorithm will dtop when the difference between the likelihood at sucessive iterations is less
 #' ## than 0.00001
 #' rf_est_FS(ref = list(F1data$ref), alt = list(F1data$alt), OPGP = list(OPGP),
@@ -129,7 +131,8 @@
 #' 
 #' @export rf_est_FS
 rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
-                      sexSpec=F, seqErr=T, trace=F, noFam=1, method = "optim", ...){
+                      sexSpec=F, seqErr=T, trace=F, noFam=1, method = "optim",
+                      nThreads=0, ...){
   
   ## Do some checks
   # if(!is.list(ref) | !is.list(alt) | !is.list(OPGP))
@@ -247,7 +250,7 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
                          method="BFGS", control=optim.arg,
                          ref=ref,alt=alt,bcoef_mat=bcoef_mat,Kab=Kab,
                          nInd=nInd,nSnps=nSnps,OPGP=OPGP,noFam=noFam,
-                         seqErr=seqErr,extra=ep)
+                         seqErr=seqErr,extra=ep,nThreads=nThreads)
       toc()
     }
     # Print out the output from the optim procedure (if specified)
@@ -322,7 +325,7 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
       optim.MLE <- optim(para,ll_fs_mp_scaled_err,method="BFGS",control=optim.arg,
                          ref=ref,alt=alt,bcoef_mat=bcoef_mat,Kab=Kab,
                          nInd=nInd,nSnps=nSnps,OPGP=OPGP,noFam=noFam,
-                         seqErr=seqErr)
+                         seqErr=seqErr,nThreads=nThreads)
     }
     # Print out the output from the optim procedure (if specified)
     if(trace){
