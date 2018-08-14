@@ -38,7 +38,7 @@ The above functions are merely to read in data. *VCFtoRA* is probably the slowes
 #### Create a mapping population
 
 ```{r}
-MK_fs <- createPop(RAdata, pedfile=MKdata$ped)
+MK_fs <- createPop_FS(RAdata, pedfile=MKdata$ped)
 ```
 The above function processes (including some filtering) the RA file into a format required for a full-sib family. There are a whole bunch of things going inside this function.  
 
