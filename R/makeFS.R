@@ -1,10 +1,86 @@
-
-
+##########################################################################
+# Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap)
+# Copyright 2017-2018 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#########################################################################
+#' Make a full-sib family (FS) population
+#'
+#' Create an FS object from an RA object, perform standard filtering and computes statistics specific to full-sib family populations.
+#' 
+#' The segregation type of each SNP is infer based on the genotypes of the parents. The parental genotypes are called homozygous for the 
+#' reference is there is only reference reads seen, heterozygous if at least one read for the reference and alternate allele are seen
+#' and homozygous for the alternate if only reads for the alternate allele is seen. The \code{BIN} filter is implemented to remove any SNPs
+#' with incorrect segregation type. The segregation test procedure for performing the segregation test is described in the supplementary methods 
+#' of the publication by \insertCite{bilton2018genetics1;textual}{GUSMap} (Section 4 of File S1).
+#' 
+#' @param RAobj Object of class RA created via the \code{\link[GUSbase]{readRA}} function.
+#' @param pedfile Character string giving the file name (relative to the current directory) of the pedigree file.
+#' @param family Vector of character strings giving the families to retain in the FS object. This allows a pedigree file with more than one family to be supplied.
+#' @param filter Named list of thresholds for various filtering criteria.
+#' See below for details.
+#' 
+#' @section Filtering:
+#' The filtering criteria currently implemented are:
+#' \itemize{
+#' \item{Proportion of missing data (\code{BIN}): }{SNPs are binned together if the distance between them is less than threshold value of base pairs (default is 0).
+#' One SNP is then randomly selected from each bin and retained for final analysis. This filtering is to ensure that there is only one SNP on each tag.}
+#' \item{Parental read depth (\code{DEPTH}): }{SNPs are discarded if the read depth of either parent is less than the threshold value (default is 6). 
+#' This filter is to remove SNPs where the parental information is insufficient to infer segregation type.}
+#' \item{Minor allele frequency (\code{MAF}): }{SNPs are discarded if their MAF is less than the threshold (default is 0.05)}
+#' \item{Proportion of missing data (\code{MISS}): }{SNPs are discarded if the proportion of individuals with no reads (e.g. missing genotype)
+#'  is greater than the threshold value (default is 0.5).}
+#' \item{Segregation test P-value (\code{PVALUE}): }{SNPs are discarded if the p-value from a segregation test is smaller than the threshold (default is 0.01).
+#'  This removes SNPs with the wrong segregation type.}
+#' }
+#' 
+#' @section Pedigree File:
+#' The pedigree file must be a csv file contains the five columns:
+#' \itemize{
+#' \item SampleID: A unique character string of the sample ID. These correspond to those found in the VCF file
+#' \item IndividualID: A character giving the ID number of the individual for which the sample corresponds to.
+#' Note that some samples can be from the same individual. 
+#' \item Mother: The ID of the mother as given in the IndividualID. Note, if the mother is unknown then this should be left blank.
+#' \item Father: The ID of the father as given in the IndividualID. Note, if the father is unknown then this should be left blank.
+#' \item Family: The name of the Family for a group of progeny with the same parents. Note that this is not necessary (it works all the full-sib families) but if
+#' given must be the same for all the progeny.
+#' }
+#' Grandparents can also be supplied but are only used to infer parental genotypes when the associated read depth is below the threshold \code{DEPTH}.
+#' 
+#' @return 
+#' An R6 object of class RA
+#' @author Timothy P. Bilton
+#' @examples 
+#' ## extract filename for Manuka dataset in GUSMap package
+#' vcffile <- Manuka11()
+#' 
+#' ## Convert VCF to RA format
+#' rafile <- VCFtoRA(vcffile$vcf)
+#' 
+#' ## read in the RA data
+#' mkdata <- readRA(rafile)
+#' 
+#' ## Create the FS population
+#' makeFS(mkdata, pedfile=vcffile$ped)
+#' @references
+#' \insertRef{bilton2018genetics1}{GUSMap}
 #' @export
 
 ### Make a full-sib family population
-makePop_FS <- function(RAobj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0.2, BIN=0, DEPTH=5, PVALUE=0.01), inferSNPs = FALSE, perInfFam=1){
-  
+makeFS <- function(RAobj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0.2, BIN=0, DEPTH=5, PVALUE=0.01)){
+  #inferSNPs = FALSE, perInfFam=1){
+  inferSNPs = FALSE; perInfFam=1 # some variables for multiple familes needed for later
   ## Do some checks
   if(!all(class(RAobj) %in% c("RA","R6")))
     stop("First argument supplied is not of class 'R6' and 'RA'")
@@ -41,6 +117,7 @@ makePop_FS <- function(RAobj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0
   cat("Filtering criteria for removing SNPs:\n")
   cat("Minor allele frequency (MAF) < ", filter$MAF,"\n", sep="")
   cat("Percentage of missing genotypes > ", filter$MISS*100,"%\n", sep="")
+  cat("Distance for binning SNPs <= ", filter$BIN," bp\n", sep="")
   cat("Read depth associated with at least one parental genotype <= ", filter$DEPTH,"\n", sep="")
   cat("P-value for segregation test < ", filter$PVALUE,"%\n\n", sep="")
   ## Extract the private variables we want
@@ -63,6 +140,8 @@ makePop_FS <- function(RAobj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0
     if(any(!(family %in% unique(ped$Family)[!is.na(unique(ped$Family))])))
       stop("Family missing from the pedigree file. Please check the family ID suppied or the pedigree file.")
   }
+  if(length(family)>1)
+    stop("Multiple are yet to be implemented")
   ## Create each family
   for(fam in family){
     progIndx <- which(ped$Family == fam)

@@ -1,4 +1,49 @@
-#' @export FS
+##########################################################################
+# Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap)
+# Copyright 2017-2018 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#########################################################################
+#' FS object
+#' 
+#' Class for storing RA data and associated functions for analysis with full-sib populations.
+#' 
+#' @usage
+#' ## Create FS object
+#' FSobj <- makeFS(RAobj, pedfile, family=NULL, 
+#'                 filter=list(MAF=0.05, MISS=0.2, BIN=0, DEPTH=5, PVALUE=0.01))
+#'
+#' ## Functions (Methods) of FS object
+#' FSobj$maskSNP(snps)
+#' FSobj$rf_2pt(nClust=2)
+#' FSobj$unmaskSNP(snps)
+#' 
+#' @details
+#' An FS object is created from the \code{\link{makeFS}} function and contains RA data,
+#' various statistics of the dataset that have been computed, and functions (methods)
+#' for analyzing the data. Information in an FS object are specific to full-sib family populations.
+#' 
+#' @section Methods(Functions):
+#' \describe{
+#' \item{\code{\link{$maskSNP}}}{Mask SNPs from the data set.}
+#' \item{\code{\link{$rf_2pt}}}{Compute the 2-point recombination fraction between all SNP pairs.}
+#' \item{\code{\link{$unmaskSNP}}}{Unmask SNPs from the data set.}
+#' }
+#' @format NULL
+#' @author Timothy P. Bilton
+#' @name FS
+#' @export
 
 ### R6 class for creating a data format for full-sib families
 FS <- R6Class("FS",
@@ -24,7 +69,7 @@ FS <- R6Class("FS",
                 },
                 ### print methods
                  print = function(...){
-                   if(noFam == 1){
+                   if(private$noFam == 1){
                      cat("Single Family Linkage analysis:\n\n")
                      cat("Data Summary:\n")
                      cat("Data file:\t",private$infilename,"\n")
@@ -39,7 +84,7 @@ FS <- R6Class("FS",
                      cat("  Total SNPs:\t",length(unlist(private$group)),"\n\n")
                      ## linkage group information (if any)
                      if(is.null(private$LG)){
-                       cat("Linkage Group Summary:")
+                       cat("Linkage Group Summary:\n")
                        MI <- unlist(lapply(private$LG_mat, function(x) sum(x %in% private$group$MI)))
                        PI <- unlist(lapply(private$LG_pat, function(x) sum(x %in% private$group$PI)))
                        tab <- cbind(LG=1:(length(MI)+length(PI)),MI=c(MI,rep(0,length(PI))),PI=c(rep(0,length(MI)),PI))
@@ -67,37 +112,84 @@ FS <- R6Class("FS",
                  },
                 #############################################################
                 ## Function for removing SNPs from the linkage groups
-                removeSNP = function(indx){
+                removeSNP = function(snps){
                   ## some checks
-                  if( !is.vector(indx) || !is.numeric(indx) || !all(indx == round(indx)) || any(indx < 1) || any(indx > private$nSnps) )
+                  if( !is.vector(snps) || !is.numeric(snps)  || any(is.na(snps)) || !all(snps == round(snps)) || any(snps < 1) || any(snps > private$nSnps) )
                     stop(paste0("Input must be a vector of indices between 1 and ", private$nSnps))
-                  indx <- unique(indx) ## make sure no double ups in SNPs
-                  ## remove SNP from the maternal linkage groups
-                  for(lg in 1:length(private$LG_mat)){
-                    if(any(private$LG_mat[[lg]] %in% indx))
-                      private$LG_mat[[lg]] <- private$LG_mat[[lg]][-which(private$LG_mat[[lg]] %in% indx)]
+                  snps <- unique(snps) ## make sure no double ups in SNPs
+                  if(is.null(private$LG)){
+                    if(is.null(private$LG_mat) || is.null(private$LG_pat))
+                      stop("No linkage groups exist. Please use the $createLG function to create some linkage groups")
+                    else{
+                      ## remove SNP from the maternal linkage groups
+                      for(lg in 1:length(private$LG_mat)){
+                        if(any(private$LG_mat[[lg]] %in% snps))
+                          private$LG_mat[[lg]] <- private$LG_mat[[lg]][-which(private$LG_mat[[lg]] %in% snps)]
+                      }
+                      ## remove SNP from the paternal linkage groups
+                      for(lg in 1:length(private$LG_pat)){
+                        if(any(private$LG_pat[[lg]] %in% snps))
+                          private$LG_pat[[lg]] <- private$LG_pat[[lg]][-which(private$LG_pat[[lg]] %in% snps)]
+                      }
+                      ## check that there are no LGs that are now empty
+                      empty_mat <- lapply(private$LG_mat, length) != 0
+                      if(any(empty_mat))
+                        private$LG_mat <- private$LG_mat[which(empty_mat)]
+                      empty_pat <- lapply(private$LG_pat, length) != 0
+                      if(any(empty_pat))
+                        private$LG_pat <- private$LG_pat[which(empty_pat)]
+                    }
                   }
-                  ## remove SNP from the paternal linkage groups
-                  for(lg in 1:length(private$LG_pat)){
-                    if(any(private$LG_pat[[lg]] %in% indx))
-                      private$LG_pat[[lg]] <- private$LG_pat[[lg]][-which(private$LG_pat[[lg]] %in% indx)]
+                  else{
+                    ## remove SNPs from the combined groups
+                    for(lg in 1:length(private$LG))
+                      private$LG[[lg]] <- private$LG[[lg]][-which(private$LG[[lg]] %in% snps)]
+                    ## check for empty LGs
+                    empty <- lapply(private$LG, length) != 0
+                    if(any(empty))
+                      private$LG <- private$LG[which(empty)]
                   }
                   return(invisible())
                 },
+                ## Function for removing linkage groups 
+                removeLG = function(LG){
+                  if(is.null(private$LG)){
+                    if(is.null(private$LG_mat) || is.null(private$LG_pat))
+                      stop("No linkage groups exist. Please use the $createLG function to create some linkage groups")
+                    else{
+                      nmat <- length(private$LG_mat)
+                      npat <- length(private$LG_pat)
+                      if(isValue(LG,min=1,max=nmat+npat))
+                        stop(paste0("The LG indices must an integer vector between 1 and the number of linkage groups which is ",nmat+npat))
+                      else{
+                        private$LG_mat <- private$LG_mat[which(!(1:nmat %in% LG))]
+                        private$LG_pat <- private$LG_pat[which(!((nmat+1:npat) %in% LG))]
+                      }
+                    }
+                  }
+                  else{
+                    nLG <- length(private$LG)
+                    if(isValue(LG,min=1,max=nLG))
+                      stop(paste0("The LG indices must an integer vector between 1 and the number of linkage groups which is ",nLG))
+                    else{
+                      private$LG <- private$LG[which(!(1:nLG %in% LG))]
+                    }
+                  }
+                },
                 ## function for masking SNPs
-                maskSNP = function(indx){
+                maskSNP = function(snps){
                   ## Inout checks
-                  if( !is.vector(indx) || !is.numeric(indx) || !all(indx == round(indx)) || any(indx < 1) || any(indx > private$nSnps) )
+                  if( !is.vector(snps) || !is.numeric(snps) || any(is.na(snps)) || !all(snps == round(snps)) || any(snps < 1) || any(snps > private$nSnps) )
                     stop(paste0("Input must be a vector of indices between 1 and ", private$nSnps))
                   ## mask SNPs
-                  private$masked[indx] <- TRUE
+                  private$masked[snps] <- TRUE
                   return(self)
                 },
                 ## function for unmasking SNPs
-                unMaskSNP = function(indx){
-                  if( !is.vector(indx) || !is.numeric(indx) || !all(indx == round(indx)) || any(indx < 1) || any(indx > private$nSnps) )
+                unmaskSNP = function(snps){
+                  if( !is.vector(snps) || !is.numeric(snps) || any(is.na(snps)) || !all(snps == round(snps)) || any(snps < 1) || any(snps > private$nSnps) )
                     stop(paste0("Input must be a vector of indices between 1 and ", private$nSnps))
-                  private$masked[indx] <- FALSE
+                  private$masked[snps] <- FALSE
                   return(self)
                 },
                 #####################################################################
@@ -125,16 +217,16 @@ FS <- R6Class("FS",
                 createLG = function(parent, LODthres=10, nComp=10){
                   ## Do some checks
                   if(is.null(private$rf) || is.null(private$LOD))
-                    stop("Recombination fractions and LOD scores have not been computed.\nUse rf_2pt() to compute the recombination fractions and LOD scores.")
+                    stop("Recombination fractions and LOD scores have not been computed.\nUse $rf_2pt() to compute the recombination fractions and LOD scores.")
                   if(!is.character(parent) || length(parent) != 1 || !(parent %in% c("maternal","paternal","both")))
                     stop("parent argument is not a string of length one or is invalid:
 Please select one of the following:
    maternal: Only MI SNPs
    paternal: Only PI SNPs
    both:     MI and PI SNPs")
-                  if(!is.numeric(LODthres) || !is.vector(LODthres) || length(LODthres) != 1 || LODthres < 0 || !is.finite(LODthres))
+                  if(!is.numeric(LODthres) || !is.vector(LODthres) || length(LODthres) != 1 || is.na(nComp) ||  LODthres < 0 || !is.finite(LODthres))
                     stop("The LOD threshold (argument 2) needs to be a finite numeric number.")
-                  if(!is.numeric(nComp) || !is.vector(nComp) || length(nComp) != 1 || nComp < 0 || !is.finite(nComp) ||
+                  if(!is.numeric(nComp) || !is.vector(nComp) || length(nComp) != 1 || is.na(nComp) || nComp < 0 || !is.finite(nComp) ||
                      round(nComp) != nComp)
                     stop("The number of comparsion points (argument 3) needs to be a finite integer number.")
                   
@@ -362,46 +454,114 @@ Please select one of the following:
                   return(invisible())
                 },
                 ## Function for plotting linkage groups
-                plotLG = function(mat=c("rf"), LG, filename=NULL, names=NULL, chrS=2, lmai=2, chrom=T){
+                plotLG = function(mat=c("rf"), parent, LG=NULL, filename=NULL, names=NULL, chrS=2, lmai=2, chrom=T){
+                  ## do some checks
+                  if(!is.vector(mat) || !is.character(mat) || length(mat) != 1 || !(mat %in% c('rf','LOD')))
+                    stop("Argument specifying which matrix to plot (argument 1) must be either 'rf' or 'LOD'")
+                  if(!is.character(parent) || length(parent) != 1 || !(parent %in% c("maternal","paternal","both")))
+                    stop("parent argument is not a string of length one or is invalid:
+Please select one of the following:
+  maternal: Add BI SNPs to MI LGs
+  paternal: Add BI SNPs to PI LGs
+  both:     Add BI SNPs to both MI and PI LGs")
                   
-                  if(mat == "rf")
-                    plotLG(mat=private$rf, LG=LG, filename=filename, names=names, chrS=chrS, lmai=lmai, chrom=chrom)
-                  else if(mat == "LOD")
-                    plotLG(mat=private$LOD, LG=LG, filename=filename, names=names, chrS=chrS, lmai=lmai, chrom=chrom)
+                  if(private$noFam == 1){
+                    ## Work out which LGs list to use
+                    if(is.null(private$LG)){
+                      if(!is.null(private$LG_pat) || !is.null(private$LG_mat))
+                        LGlist <- c(private$LG_mat,private$LG_pat)
+                      else
+                        stop("No linkage groups are available to be plotted. Please use the $createLG function to create some linkage groups")
+                    }
+                    else
+                      LGlist <- private$LG
+                    
+                    ## Work out if we want a subset of the LGs
+                    if(!is.null(LG)){
+                      LGlist <- LGlist[LG]
+                      names(LGlist) <- LG
+                    }
+                    else
+                      names(LGlist) <- 1:length(LGlist)
+                    
+                    
+                    ## Check which type of SNPs we are plotting
+                    if(parent == "maternal"){
+                      mi_ind <- lapply(LGlist, function(x) x[which(x %in% c(private$group$MI, private$group$BI))])
+                      LGlist <- mi_ind[which(unlist(lapply(mi_ind, length))!=0)]
+                    }
+                    else if (parent == "paternal"){
+                      pi_ind <- lapply(LGlist, function(x) x[which(x %in% c(private$group$PI, private$group$BI))])
+                      LGlist <- pi_ind[which(unlist(lapply(pi_ind, length))!=0)]
+                    }
+  
+                    ## Sort out the matrix
+                    if(mat == "rf")
+                      temprf <- private$rf
+                    else if(mat == "LOD")
+                      temprf <- private$LOD
+                    b <- ncol(temprf) + 1
+                    temprf <- cbind(temprf,rep(NA,b-1))
+                    temprf <- rbind(temprf,rep(NA,b))
+                    chrom.ind <- unlist(lapply(LGlist, function(x) c(x,b)), use.names = FALSE)
+                    chrom.ind <- chrom.ind[-length(chrom.ind)]
+                    temprf <- temprf[chrom.ind, chrom.ind]
+                    
+                    ## Plot the matrix
+                    nn <- length(chrom.ind)
+                    b_indx <- chrom.ind == b
+                    chrom.ind[which(!b_indx)] <- paste0(chrom.ind[which(!b_indx)]," (", rep(names(LGlist), lapply(LGlist,length)),")") 
+                    chrom.ind[which(b_indx)] <- rep("Break",length(LGlist)-1)
+                    hovertext <- matrix(paste(matrix(paste0("x: ",chrom.ind), nrow=nn, ncol=nn), 
+                          matrix(paste0("x: ",chrom.ind), nrow=nn, ncol=nn, byrow=T), paste0("rf: ",round(temprf,4)), sep="<br>"),
+                          nrow=nn, ncol=nn)
+                    ax <- list(visible=FALSE)
+                    # suppress warnings  
+                    storeWarn<- getOption("warn")
+                    options(warn = -1) 
+                    ## produce the plotly plot
+                    plotly::plot_ly(z=temprf, type="heatmap", showscale=F, hoverinfo="text",
+                            text=hovertext, colors=heat.colors(100)) %>% 
+                      plotly::add_segments(x=which(b_indx)-1,xend=which(b_indx)-1,y=0,yend=nn, line=list(color="black"),  showlegend=F) %>%
+                      plotly::add_segments(y=which(b_indx)-1,yend=which(b_indx)-1,x=0,xend=nn, line=list(color="black"),  showlegend=F) %>%
+                      plotly::layout(margin=list(l=0,r=0,t=0,b=0), xaxis=ax, yaxis=ax)
+                    options(warn = storeWarn) 
+                  }
                   else
-                    stop("Matrix to be plotted not found.")
+                    stop("Not yet implemented.")
                   return(invisible())
                 },
-                ## Function for plotting chromosome ordering
-                plotChr = function(mat=c("rf"), parent = "maternal", ordering = "original", filename=NULL, chrS=2, lmai=2){
+                ## Function for plotting chromosome in their original ordering
+                plotChr = function(mat=c("rf"), parent = "maternal", filename=NULL, chrS=2, lmai=2){
+                  ## do some checks
+                  if(!is.vector(mat) || !is.character(mat) || length(mat) != 1 || !(mat %in% c('rf','LOD')))
+                    stop("Argument specifying which matrix to plot (argument 1) must be either 'rf' or 'LOD'")
+                  if(!is.character(parent) || length(parent) != 1 || !(parent %in% c("maternal","paternal","both")))
+                    stop("parent argument is not a string of length one or is invalid:
+Please select one of the following:
+  maternal: Add BI SNPs to MI LGs
+  paternal: Add BI SNPs to PI LGs
+  both:     Add BI SNPs to both MI and PI LGs")
+                  
+                  ## workout which SNPs to plot to plot
                   if(private$noFam == 1){
                     ## workout the indices for the chromosomes
                     names <- unique(private$chrom)
-                    if(parent == "maternal"){
-                      if(ordering == "original")
-                        LG <- sapply(names, function(x) which((private$chrom == x) & !private$masked & (private$config[[1]] %in% c(1,4,5))), simplify=F)
-                      else if(ordering == "LG")
-                        LG <- private$LG_mat
-                      else if(ordering == "tempLG")
-                        LG <- private$LG_mat_temp
-                    }
-                    if(parent == "paternal"){
-                      if(ordering == "original")
-                        LG <- sapply(names, function(x) which((private$chrom == x) & !private$masked & (private$config[[1]] %in% c(1,2,3))), simplify=F)
-                      else if(ordering == "LG")
-                        LG <- private$LG_pat
-                      else if(ordering == "tempLG")
-                        LG <- private$LG_pat_temp
-                    }
+                    if(parent == "maternal")
+                      LG <- sapply(names, function(x) which((private$chrom == x) & !private$masked & (private$config[[1]] %in% c(1,4,5))), simplify=F)
+                    else if(parent == "paternal")
+                      LG <- sapply(names, function(x) which((private$chrom == x) & !private$masked & (private$config[[1]] %in% c(1,2,3))), simplify=F)
+                    else if(parent == "both")
+                      LG <- sapply(names, function(x) which((private$chrom == x) & !private$masked & (private$config[[1]] %in% c(1,2,3,4,5))), simplify=F)
                     ## plot the chromsomes rf info
                     if(mat == "rf")
                       plotLG(mat=private$rf, LG=LG, filename=filename, names=names, chrS=chrS, lmai=lmai, chrom=T)
                     else if(mat == "LOD")
                       plotLG(mat=private$LOD, LG=LG, filename=filename, names=names, chrS=chrS, lmai=lmai, chrom=T)
                     else
-                      stop("Matrix to be plotted not found.")
+                      stop("Matrix to be plotted not found.") ## shouldn't get here
                     return(invisible())
-                    }
+                  }
                   else{
                     stop("not implemented yet")
                   }

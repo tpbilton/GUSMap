@@ -6,10 +6,13 @@ Authors@R: person("Timothy P.", "Bilton", role = c("aut", "cre"), email = "tbilt
 Author: Timothy P. Bilton [aut, cre]
 Maintainer: Timothy P. Bilton <tbilton@maths.otago.ac.nz>
 Depends: R (>= 3.4.0), GUSbase
-Imports: R6, smacof, princurve, car, clue
-Description: Package for performing constructing linkage maps using outcrossed full-sib family populations that have been sequenced using next generation multiplexing sequencing methods.
+RdMacros: Rdpack
+Imports: R6, smacof, princurve, car, clue, plotly, Rdpack (>= 0.8-0)
+Description: Package for constructing linkage maps using outcrossed full-sib family populations that have been sequenced using next generation multiplexing sequencing methods.
 License: GPL-3
 LazyData: true
 NeedsCompilation: yes
-RdMacros: Rdpack
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.0
+Suggests: knitr,
+    rmarkdown
+VignetteBuilder: knitr
