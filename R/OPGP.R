@@ -89,7 +89,7 @@
 #' 
 #' @export infer_OPGP_FS
 
-infer_OPGP_FS <- function(ref, alt, config, ep=0.001, method="optim", ...){
+infer_OPGP_FS <- function(ref, alt, config, ep=0.001, method="optim", nThreads=0, ...){
   
   if(!is.matrix(ref) || !is.matrix(alt))
     stop("The read counts inputs are not matrix objects")
@@ -109,7 +109,7 @@ infer_OPGP_FS <- function(ref, alt, config, ep=0.001, method="optim", ...){
   Isnps <- which(!(config %in% 6:9))
   
   ## solve the likelihood for when phase is not known
-  MLEs <- rf_est_FS_UP(ref[,Isnps], alt[,Isnps], config[Isnps], ep=ep, method=method, ...)
+  MLEs <- rf_est_FS_UP(ref[,Isnps], alt[,Isnps], config[Isnps], ep=ep, method=method, nThreads=nThreads, ...)
   
   parHap <- matrix("A",nrow=4,ncol=nSnps)
   parHap[cbind(c(rep(3,sum(config %in% c(3,7,9))),rep(4,sum(config %in% c(3,7,9)))),which(config %in% c(3,7,9)))] <- "B"

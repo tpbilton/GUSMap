@@ -164,7 +164,7 @@ FS <- R6Class("FS",
                         !is.null(self$para$OPGP[i][[x]]) && (length(self$para$OPGP[i][[x]]) != ncol(ref_temp[[x]])))){
                         tempOPGP <- list()
                         for(fam in 1:private$noFam){
-                          tempOPGP <- c(tempOPGP,list(as.integer(infer_OPGP_FS(ref_temp[[fam]],alt_temp[[fam]],private$config[[fam]][indx_chr], method="EM"))))                        
+                          tempOPGP <- c(tempOPGP,list(as.integer(infer_OPGP_FS(ref_temp[[fam]],alt_temp[[fam]],private$config[[fam]][indx_chr], method="EM", nThreads=nThreads))))
                           }
                         self$para$OPGP[i] <- tempOPGP
                       }

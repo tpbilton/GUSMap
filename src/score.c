@@ -27,7 +27,6 @@
     #include <omp.h>
 #else
     inline int omp_get_max_threads() { return 1; }
-    inline void omp_set_num_threads(n) { return; }
 #endif
 
 

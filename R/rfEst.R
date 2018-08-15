@@ -384,7 +384,8 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
     cat("RDEBUG: nInd:", class(unlist(nInd)), typeof(unlist(nInd)), "\n")
     cat("RDEBUG:", dim(unlist(nInd)), unlist(nInd)[1], "\n")
     EMout <- .Call("EM_HMM", init_r, ep, ref_mat, alt_mat, OPGPmat,
-                   noFam, unlist(nInd), nSnps, sexSpec, seqErr, EM.arg, as.integer(ss_rf))
+                   noFam, unlist(nInd), nSnps, sexSpec, seqErr, EM.arg, as.integer(ss_rf),
+                   nThreads)
     toc()
     
     EMout[[3]] = EMout[[3]] + sum(log(choose(ref_mat+alt_mat,ref_mat)))
@@ -405,7 +406,7 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
 
 ## recombination estimates for case where the phase is unkonwn.
 ## The r.f.'s are sex-specific and constrained to the range [0,1]
-rf_est_FS_UP <- function(ref, alt, config, ep, method="optim", trace=F, ...){
+rf_est_FS_UP <- function(ref, alt, config, ep, method="optim", trace=F, nThreads=0, ...){
   
   ## Check imputs
   if( any( ref<0 | !is.finite(ref)) || any(!(ref == round(ref))))
@@ -528,7 +529,8 @@ rf_est_FS_UP <- function(ref, alt, config, ep, method="optim", trace=F, ...){
     library(tictoc)
     tic("RTIME: call to EM_HMM_UP")
     EMout <- .Call("EM_HMM_UP", rep(0.5,(nSnps-1)*2), ep, ref, alt, config,
-                   as.integer(1), nInd, nSnps, seqErr, EM.arg, as.integer(ss_rf))
+                   as.integer(1), nInd, nSnps, seqErr, EM.arg, as.integer(ss_rf),
+                   nThreads)
     toc()
     return(list(rf_p=EMout[[1]][ps],rf_m=EMout[[1]][nSnps-1+ms],
                 ep=EMout[[2]],

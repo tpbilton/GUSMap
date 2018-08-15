@@ -28,8 +28,7 @@
 #ifdef _OPENMP
     #include <omp.h>
 #else
-    #define omp_num_threads() 1
-    #define omp_get_thread_num() 0
+    inline int omp_get_max_threads() { return 1; }
 #endif
 
 int Tcount(int s1, int s2){
@@ -53,9 +52,9 @@ double long binomial(int a, int b){
 
 // Function for computing the emission probabilities given the true genotypes (parallel)
 double computeProb(int nInd, int nSnps, double pAA[nInd][nSnps], double pBB[nInd][nSnps], double bin_coef[nInd][nSnps],
-                        double epsilon, int *pref, int *palt){
+                        double epsilon, int *pref, int *palt, int nThreads_c){
   int ind;
-  #pragma omp parallel for
+  #pragma omp parallel for num_threads(nThreads_c)
   for(ind = 0; ind < nInd; ind++){
     int snp;
     for(snp = 0; snp < nSnps; snp++){
@@ -161,10 +160,17 @@ int Iindx(int OPGP, int elem){
 
 
 SEXP EM_HMM(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam, SEXP nInd, SEXP nSnps,
-            SEXP sexSpec, SEXP seqError, SEXP para, SEXP ss_rf){
+            SEXP sexSpec, SEXP seqError, SEXP para, SEXP ss_rf, SEXP nThreads){
   // Initialize variables
-  int s1, s2, fam, ind, snp, g, iter, nIter, parent, noFam_c, nSnps_c, sexSpec_c, seqError_c;
+  int s1, s2, fam, ind, snp, g, iter, nIter, parent, noFam_c, nSnps_c, sexSpec_c, seqError_c, nThreads_c;
   double sum, sumA, sumB, a, b, delta;
+
+  // set up number of threads
+  nThreads_c = asInteger(nThreads);
+  if (nThreads_c <= 0) {
+    // if nThreads is set to zero then use everything
+    nThreads_c = omp_get_max_threads();
+  }
 
   // Copy values of R input into C objects
   nSnps_c = INTEGER(nSnps)[0];
@@ -262,11 +268,12 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam, SEXP nIn
     llval = 0;
     
     // unpdate the probabilites for pAA and pBB given the parameter values and data.
-    computeProb(nTotal, nSnps_c, pAA, pBB, bin_coef, ep_c, pref, palt);
+    computeProb(nTotal, nSnps_c, pAA, pBB, bin_coef, ep_c, pref, palt, nThreads_c);
   
     // Compute the forward and backward probabilities for each individual
     for(fam = 0; fam < noFam_c; fam++){
-      #pragma omp parallel for reduction(+:llval) private(sum, s1, s2, alphaDot, snp, w_new, betaDot)
+      #pragma omp parallel for reduction(+:llval) num_threads(nThreads_c) \
+                               private(sum, s1, s2, alphaDot, snp, w_new, betaDot)
       for(ind = 0; ind < nInd_c[fam]; ind++){
         int indx = ind + indSum[fam];
         //Rprintf("indSum %i\n", indSum[fam]);
@@ -388,7 +395,7 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam, SEXP nIn
     // The recombination fractions
     if(sexSpec_c){
       //Rprintf("Sex-Specific rf's\n");
-      #pragma omp parallel for private(sum, fam, ind, s1, s2)
+      #pragma omp parallel for private(sum, fam, ind, s1, s2) num_threads(nThreads_c)
       for(snp = 0; snp < nSnps_c-1; snp++){
         // Paternal
         if(pss_rf[snp] == 1){
@@ -424,7 +431,7 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam, SEXP nIn
     }
     else{ // non sex-specific
       //Rprintf("non Sex-Specific rf's\n");
-      #pragma omp parallel for private(sum, fam, ind, s1, s2)
+      #pragma omp parallel for private(sum, fam, ind, s1, s2) num_threads(nThreads_c)
       for(snp = 0; snp < nSnps_c-1; snp++){
         sum = 0;
         for(fam = 0; fam < noFam_c; fam++){
@@ -448,7 +455,7 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam, SEXP nIn
     if(seqError_c){
       sumA = 0;
       sumB = 0;
-      #pragma omp parallel for reduction(+:sumA,sumB) private(fam, ind, a, b, s1)
+      #pragma omp parallel for reduction(+:sumA,sumB) private(fam, ind, a, b, s1) num_threads(nThreads_c)
       for(snp = 0; snp < nSnps_c; snp++){
         for(fam = 0; fam < noFam_c; fam++){
           for(ind = 0; ind < nInd_c[fam]; ind++){
@@ -535,10 +542,17 @@ int Iindx_up(int config, int elem){
 
 
 SEXP EM_HMM_UP(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP config, SEXP noFam, SEXP nInd, SEXP nSnps,
-               SEXP seqError, SEXP para, SEXP ss_rf){
+               SEXP seqError, SEXP para, SEXP ss_rf, SEXP nThreads){
   // Initialize variables
-  int s1, s2, fam, ind, snp, g, iter, nIter, indx, parent, noFam_c, nSnps_c, seqError_c;
+  int s1, s2, fam, ind, snp, g, iter, nIter, indx, parent, noFam_c, nSnps_c, seqError_c, nThreads_c;
   double sum, sumA, sumB, a, b, delta;
+
+  // set up number of threads
+  nThreads_c = asInteger(nThreads);
+  if (nThreads_c <= 0) {
+    // if nThreads is set to zero then use everything
+    nThreads_c = omp_get_max_threads();
+  }
 
   // Copy values of R input into C objects
   nSnps_c = INTEGER(nSnps)[0];
@@ -633,11 +647,12 @@ SEXP EM_HMM_UP(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP config, SEXP noFam, SEX
     llval = 0;
     
     // unpdate the probabilites for pAA and pBB given the parameter values and data.
-    computeProb(nTotal, nSnps_c, pAA, pBB, bin_coef, ep_c, pref, palt);
+    computeProb(nTotal, nSnps_c, pAA, pBB, bin_coef, ep_c, pref, palt, nThreads_c);
     
     // Compute the forward and backward probabilities for each individual
     for(fam = 0; fam < noFam_c; fam++){
-      #pragma omp parallel for reduction(+:llval) private(indx, sum, s1, s2, alphaDot, snp, w_new, betaDot)
+      #pragma omp parallel for reduction(+:llval) num_threads(nThreads_c) \
+                               private(indx, sum, s1, s2, alphaDot, snp, w_new, betaDot)
       for(ind = 0; ind < nInd_c[fam]; ind++){
         indx = ind + indSum[fam];
         //Rprintf("indSum %i\n", indSum[fam]);
@@ -752,7 +767,7 @@ SEXP EM_HMM_UP(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP config, SEXP noFam, SEX
       }  
     }
     // The recombination fractions
-    #pragma omp parallel for private(sum, fam, ind, indx, s1, s2)
+    #pragma omp parallel for private(sum, fam, ind, indx, s1, s2) num_threads(nThreads_c)
     for(snp = 0; snp < nSnps_c-1; snp++){
       // Paternal
       if(pss_rf[snp] == 1){
@@ -789,7 +804,8 @@ SEXP EM_HMM_UP(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP config, SEXP noFam, SEX
     if(seqError_c){
       sumA = 0;
       sumB = 0;
-      #pragma omp parallel for reduction(+:sumA,sumB) private(fam, ind, indx, a, b, s1)
+      #pragma omp parallel for reduction(+:sumA,sumB) num_threads(nThreads_c) \
+                               private(fam, ind, indx, a, b, s1)
       for(snp = 0; snp < nSnps_c; snp++){
         for(fam = 0; fam < noFam_c; fam++){
           for(ind = 0; ind < nInd_c[fam]; ind++){
