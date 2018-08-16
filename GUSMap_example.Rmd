@@ -38,7 +38,7 @@ The above functions are merely to read in data. *VCFtoRA* is probably the slowes
 #### Create a mapping population
 
 ```{r}
-MK_fs <- createPop_FS(RAdata, pedfile=MKdata$ped)
+MK_fs <- makeFS(RAdata, pedfile=MKdata$ped)
 ```
 The above function processes (including some filtering) the RA file into a format required for a full-sib family. There are a whole bunch of things going inside this function.  
 
@@ -46,7 +46,7 @@ The above function processes (including some filtering) the RA file into a forma
 
 Now, we need to compute all the pairwise recombination fraction estimates between all pairs of SNPs.
 ```{r}
-MK_fs$rf_2pt(nClust=2)
+MK_fs$rf_2pt(nClust=3)
 ```
 The above function is very slow because it is taking each pair of SNPs and computing a likelihood to get a point estimate. *nClust* argument specifies the number of cores to use with the parallelization within the function using the *foreach* R package.
 
@@ -101,12 +101,12 @@ The *MK_fs$rf_est()* is the main function here and is solving the likelihood for
 
 For a larger dataset, I'll simulate some ideal data below (for two chromosomes)
 ```{r}
-noChr=2
-nSnps=300
+noChr=5
+nSnps=50
 noFam=1
 set.seed(5721)
 config <- list(sapply(1:noChr, function(x) list(sample(c(1,2,4),size=nSnps, prob=c(1,2,2)/5, replace=T)), simplify=T))
-simData <- simFS(1/100,epsilon=0.01,config=config,nInd=200, meanDepth=5, noChr=noChr, seed1=687534, seed2=6772)
+simData <- simFS(1/nSnps,epsilon=0.01,config=config,nInd=200, meanDepth=5, noChr=noChr, seed1=687534, seed2=6772)
 ```
 
 Again compute the pairwise recombination fraction estimates between all pairs of SNPs.
