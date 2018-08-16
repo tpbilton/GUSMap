@@ -14,7 +14,7 @@ print statements that will be removed.
 The number of threads can be set by passing the `nThreads` argument. Currently,
 if this is not set it will default to using all available OpenMP cores. This
 will either be the number of cores detected by the operating system, or the
-value of the `OPENMP_NUM_THREADS` environment variable, if it is set.
+value of the `OMP_NUM_THREADS` environment variable, if it is set.
 
 To handle this, in the code we need to call an OpenMP function to get the
 number of available cores and therefore need to include the OpenMP header
