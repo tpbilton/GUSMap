@@ -12,6 +12,7 @@ knitr::opts_chunk$set(echo = TRUE, eval=TRUE)
 ```{r, echo=FALSE}
 #install.packages("devtools", repos="https://cran.stat.auckland.ac.nz/")
 library(devtools)
+#install_github("tpbilton/GUSbase")
 #install_github("tpbilton/GUSMap", ref="Development")
 library(GUSMap)
 #install.packages("onemap", repos="https://cran.stat.auckland.ac.nz/")

@@ -262,27 +262,29 @@ FS <- R6Class("FS",
                 },
                 #####################################################################
                 ## Function for computing the 2-point rf estimates
-                rf_2pt = function(nClust=4){
+                rf_2pt = function(nClust=4, err=FALSE){
                   ## do some checks
                   if(!is.numeric(nClust) || !is.vector(nClust) || length(nClust)!=1 || nClust < 0 || is.infinite(nClust) )
                     stop("Number of clusters for parallelization needs to be a positive finite integer number")
-                  
+                  if(!is.vector(err) || !is.logical(err) || length(err) != 1)
+                    stop("Argument specifying whether error parameters are to be estimated is invlaid.")
                   ## If there is only one family
                   if(private$noFam == 1)
                     mat <- rf_2pt_single(private$ref[[1]], private$alt[[1]],
                                          private$config[[1]], private$config_infer[[1]],
                                          private$group, private$group_infer,
-                                         nClust, private$nInd)
+                                         nClust, private$nInd, err=err)
                   else
-                    mat <- rf_2pt_multi(private$ref, private$alt,
-                                        private$config,private$group, nClust, private$noFam)
+                    stop("Multiple families have yet to be implemented")
+                    #mat <- rf_2pt_multi(private$ref, private$alt,
+                    #                    private$config,private$group, nClust, private$noFam)
                   ## Save the results to the object
                   private$rf <- mat$rf
                   private$LOD <- mat$LOD
                   return(invisible())
                 },
                 ## Function for creating linkage groups
-                createLG = function(parent, LODthres=10, nComp=10){
+                createLG = function(parent="both", LODthres=10, nComp=10){
                   ## Do some checks
                   if(is.null(private$rf) || is.null(private$LOD))
                     stop("Recombination fractions and LOD scores have not been computed.\nUse $rf_2pt() to compute the recombination fractions and LOD scores.")
@@ -368,10 +370,8 @@ Please select one of the following:
                   ## Do some checks
                   if(is.null(private$rf) || is.null(private$LOD))
                     stop("Recombination fractions and LOD scores have not been computed.\nUse rf_2pt() to compute the recombination fractions and LOD scores.")
-                  if((parent == "maternal" || parent == "both") && is.null(private$LG_mat))
-                    stop("There are no maternal linkage groups. Use createLG(parent='maternal') to form maternal linkage groups.")
-                  if((parent == "paternal" || parent == "both") && is.null(private$LG_pat))
-                    stop("There are no maternal linkage groups. Use createLG(parent='maternal') to form maternal linkage groups.")
+                  if(is.null(private$LG_pat) && is.null(private$LG_mat))
+                    stop("There are no existing linkage groups. Use $createLG() method to create linkage groups.")
                   ##if(parent == "maternal" && length(private$LG_mat) == 0)
                   #  stop("There are no maternal linkage groups. Please use 'createLG' function to create the linkage groups first")
                   #else if(parent == "paternal" && length(private$LG_pat) == 0)
@@ -426,18 +426,18 @@ Please select one of the following:
                     }
                     nmapped <- length(mappedLG_mat)
                     ## Check whether there are still any lingering LGs that could be mapped
-                    if(length(mappedLG_mat) < nmat){
+                    if(unique(length(mappedLG_mat)) < nmat){
                       tomap <- which(!(1:nmat %in% mappedLG_mat))
                       if(max(tabBI[tomap,], na.rm=T) > 0){
                         for(matlg in tomap){
                           patlg <- which.max(tabBI[matlg,])
                           mappedLG_mat <- c(mappedLG_mat,matlg)
                           mappedLG_pat <- c(mappedLG_pat,patlg)
-                          tabBI[matlg,patlg]
+                          tabBI[matlg,patlg] <- NA
                         }
                       }
                     }
-                    if(length(mappedLG_pat) < npat){
+                    if(unique(length(mappedLG_pat)) < npat){
                       tomap <- which(!(1:npat %in% mappedLG_pat))
                       if(max(tabBI[,tomap], na.rm=T) > 0){
                         for(patlg in tomap){
@@ -457,11 +457,11 @@ Please select one of the following:
                     if(nmapped != length(mappedLG_mat)){
                       for(lg in (nmapped+1):length(mappedLG_mat)){
                         matlg <- which(mappedLG_mat[1:nmapped] == mappedLG_mat[lg])
-                        patlg <- which(mappedLG_mat[1:nmapped] == mappedLG_mat[lg])
+                        patlg <- which(mappedLG_pat[1:nmapped] == mappedLG_pat[lg])
                         if(length(matlg) == 0)
-                          LGmerged[[lg]] <- c(LGmerged[[lg]], newLGlist_pat[patlg])
+                          LGmerged[[patlg]] <- c(LGmerged[[patlg]],newLGlist_mat[[mappedLG_mat[lg]]])
                         else if(length(patlg) == 0)
-                          LGmerged[[lg]] <- c(LGmerged[[lg]], newLGlist_pat[matlg])
+                          LGmerged[[matlg]] <- c(LGmerged[[matlg]],newLGlist_mat[[mappedLG_pat[lg]]])
                       }
                     }
                     ## Clean-up: remove BI SNPs which only mapped to one LG and remove duplicates
@@ -502,9 +502,9 @@ Please select one of the following:
                     ind_pi <- which(ind %in% private$group$PI)
                     ## set up the weighting matrix
                     if(weight == "LOD")
-                      wmat <- matrix(private$LOD,nrow=length(ind), ncol=length(ind))
+                      wmat <- matrix(private$LOD[ind,ind],nrow=length(ind), ncol=length(ind))
                     else if (weight == "LOD2")
-                      wmat <- matrix((private$LOD)^2,nrow=length(ind), ncol=length(ind))
+                      wmat <- matrix((private$LOD[ind,ind])^2,nrow=length(ind), ncol=length(ind))
                     else if (weight == "none")
                       wmat <- matrix(1,nrow=length(ind), ncol=length(ind))
                     ## set the weights of the PI and MI combinations to zero.
@@ -663,6 +663,23 @@ Please select one of the following:
                     stop("not implemented yet")
                   }
                 },
+                ## compare order with original and ordered markers
+                plotSyn = function(){
+                  LGorder <- unlist(private$LG)
+                  orgOrder <- sort(LGorder)
+                  LGbreaks <- cumsum(unlist(lapply(private$LG, length))) + 0.5
+                  LGbreaks <- LGbreaks[-length(LGbreaks)]
+                  chrBreaks <- which(diff(private$chrom)==1) + 0.5
+                  
+                  plot(orgOrder,LGorder, pch=20,cex=0.8, xaxt="n", yaxt="n",ylab="Assembly Ordering", xlab="Linkage Group Ordering", 
+                       ylim=c(min(orgOrder),max(orgOrder)), xlim=c(min(LGorder), max(LGorder)))
+                  abline(h=chrBreaks)
+                  abline(v=LGbreaks)
+                  mtext(text = unique(private$chrom[orgOrder]), side = 2,
+                        at = apply(cbind(c(min(orgOrder),chrBreaks),c(chrBreaks,max(orgOrder))),1,mean))
+                  mtext(text = 1:length(private$LG), side = 1,
+                        at = apply(cbind(c(min(LGorder),LGbreaks),c(LGbreaks,max(LGorder))),1,mean))
+                }, 
                 ## Function for computing the rf's for each chromosome 
                 rf_est = function(chr=NULL, init_r=0.01, ep=0.001, method="optim", sexSpec=F, seqErr=T, mapped=T){
                   ## do some checks
@@ -714,10 +731,14 @@ Please select one of the following:
                     }
                   }
                   else{
+                    ## Check the input
                     if((length(private$LG) == 0) && length(is.null(private$LG) == 0))
                       stop("No linkage groups have been formed.")
-                    if(!is.null(chr) && (!is.vector(chr) || chr < 0 || chr > length(private$LG) || round(chr) != chr))
+                    if(is.null(chr)) # compute distances for all chromosomes
+                      chr <- 1:nChr
+                    else if(!is.vector(chr) || chr < 0 || chr > length(private$LG) || round(chr) != chr)
                       stop("Chromosomes input must be an integer vector between 1 and the number of linkage groups")
+                    ## Compute rf's
                     cat("Computing recombination fractions:\n")
                     private$para <- list(OPGP=vector(mode = "list",length = nChr),rf_p=vector(mode = "list",length = nChr),
                                          rf_m=vector(mode = "list",length = nChr),ep=vector(mode = "list",length = nChr),

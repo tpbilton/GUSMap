@@ -127,9 +127,8 @@
 #'           alt = list(Fam1$alt,Fam2$alt), OPGP = list(OPGP_1,OPGP_2), noFam = 2)
 #'           
 #' 
-#' @export rf_est_FS
 rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
-                      sexSpec=F, seqErr=T, trace=F, noFam=1, method = "optim", ...){
+                      sexSpec=F, seqErr=T, trace=F, noFam=as.integer(1), method = "optim", ...){
   
   ## Do some checks
   # if(!is.list(ref) | !is.list(alt) | !is.list(OPGP))
@@ -150,8 +149,8 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
   #   trace = FALSE
   # if( !is.logical(sexSpec) || is.na(sexSpec) )
   #   sexSpec = FALSE
-  if(!(method %in% c("EM","optim","optim_old")))
-    stop("Specified optimization method is unknown. Please select one of 'EM' or 'optim'")
+  #if(!(method %in% c("EM","optim","optim_old")))
+  #  stop("Specified optimization method is unknown. Please select one of 'EM' or 'optim'")
   
   ## Check the read count matrices
   # if(any(unlist(lapply(ref,function(x) !is.numeric(x) || any( x<0 | !is.finite(x)) || any(!(x == round(x)))))))
@@ -168,18 +167,18 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
   #  method = "optim"
   
   ## check inputs are of required type for C functions
-  if(!is.numeric(init_r)|is.integer(init_r))
-    init_r <- as.numeric(init_r)
-  for(fam in 1:noFam){
-    if(!is.integer(ref[[fam]]))
-      ref[[fam]] <- matrix(as.integer(ref[[fam]]), nrow=nInd[[fam]], ncol=nSnps)
-    if(!is.integer(alt[[fam]]))
-      alt[[fam]] <- matrix(as.integer(alt[[fam]]), nrow=nInd[[fam]], ncol=nSnps)
-    if(!is.integer(OPGP[[fam]]))
-      OPGP[[fam]] <- as.integer(OPGP[[fam]])
-  }
-  if(!is.integer(noFam))
-    noFam <- as.integer(noFam)
+  # if(!is.numeric(init_r)|is.integer(init_r))
+  #   init_r <- as.numeric(init_r)
+  # for(fam in 1:noFam){
+  #   if(!is.integer(ref[[fam]]))
+  #     ref[[fam]] <- matrix(as.integer(ref[[fam]]), nrow=nInd[[fam]], ncol=nSnps)
+  #   if(!is.integer(alt[[fam]]))
+  #     alt[[fam]] <- matrix(as.integer(alt[[fam]]), nrow=nInd[[fam]], ncol=nSnps)
+  #   if(!is.integer(OPGP[[fam]]))
+  #     OPGP[[fam]] <- as.integer(OPGP[[fam]])
+  # }
+  # if(!is.integer(noFam))
+  #   noFam <- as.integer(noFam)
   
   if(method=="optim"){
     # Arguments for the optim function
