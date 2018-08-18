@@ -251,7 +251,7 @@ FS <- R6Class("FS",
                     stop(paste0("Input must be a vector of indices between 1 and ", private$nSnps))
                   ## mask SNPs
                   private$masked[snps] <- TRUE
-                  return(self)
+                  return(invisible(self))
                 },
                 ## function for unmasking SNPs
                 unmaskSNP = function(snps){

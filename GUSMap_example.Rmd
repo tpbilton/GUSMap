@@ -15,8 +15,6 @@ library(devtools)
 #install_github("tpbilton/GUSbase")
 #install_github("tpbilton/GUSMap", ref="Development")
 library(GUSMap)
-#install.packages("onemap", repos="https://cran.stat.auckland.ac.nz/")
-library(onemap)
 ```
 
 # Code for testing GUSMap
@@ -72,7 +70,7 @@ badSnps[c(3:14,16,18:23,25:27,29,33:35,39:42,44,46:49,
    543,553,556,569,582,585,601,617,620,623,628,635, 
    636:643,647:650,669:680)] <- TRUE 
 MK_fs$maskSNP(which(badSnps))
-MK_fs$plotChr()
+MK_fs$plotChr(parent = "maternal")
 MK_fs$plotChr(parent = "paternal")
 ```
 
@@ -84,13 +82,18 @@ rd6 <- ((colMeans(depth) > 6) | badSnps)
 MK_fs$maskSNP(which(rd6))
 ## Compute the rf estimates
 ## using optim 
-MK_fs$rf_est(method="optim")
-sum(haldane(MK_fs$para$rf_p[[1]])) ## should be 76.09481
-MK_fs$para$ep[[1]]                 ## should be 0.003167973
+MK_fs$rf_est(method="optim", mapped = FALSE)
+## should be 76.09481
+sum(GUSMap:::mfun(MK_fs$.__enclos_env__$private$para$rf_p[[1]],fun = "haldane", centiM = T)) 
+MK_fs$.__enclos_env__$private$para$ep[[1]]
+## should be 0.003167973
+######
 ## using EM algorithm
-MK_fs$rf_est(method="EM")
-sum(haldane(MK_fs$para$rf_p[[1]])) ## should be 76.09481
-MK_fs$para$ep[[1]]                 ## should be 0.003167973
+MK_fs$rf_est(method="EM", mapped = FALSE)
+## should be 76.09481
+sum(GUSMap:::mfun(MK_fs$.__enclos_env__$private$para$rf_p[[1]],fun = "haldane", centiM = T))
+## should be 0.003167973
+MK_fs$.__enclos_env__$private$para$ep[[1]]                 
 
 ```
 The *MK_fs$rf_est()* is the main function here and is solving the likelihood for a hidden Markov model (HMM). The likelihood is written as C functions and are in the src folder. There is also two different optimization routines:
@@ -102,8 +105,8 @@ The *MK_fs$rf_est()* is the main function here and is solving the likelihood for
 
 For a larger dataset, I'll simulate some ideal data below (for two chromosomes)
 ```{r}
-noChr=5
-nSnps=50
+noChr=2
+nSnps=100
 noFam=1
 set.seed(5721)
 config <- list(sapply(1:noChr, function(x) list(sample(c(1,2,4),size=nSnps, prob=c(1,2,2)/5, replace=T)), simplify=T))
@@ -120,12 +123,16 @@ simData$plotChr(parent="paternal")
 
 Solve the likelihood for the hidden Markov model (HMM) and get recombination fraction estimates
 ```{r}
-simData$rf_est(method="optim")
+simData$rf_est(method="optim", mapped = FALSE)
 ## Chromosome 1
-sum(haldane(simData$para$rf_p[[1]])) ## Should be 98.41231
-simData$para$ep[[1]]                 ## 0.01010545
+## Should be 98.41231
+sum(GUSMap:::mfun(simData$.__enclos_env__$private$para$rf_p[[1]],fun = "haldane", centiM = T))
+## 0.01010545
+simData$.__enclos_env__$private$para$ep[[1]]                 ## 0.01010545
 ## Chromosome 2
-sum(haldane(simData$para$rf_p[[2]])) ## Should be 103.2207 
-simData$para$ep[[2]]                 ## 0.009815709
+## Should be 103.2207
+sum(GUSMap:::mfun(simData$.__enclos_env__$private$para$rf_p[[2]],fun = "haldane", centiM = T))
+## 0.009815709
+simData$.__enclos_env__$private$para$ep[[2]]
 ```
 
