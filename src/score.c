@@ -149,12 +149,11 @@ double der_epsilon(int OPGP, double epsilon, int a, int b, int elem){
 SEXP score_fs_scaled_err_c(SEXP r, SEXP epsilon, SEXP ref, SEXP alt, SEXP Kaa, SEXP Kab, SEXP Kbb,
         SEXP OPGP, SEXP nInd, SEXP nSnps, SEXP nThreads){
   // Initialize variables
-  int ind, snp, snp_der, nInd_c, nSnps_c, nThreads_c, *pOPGP, *pref, *palt;
+  int ind, snp, snp_der, nInd_c, nSnps_c, nThreads_c, *pOPGP, *pref, *palt, maxThreads;
   double *pscore, *pr, *pKaa, *pKab, *pKbb, epsilon_c;
   // Load R input variables into C
   nInd_c = INTEGER(nInd)[0];
   nSnps_c = INTEGER(nSnps)[0];
-  nThreads_c = asInteger(nThreads);
   // Define the pointers to the other input R variables
   pOPGP = INTEGER(OPGP);
   pref = INTEGER(ref);
@@ -170,9 +169,16 @@ SEXP score_fs_scaled_err_c(SEXP r, SEXP epsilon, SEXP ref, SEXP alt, SEXP Kaa, S
   pscore = REAL(score);
   //SEXP pout = PROTECT(allocVector(VECSXP, 3));
 
-  // if nThreads is set to zero then use everything
+  // set up number of threads
+  nThreads_c = asInteger(nThreads);
+  maxThreads = omp_get_max_threads();
   if (nThreads_c <= 0) {
-    nThreads_c = omp_get_max_threads();
+    // if nThreads is set to zero then use everything
+    nThreads_c = maxThreads;
+  }
+  else if (nThreads_c > maxThreads) {
+    // don't allow more threads than the maximum available
+    nThreads_c = maxThreads;
   }
   
   double llval = 0, score_c[nSnps_c];

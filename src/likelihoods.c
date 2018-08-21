@@ -51,13 +51,12 @@
 // Include error parameters
 SEXP ll_fs_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nInd, SEXP nSnps, SEXP nThreads){
   // Initialize variables
-  int s1, s2, ind, snp, nInd_c, nSnps_c, nThreads_c, *pOPGP;
+  int s1, s2, ind, snp, nInd_c, nSnps_c, nThreads_c, *pOPGP, maxThreads;
   double *pll, *pr, *pKaa, *pKab, *pKbb;
   double alphaTilde[4], alphaDot[4], sum, w_new;
   // Load R input variables into C
   nInd_c = INTEGER(nInd)[0];
   nSnps_c = INTEGER(nSnps)[0];
-  nThreads_c = asInteger(nThreads);
   // Define the pointers to the other input R variables
   pOPGP = INTEGER(OPGP);
   pKaa = REAL(Kaa);
@@ -70,9 +69,16 @@ SEXP ll_fs_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nI
   pll = REAL(ll);
   double llval = 0;
 
-  // if nThreads is set to zero then use everything
+  // set up number of threads
+  nThreads_c = asInteger(nThreads);
+  maxThreads = omp_get_max_threads();
   if (nThreads_c <= 0) {
-    nThreads_c = omp_get_max_threads();
+    // if nThreads is set to zero then use everything
+    nThreads_c = maxThreads;
+  }
+  else if (nThreads_c > maxThreads) {
+    // don't allow more threads than the maximum available
+    nThreads_c = maxThreads;
   }
   
   // Now compute the likelihood

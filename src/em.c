@@ -162,14 +162,19 @@ int Iindx(int OPGP, int elem){
 SEXP EM_HMM(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam, SEXP nInd, SEXP nSnps,
             SEXP sexSpec, SEXP seqError, SEXP para, SEXP ss_rf, SEXP nThreads){
   // Initialize variables
-  int s1, s2, fam, ind, snp, g, iter, nIter, parent, noFam_c, nSnps_c, sexSpec_c, seqError_c, nThreads_c;
+  int s1, s2, fam, ind, snp, g, iter, nIter, parent, noFam_c, nSnps_c, sexSpec_c, seqError_c, nThreads_c, maxThreads;
   double sum, sumA, sumB, a, b, delta;
 
   // set up number of threads
   nThreads_c = asInteger(nThreads);
+  maxThreads = omp_get_max_threads();
   if (nThreads_c <= 0) {
     // if nThreads is set to zero then use everything
-    nThreads_c = omp_get_max_threads();
+    nThreads_c = maxThreads;
+  }
+  else if (nThreads_c > maxThreads) {
+    // don't allow more threads than the maximum available
+    nThreads_c = maxThreads;
   }
 
   // Copy values of R input into C objects
@@ -544,14 +549,19 @@ int Iindx_up(int config, int elem){
 SEXP EM_HMM_UP(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP config, SEXP noFam, SEXP nInd, SEXP nSnps,
                SEXP seqError, SEXP para, SEXP ss_rf, SEXP nThreads){
   // Initialize variables
-  int s1, s2, fam, ind, snp, g, iter, nIter, indx, parent, noFam_c, nSnps_c, seqError_c, nThreads_c;
+  int s1, s2, fam, ind, snp, g, iter, nIter, indx, parent, noFam_c, nSnps_c, seqError_c, nThreads_c, maxThreads;
   double sum, sumA, sumB, a, b, delta;
 
   // set up number of threads
   nThreads_c = asInteger(nThreads);
+  maxThreads = omp_get_max_threads();
   if (nThreads_c <= 0) {
     // if nThreads is set to zero then use everything
-    nThreads_c = omp_get_max_threads();
+    nThreads_c = maxThreads;
+  }
+  else if (nThreads_c > maxThreads) {
+    // don't allow more threads than the maximum available
+    nThreads_c = maxThreads;
   }
 
   // Copy values of R input into C objects
