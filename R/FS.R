@@ -83,14 +83,14 @@ FS <- R6Class("FS",
                      cat("  BI SNPs:\t",length(private$group$BI),"\n")
                      cat("  Total SNPs:\t",length(unlist(private$group)),"\n\n")
                      ## linkage group information (if any)
-                     if(is.null(private$LG)){
+                     if(is.null(private$LG) & (!is.null(private$LG_mat) || !is.null(private$LG_pat))){
                        cat("Linkage Group Summary:\n")
                        MI <- unlist(lapply(private$LG_mat, length))
                        PI <- unlist(lapply(private$LG_pat, length))
                        tab <- cbind(LG=1:(length(MI)+length(PI)),MI=c(MI,rep(0,length(PI))),PI=c(rep(0,length(MI)),PI))
                        prmatrix(tab, rowlab = rep("",nrow(tab)))
                      }
-                     else{
+                     else if(!is.null(private$LG)){
                        cat("Linkage Group Summary:\n")
                        MI <- unlist(lapply(private$LG, function(x) sum(x %in% private$group$MI)))
                        PI <- unlist(lapply(private$LG, function(x) sum(x %in% private$group$PI)))
@@ -396,81 +396,89 @@ Please select one of the following:
                   ## if paternal groups, map the BIs
                   if(!is.null(private$LG_pat))
                     newLGlist_pat <- private$mapBISnps(unmapped, parent="paternal", LODthres=LODthres, nComp=nComp)
-                  
                   if(exists("newLGlist_mat") & exists("newLGlist_pat")){
-                    
-                    ## work out which LGs go together
-                    indx_mat <- sapply(unmapped, function(x){ which(unlist(lapply(newLGlist_mat, function(y) any(x == y))))}, simplify=F)
-                    indx_pat <- sapply(unmapped, function(x){ which(unlist(lapply(newLGlist_pat, function(y) any(x == y))))}, simplify=F)
-                    mappedBI <- which(sapply(1:length(unmapped), function(y) length(indx_mat[[y]]) != 0 &  length(indx_pat[[y]])))
-                    nmat <- length(private$LG_mat)
-                    npat <- length(private$LG_pat)
-                    tabBI <- table(unlist(factor(indx_mat[mappedBI], levels=1:nmat)),
-                                   unlist(factor(indx_pat[mappedBI], levels=1:npat)))
-                    finish <- FALSE
-                    mappedLG_mat <- mappedLG_pat <- numeric(0)
-                    while(!finish){
-                      if(length(mappedLG_mat) == nmat || length(mappedLG_pat) == npat){
-                        finish = TRUE
-                        next
-                      }
-                      maxv <- max(tabBI[which(!(1:nmat %in% mappedLG_mat)),which(!(1:npat %in% mappedLG_pat))], na.rm=T)
-                      if(maxv == 0){
-                        finish = TRUE
-                        next
-                      }
-                      temp <- which(tabBI == maxv, arr.ind=T)[1,]
-                      tabBI[t(temp)] <- NA
-                      mappedLG_mat <- c(mappedLG_mat,(1:nmat)[temp[1]])
-                      mappedLG_pat <- c(mappedLG_pat,(1:npat)[temp[2]])
+                    if(length(newLGlist_mat) == 0 || length(newLGlist_pat) == 0){
+                      cat("No BI SNPs mapped to maternal or/and paternal linkage groups. Un able to merge Linkage groups")
                     }
-                    nmapped <- length(mappedLG_mat)
-                    ## Check whether there are still any lingering LGs that could be mapped
-                    if(unique(length(mappedLG_mat)) < nmat){
-                      tomap <- which(!(1:nmat %in% mappedLG_mat))
-                      if(max(tabBI[tomap,], na.rm=T) > 0){
-                        for(matlg in tomap){
-                          patlg <- which.max(tabBI[matlg,])
-                          mappedLG_mat <- c(mappedLG_mat,matlg)
-                          mappedLG_pat <- c(mappedLG_pat,patlg)
-                          tabBI[matlg,patlg] <- NA
+                    else{
+                      ## work out which LGs go together
+                      indx_mat <- sapply(unmapped, function(x){ which(unlist(lapply(newLGlist_mat, function(y) any(x == y))))}, simplify=F)
+                      indx_pat <- sapply(unmapped, function(x){ which(unlist(lapply(newLGlist_pat, function(y) any(x == y))))}, simplify=F)
+                      mappedBI <- which(sapply(1:length(unmapped), function(y) length(indx_mat[[y]]) != 0 &  length(indx_pat[[y]])))
+                      nmat <- length(private$LG_mat)
+                      npat <- length(private$LG_pat)
+                      tabBI <- table(unlist(factor(indx_mat[mappedBI], levels=1:nmat)),
+                                     unlist(factor(indx_pat[mappedBI], levels=1:npat)))
+                      finish <- FALSE
+                      mappedLG_mat <- mappedLG_pat <- numeric(0)
+                      indmat <- 1:nmat
+                      indpat <- 1:npat
+                      while(!finish){
+                        if(length(mappedLG_mat) == nmat || length(mappedLG_pat) == npat){
+                          finish = TRUE
+                          next
+                        }
+                        indrow <- which(!(indmat %in% mappedLG_mat))
+                        indcol <- which(!(indpat %in% mappedLG_pat))
+                        tempBI <- matrix(tabBI[indrow,indcol], nrow=length(indrow), ncol=length(indcol))
+                        maxv <- max(tempBI, na.rm=T)
+                        if(maxv == 0){
+                          finish = TRUE
+                          next
+                        }
+                        temp <- which(tempBI == maxv, arr.ind=T)[1,]
+                        tabBI[indrow[temp[1]], indcol[temp[2]]] <- NA
+                        mappedLG_mat <- c(mappedLG_mat,indrow[temp[1]])
+                        mappedLG_pat <- c(mappedLG_pat,indcol[temp[2]])
+                      }
+                      nmapped <- length(mappedLG_mat)
+                      ## Check whether there are still any lingering LGs that could be mapped
+                      if(unique(length(mappedLG_mat)) < nmat){
+                        tomap <- which(!(1:nmat %in% mappedLG_mat))
+                        if(max(tabBI[tomap,], na.rm=T) > 0){
+                          for(matlg in tomap){
+                            patlg <- which.max(tabBI[matlg,])
+                            mappedLG_mat <- c(mappedLG_mat,matlg)
+                            mappedLG_pat <- c(mappedLG_pat,patlg)
+                            tabBI[matlg,patlg] <- NA
+                          }
                         }
                       }
-                    }
-                    if(unique(length(mappedLG_pat)) < npat){
-                      tomap <- which(!(1:npat %in% mappedLG_pat))
-                      if(max(tabBI[,tomap], na.rm=T) > 0){
-                        for(patlg in tomap){
-                          matlg <- which.max(tabBI[,patlg])
-                          mappedLG_mat <- c(mappedLG_mat,matlg)
-                          mappedLG_pat <- c(mappedLG_pat,patlg)
-                          tabBI[matlg,patlg]
+                      if(unique(length(mappedLG_pat)) < npat){
+                        tomap <- which(!(1:npat %in% mappedLG_pat))
+                        if(max(tabBI[,tomap], na.rm=T) > 0){
+                          for(patlg in tomap){
+                            matlg <- which.max(tabBI[,patlg])
+                            mappedLG_mat <- c(mappedLG_mat,matlg)
+                            mappedLG_pat <- c(mappedLG_pat,patlg)
+                            tabBI[matlg,patlg]
+                          }
                         }
                       }
-                    }
-                    ## Now combine groups with only the BIs mapped to same groups
-                    LGmerged <- list()
-                    for(lg in 1:nmapped){
-                      LGmerged[[lg]] <- c(newLGlist_mat[[mappedLG_mat[lg]]], newLGlist_pat[[mappedLG_pat[lg]]])
-                    }
-                    ## check for extra groups that have been mapped
-                    if(nmapped != length(mappedLG_mat)){
-                      for(lg in (nmapped+1):length(mappedLG_mat)){
-                        matlg <- which(mappedLG_mat[1:nmapped] == mappedLG_mat[lg])
-                        patlg <- which(mappedLG_pat[1:nmapped] == mappedLG_pat[lg])
-                        if(length(matlg) == 0)
-                          LGmerged[[patlg]] <- c(LGmerged[[patlg]],newLGlist_mat[[mappedLG_mat[lg]]])
-                        else if(length(patlg) == 0)
-                          LGmerged[[matlg]] <- c(LGmerged[[matlg]],newLGlist_mat[[mappedLG_pat[lg]]])
+                      ## Now combine groups with only the BIs mapped to same groups
+                      LGmerged <- list()
+                      for(lg in 1:nmapped){
+                        LGmerged[[lg]] <- c(newLGlist_mat[[mappedLG_mat[lg]]], newLGlist_pat[[mappedLG_pat[lg]]])
                       }
+                      ## check for extra groups that have been mapped
+                      if(nmapped != length(mappedLG_mat)){
+                        for(lg in (nmapped+1):length(mappedLG_mat)){
+                          matlg <- which(mappedLG_mat[1:nmapped] == mappedLG_mat[lg])
+                          patlg <- which(mappedLG_pat[1:nmapped] == mappedLG_pat[lg])
+                          if(length(matlg) == 0)
+                            LGmerged[[patlg]] <- c(LGmerged[[patlg]],newLGlist_mat[[mappedLG_mat[lg]]])
+                          else if(length(patlg) == 0)
+                            LGmerged[[matlg]] <- c(LGmerged[[matlg]],newLGlist_mat[[mappedLG_pat[lg]]])
+                        }
+                      }
+                      ## Clean-up: remove BI SNPs which only mapped to one LG and remove duplicates
+                      for(lg in 1:length(LGmerged)){
+                        bi_indx <- LGmerged[[lg]] %in% private$group$BI
+                        bisnps <- LGmerged[[lg]][which(bi_indx)]
+                        LGmerged[[lg]] <- c(LGmerged[[lg]][which(!bi_indx)],unique(bisnps[duplicated(bisnps)]))
+                      }
+                      private$LG <- LGmerged
                     }
-                    ## Clean-up: remove BI SNPs which only mapped to one LG and remove duplicates
-                    for(lg in 1:length(LGmerged)){
-                      bi_indx <- LGmerged[[lg]] %in% private$group$BI
-                      bisnps <- LGmerged[[lg]][which(bi_indx)]
-                      LGmerged[[lg]] <- c(LGmerged[[lg]][which(!bi_indx)],unique(bisnps[duplicated(bisnps)]))
-                    }
-                    private$LG <- LGmerged
                   }
                   else if(exists("newLGlist_mat")){
                     private$LG <- newLGlist_mat

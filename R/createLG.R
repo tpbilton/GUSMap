@@ -43,7 +43,8 @@ createLG <- function(group, LOD, parent, LODthres, nComp, masked){
         next
       }
     }
-    meanLOD <- apply(LOD[unmapped,unmapped],2,function(x) mean(sort(x,decreasing = T)[1:nComp], na.rm=T))
+    meanLOD <- apply(matrix(LOD[unmapped,unmapped], nrow=length(unmapped), ncol=length(unmapped)),
+                     2,function(x) mean(sort(x,decreasing = T)[1:nComp], na.rm=T))
     finish <- !any(meanLOD > LODthres)
     LG <- c(LG,list(newLG))
   }
