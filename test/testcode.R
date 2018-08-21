@@ -17,11 +17,11 @@ simData$plotLG(parent="maternal")
 simData$plotLG(parent="paternal")
 simData$plotLG(parent="both")
 
-simData$addBIsnps()
+simData$addBIsnps(LODthres=5)
 simData$plotLG(parent="maternal")
 simData$plotLG(parent="paternal")
 
-simData$orderLG(weight = "LOD2", mapfun = "morgan", ndim=30)
+simData$orderLG(weight = "LOD", mapfun = "morgan", ndim=30)
 
 simData$rf_est()
 
@@ -30,6 +30,9 @@ simData$setLG()
 
 simData$orderLG(chrom=1, weight = "none", ndim=30)
 simData$orderLG(chrom=2, mapfun="morgan", weight = "none", ndim=5)
+
+simData$rf_est()
+
 
 simData$rf_est(chrom=1, mapped = F)
 

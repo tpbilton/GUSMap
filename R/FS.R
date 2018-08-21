@@ -83,27 +83,34 @@ FS <- R6Class("FS",
                      cat("  BI SNPs:\t",length(private$group$BI),"\n")
                      cat("  Total SNPs:\t",length(unlist(private$group)),"\n\n")
                      ## linkage group information (if any)
-                     if(is.null(private$LG) & (!is.null(private$LG_mat) || !is.null(private$LG_pat))){
-                       cat("Linkage Group Summary:\n")
-                       MI <- unlist(lapply(private$LG_mat, length))
-                       PI <- unlist(lapply(private$LG_pat, length))
-                       tab <- cbind(LG=1:(length(MI)+length(PI)),MI=c(MI,rep(0,length(PI))),PI=c(rep(0,length(MI)),PI))
-                       prmatrix(tab, rowlab = rep("",nrow(tab)))
-                     }
-                     else if(!is.null(private$LG)){
-                       cat("Linkage Group Summary:\n")
-                       MI <- unlist(lapply(private$LG, function(x) sum(x %in% private$group$MI)))
-                       PI <- unlist(lapply(private$LG, function(x) sum(x %in% private$group$PI)))
-                       BI <- unlist(lapply(private$LG, function(x) sum(x %in% private$group$BI)))
-                       TOTAL <- unlist(lapply(private$LG, length))
-                       tab <- cbind(LG=1:(length(private$LG)),MI,PI,BI,TOTAL)
-                       if(!is.null(private$para)){
-                        DIST_MAT <- extendVec(unlist(lapply(private$para$rf_m, function(x) round(sum(mfun(x, fun="haldane", centiM = T)),2)), nrow(tab)))
-                        DIST_PAT <- extendVec(unlist(lapply(private$para$rf_p, function(x) round(sum(mfun(x, fun="haldane", centiM = T)),2)), nrow(tab)))
-                        ERR <- extendVec(round(unlist(private$para$ep),5), nrow(tab))
-                        tab <- cbind(tab,DIST_MAT,DIST_PAT,ERR)
-                       }
-                       prmatrix(tab, rowlab = rep("",nrow(tab)))
+                     if(!is.null(private$LG_mat) || !is.null(private$LG_pat)){
+                      if(is.null(private$LG)){
+                        cat("Linkage Group Summary:\n")
+                        MI <- unlist(lapply(private$LG_mat, length))
+                        PI <- unlist(lapply(private$LG_pat, length))
+                        tab <- cbind(LG=1:(length(MI)+length(PI)),MI=c(MI,rep(0,length(PI))),PI=c(rep(0,length(MI)),PI))
+                        prmatrix(tab, rowlab = rep("",nrow(tab)))
+                      }
+                      else if(!is.null(private$LG)){
+                        cat("Linkage Group Summary:\n")
+                        MI <- unlist(lapply(private$LG, function(x) sum(x %in% private$group$MI)))
+                        PI <- unlist(lapply(private$LG, function(x) sum(x %in% private$group$PI)))
+                        BI <- unlist(lapply(private$LG, function(x) sum(x %in% private$group$BI)))
+                        TOTAL <- unlist(lapply(private$LG, length))
+                        tab <- cbind(LG=1:(length(private$LG)),MI,PI,BI,TOTAL)
+                        if(!is.null(private$para)){
+                          DIST_MAT <- extendVec(unlist(lapply(private$para$rf_m, function(x) round(sum(mfun(x, fun="haldane", centiM = T)),2))), nrow(tab))
+                          DIST_PAT <- extendVec(unlist(lapply(private$para$rf_p, function(x) round(sum(mfun(x, fun="haldane", centiM = T)),2))), nrow(tab))
+                          ERR <- extendVec(round(unlist(private$para$ep),5), nrow(tab))
+                          tab <- cbind(tab,DIST_MAT,DIST_PAT,ERR)
+                        }
+                      }
+                      tab <- addmargins(tab, margin = 1)
+                      rownames(tab) <- NULL
+                      tab[nrow(tab), 1] <- "TOTAL"
+                      if(ncol(tab) > 7)
+                        tab[nrow(tab),8] <- ""
+                      prmatrix(tab, rowlab = rep("",nrow(tab)), quote=F)
                      }
                    }
                    else
@@ -432,6 +439,8 @@ Please select one of the following:
                         mappedLG_pat <- c(mappedLG_pat,indcol[temp[2]])
                       }
                       nmapped <- length(mappedLG_mat)
+                      if(nmapped == 0)
+                        stop("No BI SNPs could be mapped. Maybe try a different LOD threshold.")
                       ## Check whether there are still any lingering LGs that could be mapped
                       if(unique(length(mappedLG_mat)) < nmat){
                         tomap <- which(!(1:nmat %in% mappedLG_mat))
@@ -468,7 +477,7 @@ Please select one of the following:
                           if(length(matlg) == 0)
                             LGmerged[[patlg]] <- c(LGmerged[[patlg]],newLGlist_mat[[mappedLG_mat[lg]]])
                           else if(length(patlg) == 0)
-                            LGmerged[[matlg]] <- c(LGmerged[[matlg]],newLGlist_mat[[mappedLG_pat[lg]]])
+                            LGmerged[[matlg]] <- c(LGmerged[[matlg]],newLGlist_pat[[mappedLG_pat[lg]]])
                         }
                       }
                       ## Clean-up: remove BI SNPs which only mapped to one LG and remove duplicates
@@ -753,7 +762,7 @@ Please select one of the following:
                                          loglik=vector(mode = "list",length = nChr))
                     for(i in chr){
                       cat("Chromosome: ",i,"\n")
-                      indx_chr <- private$LG[[chr]]
+                      indx_chr <- private$LG[[i]]
                       ref_temp <- lapply(private$ref, function(x) x[,indx_chr])
                       alt_temp <- lapply(private$alt, function(x) x[,indx_chr])
                       ## estimate OPGP's
