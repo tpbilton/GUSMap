@@ -445,7 +445,7 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
   LOD.mat <- rbind(cbind(rf.BI[[2]],t(rf.PI.BI[[2]]),t(rf.MI.BI[[2]])),
                    cbind(rf.PI.BI[[2]], rf.PI[[2]], t(rf.MI.PI[[2]])),
                    cbind(rf.MI.BI[[2]], rf.MI.PI[[2]], rf.MI[[2]]))[origOrder,origOrder]
-  LOD.mat[which(LOD.mat) < 0] <- 0  # some negative LOD scores from rounding
+  LOD.mat[which(LOD.mat < 0)] <- 0  # some negative LOD scores from rounding
   return(list(rf = rf.mat,LOD = LOD.mat))
 }
 
