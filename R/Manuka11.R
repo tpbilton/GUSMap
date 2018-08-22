@@ -1,5 +1,5 @@
 ##########################################################################
-# Genotyping Uncertainty with Sequencing data and linkage MAPping
+# Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap)
 # Copyright 2017-2018 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -15,15 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
-### R Function for reading in the Manuka data of chromosome 11.
-### Author: Timothy Bilton
-### Date: 6/02/18
-
-## Wrapper function for reading in the Manuka data set for chromosome 11
 #' Manuka chromosome 11 SNPs and pedigree file
 #' 
-#' Function for extracting the path to the (VCF) file of the Manuka data used in the publication by Bilton et
-#' al. (2017) and a pedigree file that goes with the data.
+#' Function for extracting the path to the (VCF) file of the Manuka data used in the publication by \insertCite{bilton2018genetics1;textual}{GUSMap}
+#' and a pedigree file that goes with the data.
 #' 
 #' The data consists of 680 SNPs, genotyped using genotyping-by-sequencing
 #' methods. The data is in VCF format (see this \href{https://samtools.github.io/hts-specs/VCFv4.2.pdf}{page} 
@@ -38,19 +33,17 @@
 #' given must be the same for all the progeny.
 #' }
 #' 
-#' @return Function outputs a character string of the complete path to the manuka data set contained in the package
+#' @return A character string of the complete path to the manuka data set contained in the package
 #' and a pedigree file that goes with the data.
 #' @author Timothy P. Bilton
-#' @references Bilton, T.P., Schofield, M.R., Black, M.A., Chagné, D., Wilcox,
-#' P.L., Dodds K.G. (2017). Accounting for errors in low coverage high-throughput
-#' sequencing data when constructing genetic maps using biparental outcrossed
-#' populations. Unpublished Manuscript.
+#' @references
+#' \insertRef{bilton2018genetics1}{GUSMap}
 #' @examples
-#' ## extract the name of the vcf fileand the pedigree file
+#' ## extract the name of the vcf file and the pedigree file
 #' Manuka11()
 #' 
-#' @export Manuka11
-
+#' @export
+## Wrapper function for reading in the Manuka data set for chromosome 11
 Manuka11 <- function(){
   return(list(vcf=system.file("extdata", "Manuka_chr11.vcf", package="GUSMap"),
               ped=system.file("extdata", "Manuka_chr11_ped.csv", package="GUSMap")))

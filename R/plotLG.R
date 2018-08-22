@@ -14,8 +14,8 @@ plotLG <- function(mat, LG, filename=NULL, names=NULL, chrS=2, lmai=2, chrom=T){
     chrom.ind <- 1:ncol(mat)
 
   ## Subset the matrix
-  mat <- cbind(mat,rep(0,b-1))
-  mat <- rbind(mat,rep(0,b))
+  mat <- cbind(mat,rep(0.5,b-1))
+  mat <- rbind(mat,rep(0.5,b))
   mat <- mat[chrom.ind,chrom.ind]
   ## work out where the breaks are
   breaks <- which(chrom.ind==b)

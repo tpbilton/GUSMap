@@ -100,13 +100,11 @@
 #' OPGP <- infer_OPGP_FS(F1data$ref, F1data$alt, config)
 #' 
 #' ## Estimate the recombination fractions
-#' ## Use all available OpenMP threads
 #' rf_est_FS(ref = list(F1data$ref), alt = list(F1data$alt), OPGP = list(OPGP), noFam = 1)
 #' ## To change the optimzation parameters 
 #' ## Max number of iterations for the EM algorithm set at 100
-#' ## Use 2 OpenMP threads
 #' rf_est_FS(ref = list(F1data$ref), alt = list(F1data$alt), OPGP = list(OPGP),
-#'   noFam = 1, nThreads=2, maxit=100)
+#'   noFam = 1, maxit=100)
 #' ## The algorithm will dtop when the difference between the likelihood at sucessive iterations is less
 #' ## than 0.00001
 #' rf_est_FS(ref = list(F1data$ref), alt = list(F1data$alt), OPGP = list(OPGP),
@@ -129,10 +127,8 @@
 #'           alt = list(Fam1$alt,Fam2$alt), OPGP = list(OPGP_1,OPGP_2), noFam = 2)
 #'           
 #' 
-#' @export rf_est_FS
 rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
-                      sexSpec=F, seqErr=T, trace=F, noFam=1, method = "optim",
-                      nThreads=0, ...){
+                      sexSpec=F, seqErr=T, trace=F, noFam=as.integer(1), method = "optim", nThreads=0, ...){
   
   ## Do some checks
   # if(!is.list(ref) | !is.list(alt) | !is.list(OPGP))
@@ -153,8 +149,8 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
   #   trace = FALSE
   # if( !is.logical(sexSpec) || is.na(sexSpec) )
   #   sexSpec = FALSE
-  if(!(method %in% c("EM","optim","optim_old")))
-    stop("Specified optimization method is unknown. Please select one of 'EM' or 'optim'")
+  #if(!(method %in% c("EM","optim","optim_old")))
+  #  stop("Specified optimization method is unknown. Please select one of 'EM' or 'optim'")
   
   ## Check the read count matrices
   # if(any(unlist(lapply(ref,function(x) !is.numeric(x) || any( x<0 | !is.finite(x)) || any(!(x == round(x)))))))
@@ -171,21 +167,20 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
   #  method = "optim"
   
   ## check inputs are of required type for C functions
-  if(!is.numeric(init_r)|is.integer(init_r))
-    init_r <- as.numeric(init_r)
-  for(fam in 1:noFam){
-    if(!is.integer(ref[[fam]]))
-      ref[[fam]] <- matrix(as.integer(ref[[fam]]), nrow=nInd[[fam]], ncol=nSnps)
-    if(!is.integer(alt[[fam]]))
-      alt[[fam]] <- matrix(as.integer(alt[[fam]]), nrow=nInd[[fam]], ncol=nSnps)
-    if(!is.integer(OPGP[[fam]]))
-      OPGP[[fam]] <- as.integer(OPGP[[fam]])
-  }
-  if(!is.integer(noFam))
-    noFam <- as.integer(noFam)
+  # if(!is.numeric(init_r)|is.integer(init_r))
+  #   init_r <- as.numeric(init_r)
+  # for(fam in 1:noFam){
+  #   if(!is.integer(ref[[fam]]))
+  #     ref[[fam]] <- matrix(as.integer(ref[[fam]]), nrow=nInd[[fam]], ncol=nSnps)
+  #   if(!is.integer(alt[[fam]]))
+  #     alt[[fam]] <- matrix(as.integer(alt[[fam]]), nrow=nInd[[fam]], ncol=nSnps)
+  #   if(!is.integer(OPGP[[fam]]))
+  #     OPGP[[fam]] <- as.integer(OPGP[[fam]])
+  # }
+  # if(!is.integer(noFam))
+  #   noFam <- as.integer(noFam)
   
   if(method=="optim"){
-    cat(">>> In rfEst optim section...\n")
     # Arguments for the optim function
     optim.arg <- list(...)
     if(length(optim.arg) == 0)
@@ -210,16 +205,16 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
       
       # Determine the initial values
       if(length(init_r)==1) 
-        para <- logit2(rep(init_r,sum(npar)))
+        para <- GUSbase::logit2(rep(init_r,sum(npar)))
       else if(length(init_r) != sum(npar)) 
-        para <- logit2(rep(0.1,sum(npar)))
+        para <- GUSbase::logit2(rep(0.1,sum(npar)))
       else
         para <- init_r
       # sequencing error
       if(length(ep) != 1 & !is.null(ep))
-        para <- c(para,logit(0.001))
+        para <- c(para,GUSbase::logit(0.001))
       else if(!is.null(ep))
-        para <- c(para,logit(ep))
+        para <- c(para,GUSbase::logit(ep))
       
       ## Are we estimating the error parameters?
       seqErr=!is.null(ep)
@@ -233,25 +228,21 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
     else{
       # Determine the initial values
       if(length(init_r)==1) 
-        para <- logit2(rep(init_r,nSnps-1))
+        para <- GUSbase::logit2(rep(init_r,nSnps-1))
       else if(length(init_r) != nSnps-1) 
-        para <- logit2(rep(0.1,nSnps-1))
+        para <- GUSbase::logit2(rep(0.1,nSnps-1))
       else
         para <- init_r
       # sequencing error
       if(seqErr)
-        para <- c(para,logit(ep))
+        para <- c(para,GUSbase::logit(ep))
       
-      cat(">>> calling optim...\n")
-      cat(">>> seqErr", seqErr, "\n")
-      tic("RTIME: call to optim")
       ## Find MLE
       optim.MLE <- optim(para, fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err,
                          method="BFGS", control=optim.arg,
                          ref=ref,alt=alt,bcoef_mat=bcoef_mat,Kab=Kab,
                          nInd=nInd,nSnps=nSnps,OPGP=OPGP,noFam=noFam,
                          seqErr=seqErr,extra=ep,nThreads=nThreads)
-      toc()
     }
     # Print out the output from the optim procedure (if specified)
     if(trace){
@@ -262,12 +253,12 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
       warning(paste0('Optimization failed to converge properly with error ',optim.MLE$convergence,'\n smallest MLE estimate is: ', round(min(optim.MLE$par),6)))
     # Return the MLEs
     if(sexSpec)
-      return(list(rf_p=inv.logit2(optim.MLE$par[1:npar[1]]),rf_m=inv.logit2(optim.MLE$par[npar[1]+1:npar[2]]),
-                  ep=ifelse(seqErr,inv.logit(optim.MLE$par[sum(npar)+1]),0),
+      return(list(rf_p=GUSbase::inv.logit2(optim.MLE$par[1:npar[1]]),rf_m=GUSbase::inv.logit2(optim.MLE$par[npar[1]+1:npar[2]]),
+                  ep=ifelse(seqErr,GUSbase::inv.logit(optim.MLE$par[sum(npar)+1]),0),
                   loglik=-optim.MLE$value))
     else
-      return(list(rf=inv.logit2(optim.MLE$par[1:(nSnps-1)]), 
-                  ep=ifelse(seqErr,inv.logit(optim.MLE$par[nSnps]),0),
+      return(list(rf=GUSbase::inv.logit2(optim.MLE$par[1:(nSnps-1)]), 
+                  ep=ifelse(seqErr,GUSbase::inv.logit(optim.MLE$par[nSnps]),0),
                   loglik=-optim.MLE$value))
   }
   if(method=="optim_old"){
@@ -294,14 +285,14 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
       
       # Determine the initial values
       if(length(init_r)==1) 
-        para <- logit2(rep(init_r,sum(npar)))
+        para <- GUSbase::logit2(rep(init_r,sum(npar)))
       else if(length(init_r) != sum(npar)) 
-        para <- logit2(rep(0.1,sum(npar)))
+        para <- GUSbase::logit2(rep(0.1,sum(npar)))
       else
         para <- init_r
       # sequencing error
       if(seqErr)
-        para <- c(para,logit(ep))
+        para <- c(para,GUSbase::logit(ep))
       
       ## Find MLE
       optim.MLE <- optim(para,ll_fs_ss_mp_scaled_err,method="BFGS",control=optim.arg,
@@ -312,14 +303,14 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
     else{
       # Determine the initial values
       if(length(init_r)==1) 
-        para <- logit2(rep(init_r,nSnps-1))
+        para <- GUSbase::logit2(rep(init_r,nSnps-1))
       else if(length(init_r) != nSnps-1) 
-        para <- logit2(rep(0.1,nSnps-1))
+        para <- GUSbase::logit2(rep(0.1,nSnps-1))
       else
         para <- init_r
       # sequencing error
       if(seqErr)
-        para <- c(para,logit(ep))
+        para <- c(para,GUSbase::logit(ep))
       
       ## Find MLE
       optim.MLE <- optim(para,ll_fs_mp_scaled_err,method="BFGS",control=optim.arg,
@@ -336,12 +327,13 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
       warning(paste0('Optimization failed to converge properly with error ',optim.MLE$convergence,'\n smallest MLE estimate is: ', round(min(optim.MLE$par),6)))
     # Return the MLEs
     if(sexSpec)
-      return(list(rf_p=inv.logit2(optim.MLE$par[1:npar[1]]),rf_m=inv.logit2(optim.MLE$par[npar[1]+1:npar[2]]),
-                  ep=ifelse(seqErr,inv.logit(optim.MLE$par[sum(npar)+1]),0),
+      return(list(rf_p=GUSbase::inv.logit2(optim.MLE$par[1:npar[1]]),
+                  rf_m=GUSbase::inv.logit2(optim.MLE$par[npar[1]+1:npar[2]]),
+                  ep=ifelse(seqErr,GUSbase::inv.logit(optim.MLE$par[sum(npar)+1]),0),
                   loglik=-optim.MLE$value))
     else
-      return(list(rf=inv.logit2(optim.MLE$par[1:(nSnps-1)]), 
-                  ep=ifelse(seqErr,inv.logit(optim.MLE$par[nSnps]),0),
+      return(list(rf=GUSbase::inv.logit2(optim.MLE$par[1:(nSnps-1)]), 
+                  ep=ifelse(seqErr,GUSbase::inv.logit(optim.MLE$par[nSnps]),0),
                   loglik=-optim.MLE$value))
   }
   else{ # EM algorithm approach
@@ -377,16 +369,8 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
     ref_mat = do.call(what = "rbind",ref)
     alt_mat = do.call(what = "rbind",alt)
     
-    cat(">>> Calling EM_HMM\n")
-    library(tictoc)
-    tic("RTIME: call to EM_HMM")
-    cat("RDEBUG: NUMS:", noFam, nSnps, "\n")
-    cat("RDEBUG: nInd:", class(unlist(nInd)), typeof(unlist(nInd)), "\n")
-    cat("RDEBUG:", dim(unlist(nInd)), unlist(nInd)[1], "\n")
     EMout <- .Call("EM_HMM", init_r, ep, ref_mat, alt_mat, OPGPmat,
-                   noFam, unlist(nInd), nSnps, sexSpec, seqErr, EM.arg, as.integer(ss_rf),
-                   nThreads)
-    toc()
+                   noFam, unlist(nInd), nSnps, sexSpec, seqErr, EM.arg, as.integer(ss_rf), nThreads=nThreads)
     
     EMout[[3]] = EMout[[3]] + sum(log(choose(ref_mat+alt_mat,ref_mat)))
     
@@ -447,12 +431,12 @@ rf_est_FS_UP <- function(ref, alt, config, ep, method="optim", trace=F, nThreads
     ## Are we estimating the error parameters?
     seqErr=!is.null(ep)
     
-    para <- logit(rep(0.5,sum(npar)))
+    para <- GUSbase::logit(rep(0.5,sum(npar)))
     # sequencing error
     if(length(ep) != 1 & !is.null(ep))
-      para <- c(para,logit(0.01))
+      para <- c(para,GUSbase::logit(0.01))
     else if(!is.null(ep))
-      para <- c(para,logit(ep))
+      para <- c(para,GUSbase::logit(ep))
     
     if(nSnps > 2){
       ## Find MLE
@@ -470,8 +454,8 @@ rf_est_FS_UP <- function(ref, alt, config, ep, method="optim", trace=F, nThreads
         warning(paste0('Optimization failed to converge properly with error ',optim.MLE$convergence,'\n smallest MLE estimate is: ', round(min(optim.MLE$par),6)))
       
       # Return the MLEs
-      return(list(rf_p=inv.logit(optim.MLE$par[1:npar[1]]),rf_m=inv.logit(optim.MLE$par[npar[1]+1:npar[2]]),
-                  ep=inv.logit(optim.MLE$par[sum(npar)+1])))
+      return(list(rf_p=GUSbase::inv.logit(optim.MLE$par[1:npar[1]]),rf_m=GUSbase::inv.logit(optim.MLE$par[npar[1]+1:npar[2]]),
+                  ep=GUSbase::inv.logit(optim.MLE$par[sum(npar)+1])))
     } 
     else if(nSnps == 2){
       ## If both SNPs are informative, need to use the Nelder-Mead to distinguish between the two sexes.
@@ -526,12 +510,8 @@ rf_est_FS_UP <- function(ref, alt, config, ep, method="optim", trace=F, nThreads
     ## Are we estimating the error parameters?
     seqErr=!is.null(ep)
     
-    library(tictoc)
-    tic("RTIME: call to EM_HMM_UP")
     EMout <- .Call("EM_HMM_UP", rep(0.5,(nSnps-1)*2), ep, ref, alt, config,
-                   as.integer(1), nInd, nSnps, seqErr, EM.arg, as.integer(ss_rf),
-                   nThreads)
-    toc()
+                   as.integer(1), nInd, nSnps, seqErr, EM.arg, as.integer(ss_rf), nThreads=nThreads)
     return(list(rf_p=EMout[[1]][ps],rf_m=EMout[[1]][nSnps-1+ms],
                 ep=EMout[[2]],
                 loglik=EMout[[3]]))

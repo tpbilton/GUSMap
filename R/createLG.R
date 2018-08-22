@@ -28,15 +28,23 @@ createLG <- function(group, LOD, parent, LODthres, nComp, masked){
     compLOD <- LOD[newLG,unmapped]
     meanLOD <- apply(compLOD,2,function(x) mean(sort(x,decreasing = T)[1:nComp], na.rm=T))
     maxMeanLOD <- max(meanLOD)
-    while(maxMeanLOD > LODthres ){
+    while(maxMeanLOD > LODthres){
       newSNP <- which(meanLOD == maxMeanLOD)
       newLG <- c(newLG,unmapped[newSNP])
       unmapped <- unmapped[-newSNP]
-      compLOD <- matrix(LOD[newLG,unmapped],ncol=length(unmapped))
-      meanLOD <- apply(compLOD,2,function(x) mean(sort(x,decreasing = T)[1:nComp], na.rm=T))
-      maxMeanLOD <- max(meanLOD)
+      if(length(unmapped) > 0){
+        compLOD <- matrix(LOD[newLG,unmapped],ncol=length(unmapped))
+        meanLOD <- apply(compLOD,2,function(x) mean(sort(x,decreasing = T)[1:nComp], na.rm=T))
+        maxMeanLOD <- max(meanLOD)
+      }
+      else {
+        finish = TRUE
+        maxMeanLOD = -999
+        next
+      }
     }
-    meanLOD <- apply(LOD[unmapped,unmapped],2,function(x) mean(sort(x,decreasing = T)[1:nComp], na.rm=T))
+    meanLOD <- apply(matrix(LOD[unmapped,unmapped], nrow=length(unmapped), ncol=length(unmapped)),
+                     2,function(x) mean(sort(x,decreasing = T)[1:nComp], na.rm=T))
     finish <- !any(meanLOD > LODthres)
     LG <- c(LG,list(newLG))
   }

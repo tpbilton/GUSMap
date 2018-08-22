@@ -7,12 +7,12 @@
 Manuka11()
 }
 \value{
-Function outputs a character string of the complete path to the manuka data set contained in the package
+A character string of the complete path to the manuka data set contained in the package
 and a pedigree file that goes with the data.
 }
 \description{
-Function for extracting the path to the (VCF) file of the Manuka data used in the publication by Bilton et
-al. (2017) and a pedigree file that goes with the data.
+Function for extracting the path to the (VCF) file of the Manuka data used in the publication by \insertCite{bilton2018genetics1;textual}{GUSMap}
+and a pedigree file that goes with the data.
 }
 \details{
 The data consists of 680 SNPs, genotyped using genotyping-by-sequencing
@@ -29,15 +29,12 @@ given must be the same for all the progeny.
 }
 }
 \examples{
-## extract the name of the vcf fileand the pedigree file
+## extract the name of the vcf file and the pedigree file
 Manuka11()
 
 }
 \references{
-Bilton, T.P., Schofield, M.R., Black, M.A., Chagné, D., Wilcox,
-P.L., Dodds K.G. (2017). Accounting for errors in low coverage high-throughput
-sequencing data when constructing genetic maps using biparental outcrossed
-populations. Unpublished Manuscript.
+\insertRef{bilton2018genetics1}{GUSMap}
 }
 \author{
 Timothy P. Bilton

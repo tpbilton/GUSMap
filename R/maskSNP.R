@@ -11,35 +11,20 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-#
+# 
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
-#
-#' Genotyping Uncertainty with Sequencing data for linkage Mapping (GUSMap)
+#' Mask and unmask SNPs 
 #' 
-#' Package for constructing genetic maps using outcrossed full-sib family
-#' populations that have been sequenced using next generation multiplexing
-#' sequencing methods \insertCite{@see @bilton2018genetics1}{GUSMap}.
-#'
-#' \tabular{ll}{ Package: \tab GUSMap\cr Type: \tab Package\cr Version: \tab
-#' 1.0.0\cr Date: \tab 2018-08-15\cr License: \tab GPL 3\cr }
-#'
-#' @name GUSMap-package
-#' @aliases GUSMap
-#' @docType package
-#' @author Timothy P. Bilton, Maintainer: Timothy P. Bilton
-#' <tbilton@@maths.otago.ac.nz>
-#' @references
-#' \insertAllCited{}
-#' @keywords package
-#' @importFrom Rdpack reprompt
-#' @importFrom R6 R6Class
-#' @importFrom GUSbase logit
-#' @importFrom GUSbase inv.logit
-#' @importFrom GUSbase logit2
-#' @importFrom GUSbase inv.logit2
+#' Method for masking and unmasking SNPs in an FS object. 
+#' 
+#' @usage
+#' FS$obj$maskSNP(snps)
+#' 
+#' FS$obj$unmaskSNP(snps)
+#' 
+#' @name $maskSNP
+#' @aliases $unmaskSNP
+#' @author Timothy P. Bilton
 NULL
-
-
-

@@ -1,31 +1,89 @@
-#' @export createPop
-
-#### Function for creating a particular population structure
-createPop <- function(R6obj, pop = c("full-sib"), ...){
-  
-  ## Make new R6 object depending on the family type.
-  if(pop == "full-sib")
-    newObj <- FS$new(R6obj)
-  else if(pop == "unrelated")
-    newObj <- UR$new(R6obj)
-  else
-    stop(paste("Population structure",pop,"has not yet be implemented\n"))
-  
-  ## Create the population
-  return(makePop(newObj,...))
-}
-
-
-
-### Generic method for creating a population
-makePop <- function(obj, ...){
-  UseMethod("makePop")
-}
+##########################################################################
+# Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap)
+# Copyright 2017-2018 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#########################################################################
+#' Make a full-sib family (FS) population
+#'
+#' Create an FS object from an RA object, perform standard filtering and computes statistics specific to full-sib family populations.
+#' 
+#' The segregation type of each SNP is infer based on the genotypes of the parents. The parental genotypes are called homozygous for the 
+#' reference is there is only reference reads seen, heterozygous if at least one read for the reference and alternate allele are seen
+#' and homozygous for the alternate if only reads for the alternate allele is seen. The \code{BIN} filter is implemented to remove any SNPs
+#' with incorrect segregation type. The segregation test procedure for performing the segregation test is described in the supplementary methods 
+#' of the publication by \insertCite{bilton2018genetics1;textual}{GUSMap} (Section 4 of File S1).
+#' 
+#' @param RAobj Object of class RA created via the \code{\link[GUSbase]{readRA}} function.
+#' @param pedfile Character string giving the file name (relative to the current directory) of the pedigree file.
+#' @param family Vector of character strings giving the families to retain in the FS object. This allows a pedigree file with more than one family to be supplied.
+#' @param filter Named list of thresholds for various filtering criteria.
+#' See below for details.
+#' 
+#' @section Filtering:
+#' The filtering criteria currently implemented are:
+#' \itemize{
+#' \item{Proportion of missing data (\code{BIN}): }{SNPs are binned together if the distance between them is less than threshold value of base pairs (default is 0).
+#' One SNP is then randomly selected from each bin and retained for final analysis. This filtering is to ensure that there is only one SNP on each tag.}
+#' \item{Parental read depth (\code{DEPTH}): }{SNPs are discarded if the read depth of either parent is less than the threshold value (default is 6). 
+#' This filter is to remove SNPs where the parental information is insufficient to infer segregation type.}
+#' \item{Minor allele frequency (\code{MAF}): }{SNPs are discarded if their MAF is less than the threshold (default is 0.05)}
+#' \item{Proportion of missing data (\code{MISS}): }{SNPs are discarded if the proportion of individuals with no reads (e.g. missing genotype)
+#'  is greater than the threshold value (default is 0.5).}
+#' \item{Segregation test P-value (\code{PVALUE}): }{SNPs are discarded if the p-value from a segregation test is smaller than the threshold (default is 0.01).
+#'  This removes SNPs with the wrong segregation type.}
+#' }
+#' 
+#' @section Pedigree File:
+#' The pedigree file must be a csv file contains the five columns:
+#' \itemize{
+#' \item SampleID: A unique character string of the sample ID. These correspond to those found in the VCF file
+#' \item IndividualID: A character giving the ID number of the individual for which the sample corresponds to.
+#' Note that some samples can be from the same individual. 
+#' \item Mother: The ID of the mother as given in the IndividualID. Note, if the mother is unknown then this should be left blank.
+#' \item Father: The ID of the father as given in the IndividualID. Note, if the father is unknown then this should be left blank.
+#' \item Family: The name of the Family for a group of progeny with the same parents. Note that this is not necessary (it works all the full-sib families) but if
+#' given must be the same for all the progeny.
+#' }
+#' Grandparents can also be supplied but are only used to infer parental genotypes when the associated read depth is below the threshold \code{DEPTH}.
+#' 
+#' @return 
+#' An R6 object of class RA
+#' @author Timothy P. Bilton
+#' @examples 
+#' ## extract filename for Manuka dataset in GUSMap package
+#' vcffile <- Manuka11()
+#' 
+#' ## Convert VCF to RA format
+#' rafile <- VCFtoRA(vcffile$vcf)
+#' 
+#' ## read in the RA data
+#' mkdata <- readRA(rafile)
+#' 
+#' ## Create the FS population
+#' makeFS(mkdata, pedfile=vcffile$ped)
+#' @references
+#' \insertRef{bilton2018genetics1}{GUSMap}
+#' @export
 
 ### Make a full-sib family population
-makePop.FS <- function(R6obj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0.2, BIN=0, DEPTH=5, PVALUE=0.01), inferSNPs = FALSE, perInfFam=1){
-  
+makeFS <- function(RAobj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0.2, BIN=0, DEPTH=5, PVALUE=0.01)){
+  #inferSNPs = FALSE, perInfFam=1){
+  inferSNPs = FALSE; perInfFam=1 # some variables for multiple familes needed for later
   ## Do some checks
+  if(!all(class(RAobj) %in% c("RA","R6")))
+    stop("First argument supplied is not of class 'R6' and 'RA'")
   if(is.null(filter$MAF) || filter$MAF<0 || filter$MAF>1 || !is.numeric(filter$MAF)){
     warning("Minor allele filter has not be specified or is invalid. Setting to 5%:")
     filter$MAF <- 0.05
@@ -49,6 +107,9 @@ makePop.FS <- function(R6obj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0
     filter$PVALUE <- 0.05
   }
   
+  ## initalize the UR object
+  FSobj <- FS$new(RAobj)
+  
   ## Define variables that will be used.
   cat("-------------\n")
   cat("Processing Data.\n\n")
@@ -56,11 +117,12 @@ makePop.FS <- function(R6obj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0
   cat("Filtering criteria for removing SNPs:\n")
   cat("Minor allele frequency (MAF) < ", filter$MAF,"\n", sep="")
   cat("Percentage of missing genotypes > ", filter$MISS*100,"%\n", sep="")
+  cat("Distance for binning SNPs <= ", filter$BIN," bp\n", sep="")
   cat("Read depth associated with at least one parental genotype <= ", filter$DEPTH,"\n", sep="")
   cat("P-value for segregation test < ", filter$PVALUE,"%\n\n", sep="")
   ## Extract the private variables we want
-  indID <- R6obj$.__enclos_env__$private$indID
-  nSnps <- R6obj$.__enclos_env__$private$nSnps
+  indID <- FSobj$.__enclos_env__$private$indID
+  nSnps <- FSobj$.__enclos_env__$private$nSnps
   
   ## sort out the pedigree
   ped <- read.csv(pedfile, stringsAsFactors=F)
@@ -78,6 +140,8 @@ makePop.FS <- function(R6obj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0
     if(any(!(family %in% unique(ped$Family)[!is.na(unique(ped$Family))])))
       stop("Family missing from the pedigree file. Please check the family ID suppied or the pedigree file.")
   }
+  if(length(family)>1)
+    stop("Multiple are yet to be implemented")
   ## Create each family
   for(fam in family){
     progIndx <- which(ped$Family == fam)
@@ -144,33 +208,33 @@ makePop.FS <- function(R6obj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0
     nInd <- length(progIndx)
     indID_all[[fam]] <- indID[progIndx]
     ## Subset the genon and depth matrices
-    genon     <- R6obj$.__enclos_env__$private$genon[progIndx,]
-    ref <- R6obj$.__enclos_env__$private$ref[progIndx,]
-    alt <- R6obj$.__enclos_env__$private$alt[progIndx,]
-
+    genon     <- FSobj$.__enclos_env__$private$genon[progIndx,]
+    ref <- FSobj$.__enclos_env__$private$ref[progIndx,]
+    alt <- FSobj$.__enclos_env__$private$alt[progIndx,]
+    
     ## Determine the segregation types of the loci
-    genon_mum <- matrix(R6obj$.__enclos_env__$private$genon[mumIndx,], nrow=length(mumIndx), ncol=nSnps) 
-    genon_dad <- matrix(R6obj$.__enclos_env__$private$genon[dadIndx,], nrow=length(mumIndx), ncol=nSnps)
-    depth_mum <- matrix(R6obj$.__enclos_env__$private$ref[mumIndx,] +
-                          R6obj$.__enclos_env__$private$alt[mumIndx,], nrow=length(mumIndx), ncol=nSnps)
-    depth_dad <- matrix(R6obj$.__enclos_env__$private$ref[dadIndx,] +
-                          R6obj$.__enclos_env__$private$alt[dadIndx,], nrow=length(mumIndx), ncol=nSnps)
+    genon_mum <- matrix(FSobj$.__enclos_env__$private$genon[mumIndx,], nrow=length(mumIndx), ncol=nSnps) 
+    genon_dad <- matrix(FSobj$.__enclos_env__$private$genon[dadIndx,], nrow=length(mumIndx), ncol=nSnps)
+    depth_mum <- matrix(FSobj$.__enclos_env__$private$ref[mumIndx,] +
+                          FSobj$.__enclos_env__$private$alt[mumIndx,], nrow=length(mumIndx), ncol=nSnps)
+    depth_dad <- matrix(FSobj$.__enclos_env__$private$ref[dadIndx,] +
+                          FSobj$.__enclos_env__$private$alt[dadIndx,], nrow=length(mumIndx), ncol=nSnps)
     
     if(patgrandparents){
-      genon_patgrandmum <- matrix(R6obj$.__enclos_env__$private$genon[patgrandmumIndx,], nrow=length(patgrandmumIndx), ncol=nSnps) 
-      depth_patgrandmum <- matrix(R6obj$.__enclos_env__$private$ref[patgrandmumIndx,] +
-                            R6obj$.__enclos_env__$private$alt[patgrandmumIndx,], nrow=length(patgrandmumIndx), ncol=nSnps)
-      genon_patgranddad <- matrix(R6obj$.__enclos_env__$private$genon[patgranddadIndx,], nrow=length(patgranddadIndx), ncol=nSnps) 
-      depth_patgranddad <- matrix(R6obj$.__enclos_env__$private$ref[patgranddadIndx,] +
-                                    R6obj$.__enclos_env__$private$alt[patgranddadIndx,], nrow=length(patgranddadIndx), ncol=nSnps)
+      genon_patgrandmum <- matrix(FSobj$.__enclos_env__$private$genon[patgrandmumIndx,], nrow=length(patgrandmumIndx), ncol=nSnps) 
+      depth_patgrandmum <- matrix(FSobj$.__enclos_env__$private$ref[patgrandmumIndx,] +
+                                    FSobj$.__enclos_env__$private$alt[patgrandmumIndx,], nrow=length(patgrandmumIndx), ncol=nSnps)
+      genon_patgranddad <- matrix(FSobj$.__enclos_env__$private$genon[patgranddadIndx,], nrow=length(patgranddadIndx), ncol=nSnps) 
+      depth_patgranddad <- matrix(FSobj$.__enclos_env__$private$ref[patgranddadIndx,] +
+                                    FSobj$.__enclos_env__$private$alt[patgranddadIndx,], nrow=length(patgranddadIndx), ncol=nSnps)
     }
     if(matgrandparents){
-      genon_matgrandmum <- matrix(R6obj$.__enclos_env__$private$genon[matgrandmumIndx,], nrow=length(matgrandmumIndx), ncol=nSnps) 
-      depth_matgrandmum <- matrix(R6obj$.__enclos_env__$private$ref[matgrandmumIndx,] +
-                                    R6obj$.__enclos_env__$private$alt[matgrandmumIndx,], nrow=length(matgrandmumIndx), ncol=nSnps)
-      genon_matgranddad <- matrix(R6obj$.__enclos_env__$private$genon[matgranddadIndx,], nrow=length(matgranddadIndx), ncol=nSnps) 
-      depth_matgranddad <- matrix(R6obj$.__enclos_env__$private$ref[matgranddadIndx,] +
-                                    R6obj$.__enclos_env__$private$alt[matgranddadIndx,], nrow=length(matgranddadIndx), ncol=nSnps)
+      genon_matgrandmum <- matrix(FSobj$.__enclos_env__$private$genon[matgrandmumIndx,], nrow=length(matgrandmumIndx), ncol=nSnps) 
+      depth_matgrandmum <- matrix(FSobj$.__enclos_env__$private$ref[matgrandmumIndx,] +
+                                    FSobj$.__enclos_env__$private$alt[matgrandmumIndx,], nrow=length(matgrandmumIndx), ncol=nSnps)
+      genon_matgranddad <- matrix(FSobj$.__enclos_env__$private$genon[matgranddadIndx,], nrow=length(matgranddadIndx), ncol=nSnps) 
+      depth_matgranddad <- matrix(FSobj$.__enclos_env__$private$ref[matgranddadIndx,] +
+                                    FSobj$.__enclos_env__$private$alt[matgranddadIndx,], nrow=length(matgranddadIndx), ncol=nSnps)
     }
     
     parHap_pat <- sapply(1:nSnps,function(x){
@@ -276,7 +340,7 @@ makePop.FS <- function(R6obj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0
     #propHeter <- sapply(1:nSnps, function(x) sum(genon[,x] == 1,na.rm=T)/sum(!is.na(genon[,x])))
     if(inferSNPs){
       toInfer <- (MAF > filter$MAF) & (miss < filter$MISS) & is.na(config)
-    
+      
       seg_Infer <- sapply(1:nSnps, function(x){
         if(!toInfer[x])
           return(NA)
@@ -309,8 +373,8 @@ makePop.FS <- function(R6obj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0
       },simplify = T)
     }
     
-    chrom <- R6obj$.__enclos_env__$private$chrom
-    pos <- R6obj$.__enclos_env__$private$pos
+    chrom <- FSobj$.__enclos_env__$private$chrom
+    pos <- FSobj$.__enclos_env__$private$pos
     ## Extract one SNP from each read.
     if(filter$BIN > 0){
       oneSNP <- rep(FALSE,nSnps)
@@ -338,13 +402,13 @@ makePop.FS <- function(R6obj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0
     }
     else
       indx[[fam]] <- (MAF > filter$MAF) & (miss < filter$MISS) & (!is.na(config)) & oneSNP
-  
+    
     
     ## Determine the segregation groups
     config_all[[fam]] <- config
     if(inferSNPs)
       config_infer_all[[fam]] <- seg_Infer
-
+    
     nInd_all[[fam]] <- nInd
     
     genon_all[[fam]] <- genon
@@ -357,30 +421,30 @@ makePop.FS <- function(R6obj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0
     
     ## Find all the SNPs to keep and subset the global variables
     indx_all <- indx[[fam]]
-
+    
     #indx_all <- do.call("rbind",indx)
     #indx_all <- apply(indx_all, 2, any)
     
     genon_all[[fam]]     <- genon[,indx_all]
     ref_all[[fam]] <- ref[,indx_all]
     alt_all[[fam]] <- alt[,indx_all]
-    chrom_all            <- R6obj$.__enclos_env__$private$chrom[indx_all]
-    pos_all              <- R6obj$.__enclos_env__$private$pos[indx_all]
-    SNP_Names            <- R6obj$.__enclos_env__$private$SNP_Names[indx_all]
+    chrom_all            <- FSobj$.__enclos_env__$private$chrom[indx_all]
+    pos_all              <- FSobj$.__enclos_env__$private$pos[indx_all]
+    SNP_Names            <- FSobj$.__enclos_env__$private$SNP_Names[indx_all]
     
     #group <- group_infer <- vector(mode="list", length=noFam)
     group <- group_infer <- list()
     group$BI <- which(config_all[[fam]][indx_all] == 1)
     group$PI <- which(config_all[[fam]][indx_all] %in% c(2,3))
     group$MI <- which(config_all[[fam]][indx_all] %in% c(4,5))
-      
+    
     group_infer$BI <- which(config_infer_all[[fam]][indx_all] == 1) 
     group_infer$SI <- which(config_infer_all[[fam]][indx_all] %in% c(4,5))
-      
+    
     config_all[[fam]] <- config_all[[fam]][indx_all]
     if(inferSNPs)
       config_infer_all[[fam]] <- config_infer_all[[fam]][indx_all]
-      
+    
     cat("-------------\n")
     cat("Summary:\n\n")
     cat("Number of SNPs remaining after filtering:",sum(indx_all),"\n")
@@ -430,9 +494,9 @@ makePop.FS <- function(R6obj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0
       alt_all[[fam]] <- alt_all[[fam]][,indx_all]
       config_all[[fam]] <- config_all[[fam]][indx_all]
     }
-    chrom_all     <- R6obj$.__enclos_env__$private$chrom[indx_all]
-    pos_all       <- R6obj$.__enclos_env__$private$pos[indx_all]
-    SNP_Names     <- R6obj$.__enclos_env__$private$SNP_Names[indx_all]
+    chrom_all     <- FSobj$.__enclos_env__$private$chrom[indx_all]
+    pos_all       <- FSobj$.__enclos_env__$private$pos[indx_all]
+    SNP_Names     <- FSobj$.__enclos_env__$private$SNP_Names[indx_all]
     
     cat("-------------\n")
     cat("Summary:\n\n",sep="")
@@ -444,86 +508,18 @@ makePop.FS <- function(R6obj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0
     for(fam in 1:noFam)
       cat(names(famInfo)[fam],":", nInd_all[[fam]],"\n")
     cat("\n")
-  
+    
     group_infer <- NULL
     config_infer_all <- NULL
   }
   
   ## Update the R6 object and return it
-  R6obj$.__enclos_env__$private$updatePrivate(list(
+  FSobj$.__enclos_env__$private$updatePrivate(list(
     genon = genon_all, ref = ref_all, alt = alt_all, chrom = chrom_all, pos = pos_all,
     group = group, group_infer = group_infer, config = config_all, config_infer = config_infer_all,
     nInd = nInd_all, nSnps = sum(indx_all), noFam = noFam, indID = indID_all, SNP_Names = SNP_Names,
     masked=rep(FALSE,sum(indx_all)), famInfo=famInfo)
   )
   
-  return(R6obj)
+  return(FSobj)
 }
-
-
-#### Make an unrelated population
-makePop.UR <- function(R6obj, filter=list(MAF=0.05, MISS=0.2, HWdis=c(-0.05,1))){
-  
-  ## Do some checks
-  if(is.null(filter$MAF) || filter$MAF<0 || filter$MAF>1 || !is.numeric(filter$MAF))
-    stop("Minor allele frequency filter has not be specifies or is invalid.")
-  
-  
-  cat("-------------\n")
-  cat("Processing Data.\n\n")
-  
-  cat("Filtering criteria for removing SNPs :\n")
-  cat("Minor allele frequency (MAF) < ", filter$MAF,"\n")
-  cat("Percentage of missing genotypes > ", filter$MISS*100,"%\n",sep="")
-  cat("Hardy-Weinberg equilibrium: < ", filter$HWdis[1]," and > ",filter$HWdis[2],"\n\n",sep="")
-  
-  ## Extract the private variables we want
-  indID <- R6obj$.__enclos_env__$private$indID
-  nSnps <- R6obj$.__enclos_env__$private$nSnps
-  genon <- R6obj$.__enclos_env__$private$genon
-  
-  ## Calculate the MAF
-  maf <-  colMeans(genon, na.rm=T)/2
-  maf <- pmin(maf,1-maf)
-  ## Calculate the proportion of missing data
-  miss <- apply(genon,2, function(x) sum(is.na(x))/length(x))
-  
-  ## Compute teh HWE distance
-  naa <- colSums(genon == 2, na.rm = TRUE) 
-  nab <- colSums(genon == 1, na.rm = TRUE) 
-  nbb <- colSums(genon == 0, na.rm = TRUE) 
-  n1 <- 2 * naa + nab 
-  n2 <- nab + 2 * nbb 
-  n <- n1 + n2  #n alleles 
-  p1 <- n1/n 
-  p2 <- 1 - p1 
-  HWdis <- naa/(naa + nab + nbb) - p1 * p1 
-  
-  ## Indx the filtered SNPs
-  indx <- (maf > filter$MAF) & (miss > filter$MISS) & (HWdis > filter$HWdis[1]) & (HWdis < filter$HWdis[2])
-  
-  ## Update the data in the R6 object
-  genon <- genon[,indx]
-  ref <- R6obj$.__enclos_env__$private$ref[,indx]
-  alt <- R6obj$.__enclos_env__$private$alt[,indx]
-  SNP_Names <- R6obj$.__enclos_env__$private$SNP_Names[indx]
-  nSnps = sum(indx)
-  if(R6obj$.__enclos_env__$private$gform == "reference"){
-    chrom = R6obj$.__enclos_env__$private$chrom[indx]
-    pos = R6obj$.__enclos_env__$private$pos[indx]
-    AFrq = NULL
-  }
-  else if(R6obj$.__enclos_env__$private$gform == "uneak"){
-    chrom = pos = NULL
-    AFrq = R6obj$.__enclos_env__$private$AFrq[indx]
-  }
-  
-  ## Update the R6 objective 
-  R6obj$.__enclos_env__$private$updatePrivate(list(
-    genon = genon, ref = ref, alt = alt, chrom = chrom, pos = pos,
-    SNP_Names = SNP_Names, nSnps = nSnps, AFrq = AFrq)
-  )
-  
-  return(R6obj)
-}
-  
