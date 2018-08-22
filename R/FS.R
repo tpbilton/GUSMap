@@ -546,26 +546,26 @@ Please select one of the following:
                   return(invisible)
                 },
                 ## Function for setting temp LGs to new LGs
-                setLG = function(parent="both"){
-                  if(parent == "both"){
-                    private$LG_mat <- private$LG_mat_temp
-                    private$LG_mat_temp <- NULL
-                    private$LG_pat <- private$LG_pat_temp
-                    private$LG_pat_temp <- NULL
-                    cat("Temporary linkage groups now set as new linkage groups\n")
-                  }
-                  else if(parent == "maternal"){
-                    private$LG_mat <- private$LG_mat_temp
-                    private$LG_mat_temp <- NULL
-                    cat("Temporary maternal linkage groups now set as new linkage groups\n")
-                  }
-                  else if(parent == "paternal"){
-                    private$LG_pat <- private$LG_pat_temp
-                    private$LG_pat_temp <- NULL
-                    cat("Temporary paternal linkage groups now set as new linkage groups\n")
-                  }
-                  return(invisible())
-                },
+                # setLG = function(parent="both"){
+                #   if(parent == "both"){
+                #     private$LG_mat <- private$LG_mat_temp
+                #     private$LG_mat_temp <- NULL
+                #     private$LG_pat <- private$LG_pat_temp
+                #     private$LG_pat_temp <- NULL
+                #     cat("Temporary linkage groups now set as new linkage groups\n")
+                #   }
+                #   else if(parent == "maternal"){
+                #     private$LG_mat <- private$LG_mat_temp
+                #     private$LG_mat_temp <- NULL
+                #     cat("Temporary maternal linkage groups now set as new linkage groups\n")
+                #   }
+                #   else if(parent == "paternal"){
+                #     private$LG_pat <- private$LG_pat_temp
+                #     private$LG_pat_temp <- NULL
+                #     cat("Temporary paternal linkage groups now set as new linkage groups\n")
+                #   }
+                #   return(invisible())
+                # },
                 ## Function for plotting linkage groups
                 plotLG = function(parent, LG=NULL, mat="rf", interactive=TRUE, filename=NULL){
                   ## do some checks
@@ -579,7 +579,7 @@ Please select one of the following:
   both:     Add BI SNPs to both MI and PI LGs")
                   if(!is.vector(interactive) || length(interactive) != 1 || !is.logical(interactive))
                     stop("Argument sepcifting whether to produce an interactive heatmap or not is invalid.")
-                  if(!is.null(filename) && (!is.vector(filename) || !is.character(filename) || length(filename != 1)))
+                  if(!is.null(filename) && (!is.vector(filename) || !is.character(filename) || length(filename) != 1))
                     stop("Specified filename is invalid")
                   
                   if(private$noFam == 1){
@@ -651,16 +651,27 @@ Please select one of the following:
                           plotly::add_segments(y=which(b_indx)-1,yend=which(b_indx)-1,x=0,xend=nn, line=list(color="black"),  showlegend=F) %>%
                           plotly::layout(margin=list(l=0,r=0,t=0,b=0), xaxis=ax, yaxis=ax)
                       }
-                      if(!is.null(filename))
-                        htmlwidgets::saveWidget(p, paste0(filename,"html"))
+                      if(!is.null(filename)){
+                        temp <- file.create(paste0(filename,".html"))
+                        if(!temp)
+                          stop("Error in filename. Cannot create png")
+                        else{
+                          htmlwidgets::saveWidget(p, paste0(filename,".html"))
+                        }  
+                      }
                       else 
                         print(p)
                       options(warn = storeWarn) 
                     }
                     else{
                       b_indx <- chrom.ind == b
-                      if(!is.null(filename))
-                        png("test.png", width=nn+1,height=nn+1)
+                      if(!is.null(filename)){
+                        temp <- file.create(paste0(filename,".png"))
+                        if(!temp)
+                          stop("Error in filename. Cannot create png")
+                        else
+                          png(paste0(filename,".png"), width=nn+1,height=nn+1)
+                      }
                       par(mar=rep(0,4),oma=c(0,0,0,0),xaxt='n',yaxt='n',bty='n',ann=F)
                       image(temprf, x=1:nn, y=1:nn, zlim=c(0,0.5), col=heat.colors(100))
                       abline(v=which(b_indx))
