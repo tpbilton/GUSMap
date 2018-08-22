@@ -84,33 +84,32 @@ FS <- R6Class("FS",
                      cat("  Total SNPs:\t",length(unlist(private$group)),"\n\n")
                      ## linkage group information (if any)
                      if(!is.null(private$LG_mat) || !is.null(private$LG_pat)){
-                      if(is.null(private$LG)){
-                        cat("Linkage Group Summary:\n")
-                        MI <- unlist(lapply(private$LG_mat, length))
-                        PI <- unlist(lapply(private$LG_pat, length))
-                        tab <- cbind(LG=1:(length(MI)+length(PI)),MI=c(MI,rep(0,length(PI))),PI=c(rep(0,length(MI)),PI))
-                        prmatrix(tab, rowlab = rep("",nrow(tab)))
-                      }
-                      else if(!is.null(private$LG)){
-                        cat("Linkage Group Summary:\n")
-                        MI <- unlist(lapply(private$LG, function(x) sum(x %in% private$group$MI)))
-                        PI <- unlist(lapply(private$LG, function(x) sum(x %in% private$group$PI)))
-                        BI <- unlist(lapply(private$LG, function(x) sum(x %in% private$group$BI)))
-                        TOTAL <- unlist(lapply(private$LG, length))
-                        tab <- cbind(LG=1:(length(private$LG)),MI,PI,BI,TOTAL)
-                        if(!is.null(private$para)){
-                          DIST_MAT <- extendVec(unlist(lapply(private$para$rf_m, function(x) round(sum(mfun(x, fun="haldane", centiM = T)),2))), nrow(tab))
-                          DIST_PAT <- extendVec(unlist(lapply(private$para$rf_p, function(x) round(sum(mfun(x, fun="haldane", centiM = T)),2))), nrow(tab))
-                          ERR <- extendVec(round(unlist(private$para$ep),5), nrow(tab))
-                          tab <- cbind(tab,DIST_MAT,DIST_PAT,ERR)
-                        }
-                      }
-                      tab <- addmargins(tab, margin = 1)
-                      rownames(tab) <- NULL
-                      tab[nrow(tab), 1] <- "TOTAL"
-                      if(ncol(tab) > 7)
-                        tab[nrow(tab),8] <- ""
-                      prmatrix(tab, rowlab = rep("",nrow(tab)), quote=F)
+                       if(is.null(private$LG)){
+                         cat("Linkage Group Summary:\n")
+                         MI <- unlist(lapply(private$LG_mat, length))
+                         PI <- unlist(lapply(private$LG_pat, length))
+                         tab <- cbind(LG=1:(length(MI)+length(PI)),MI=c(MI,rep(0,length(PI))),PI=c(rep(0,length(MI)),PI))
+                       }
+                       else if(!is.null(private$LG)){
+                         cat("Linkage Group Summary:\n")
+                         MI <- unlist(lapply(private$LG, function(x) sum(x %in% private$group$MI)))
+                         PI <- unlist(lapply(private$LG, function(x) sum(x %in% private$group$PI)))
+                         BI <- unlist(lapply(private$LG, function(x) sum(x %in% private$group$BI)))
+                         TOTAL <- unlist(lapply(private$LG, length))
+                         tab <- cbind(LG=1:(length(private$LG)),MI,PI,BI,TOTAL)
+                         if(!is.null(private$para)){
+                           DIST_MAT <- extendVec(unlist(lapply(private$para$rf_m, function(x) round(sum(mfun(x, fun="haldane", centiM = T)),2))), nrow(tab))
+                           DIST_PAT <- extendVec(unlist(lapply(private$para$rf_p, function(x) round(sum(mfun(x, fun="haldane", centiM = T)),2))), nrow(tab))
+                           ERR <- extendVec(round(unlist(private$para$ep),5), nrow(tab))
+                           tab <- cbind(tab,DIST_MAT,DIST_PAT,ERR)
+                         }
+                       }
+                       tab <- addmargins(tab, margin = 1)
+                       rownames(tab) <- NULL
+                       tab[nrow(tab), 1] <- "TOTAL"
+                       if(ncol(tab) > 7)
+                         tab[nrow(tab),8] <- ""
+                       prmatrix(tab, rowlab = rep("",nrow(tab)), quote=F)
                      }
                    }
                    else
@@ -258,7 +257,7 @@ FS <- R6Class("FS",
                     stop(paste0("Input must be a vector of indices between 1 and ", private$nSnps))
                   ## mask SNPs
                   private$masked[snps] <- TRUE
-                  return(invisible(self))
+                  return(self)
                 },
                 ## function for unmasking SNPs
                 unmaskSNP = function(snps){
@@ -403,6 +402,7 @@ Please select one of the following:
                   ## if paternal groups, map the BIs
                   if(!is.null(private$LG_pat))
                     newLGlist_pat <- private$mapBISnps(unmapped, parent="paternal", LODthres=LODthres, nComp=nComp)
+                  
                   if(exists("newLGlist_mat") & exists("newLGlist_pat")){
                     if(length(newLGlist_mat) == 0 || length(newLGlist_pat) == 0){
                       cat("No BI SNPs mapped to maternal or/and paternal linkage groups. Un able to merge Linkage groups")
@@ -546,28 +546,28 @@ Please select one of the following:
                   return(invisible)
                 },
                 ## Function for setting temp LGs to new LGs
-                setLG = function(parent="both"){
-                  if(parent == "both"){
-                    private$LG_mat <- private$LG_mat_temp
-                    private$LG_mat_temp <- NULL
-                    private$LG_pat <- private$LG_pat_temp
-                    private$LG_pat_temp <- NULL
-                    cat("Temporary linkage groups now set as new linkage groups\n")
-                  }
-                  else if(parent == "maternal"){
-                    private$LG_mat <- private$LG_mat_temp
-                    private$LG_mat_temp <- NULL
-                    cat("Temporary maternal linkage groups now set as new linkage groups\n")
-                  }
-                  else if(parent == "paternal"){
-                    private$LG_pat <- private$LG_pat_temp
-                    private$LG_pat_temp <- NULL
-                    cat("Temporary paternal linkage groups now set as new linkage groups\n")
-                  }
-                  return(invisible())
-                },
+                # setLG = function(parent="both"){
+                #   if(parent == "both"){
+                #     private$LG_mat <- private$LG_mat_temp
+                #     private$LG_mat_temp <- NULL
+                #     private$LG_pat <- private$LG_pat_temp
+                #     private$LG_pat_temp <- NULL
+                #     cat("Temporary linkage groups now set as new linkage groups\n")
+                #   }
+                #   else if(parent == "maternal"){
+                #     private$LG_mat <- private$LG_mat_temp
+                #     private$LG_mat_temp <- NULL
+                #     cat("Temporary maternal linkage groups now set as new linkage groups\n")
+                #   }
+                #   else if(parent == "paternal"){
+                #     private$LG_pat <- private$LG_pat_temp
+                #     private$LG_pat_temp <- NULL
+                #     cat("Temporary paternal linkage groups now set as new linkage groups\n")
+                #   }
+                #   return(invisible())
+                # },
                 ## Function for plotting linkage groups
-                plotLG = function(mat=c("rf"), parent, LG=NULL, filename=NULL, names=NULL, chrS=2, lmai=2, chrom=T){
+                plotLG = function(parent, LG=NULL, mat="rf", interactive=TRUE, filename=NULL){
                   ## do some checks
                   if(!is.vector(mat) || !is.character(mat) || length(mat) != 1 || !(mat %in% c('rf','LOD')))
                     stop("Argument specifying which matrix to plot (argument 1) must be either 'rf' or 'LOD'")
@@ -577,6 +577,10 @@ Please select one of the following:
   maternal: Add BI SNPs to MI LGs
   paternal: Add BI SNPs to PI LGs
   both:     Add BI SNPs to both MI and PI LGs")
+                  if(!is.vector(interactive) || length(interactive) != 1 || !is.logical(interactive))
+                    stop("Argument sepcifting whether to produce an interactive heatmap or not is invalid.")
+                  if(!is.null(filename) && (!is.vector(filename) || !is.character(filename) || length(filename) != 1))
+                    stop("Specified filename is invalid")
                   
                   if(private$noFam == 1){
                     ## Work out which LGs list to use
@@ -588,15 +592,16 @@ Please select one of the following:
                     }
                     else
                       LGlist <- private$LG
-                    
+
                     ## Work out if we want a subset of the LGs
                     if(!is.null(LG)){
+                      if(isValue(LG, min=1,max=length(LGlist)))
+                        stop(paste0("At least one linkage group number does not exist. Indices must be between 1 and",length(LGlist),"\n"))
                       LGlist <- LGlist[LG]
                       names(LGlist) <- LG
                     }
                     else
                       names(LGlist) <- 1:length(LGlist)
-                    
                     
                     ## Check which type of SNPs we are plotting
                     if(parent == "maternal"){
@@ -619,27 +624,61 @@ Please select one of the following:
                     chrom.ind <- unlist(lapply(LGlist, function(x) c(x,b)), use.names = FALSE)
                     chrom.ind <- chrom.ind[-length(chrom.ind)]
                     temprf <- temprf[chrom.ind, chrom.ind]
-                    
-                    ## Plot the matrix
                     nn <- length(chrom.ind)
                     b_indx <- chrom.ind == b
-                    chrom.ind[which(!b_indx)] <- paste0(chrom.ind[which(!b_indx)]," (", rep(names(LGlist), lapply(LGlist,length)),")") 
-                    chrom.ind[which(b_indx)] <- rep("Break",length(LGlist)-1)
-                    hovertext <- matrix(paste(matrix(paste0("x: ",chrom.ind), nrow=nn, ncol=nn), 
-                          matrix(paste0("x: ",chrom.ind), nrow=nn, ncol=nn, byrow=T), paste0("rf: ",round(temprf,4)), sep="<br>"),
-                          nrow=nn, ncol=nn)
-                    ax <- list(visible=FALSE)
-                    # suppress warnings  
-                    storeWarn<- getOption("warn")
-                    options(warn = -1) 
-                    ## produce the plotly plot
-                    p <- plotly::plot_ly(z=temprf, type="heatmap", showscale=F, hoverinfo="text",
-                            text=hovertext, colors=heat.colors(100)) %>% 
-                      plotly::add_segments(x=which(b_indx)-1,xend=which(b_indx)-1,y=0,yend=nn, line=list(color="black"),  showlegend=F) %>%
-                      plotly::add_segments(y=which(b_indx)-1,yend=which(b_indx)-1,x=0,xend=nn, line=list(color="black"),  showlegend=F) %>%
-                      plotly::layout(margin=list(l=0,r=0,t=0,b=0), xaxis=ax, yaxis=ax)
-                    print(p)
-                    options(warn = storeWarn) 
+                    
+                    if(interactive){
+                      ## Plot the matrix
+                      chrom.ind[which(!b_indx)] <- paste0(chrom.ind[which(!b_indx)]," (", rep(names(LGlist), lapply(LGlist,length)),")") 
+                      chrom.ind[which(b_indx)] <- rep("Break",length(LGlist)-1)
+                      hovertext <- matrix(paste(matrix(paste0("x: ",chrom.ind), nrow=nn, ncol=nn), 
+                            matrix(paste0("x: ",chrom.ind), nrow=nn, ncol=nn, byrow=T), paste0("rf: ",round(temprf,4)), sep="<br>"),
+                            nrow=nn, ncol=nn)
+                      ax <- list(visible=FALSE)
+                      # suppress warnings  
+                      storeWarn<- getOption("warn")
+                      options(warn = -1) 
+                      ## produce the plotly plot
+                      if(length(which(b_indx)) == 0){
+                        p <- plotly::plot_ly(z=temprf, type="heatmap", showscale=F, hoverinfo="text",
+                                             text=hovertext, colors=heat.colors(100)) %>%
+                          plotly::layout(margin=list(l=0,r=0,t=0,b=0), xaxis=ax, yaxis=ax)
+                      }
+                      else{
+                        p <- plotly::plot_ly(z=temprf, type="heatmap", showscale=F, hoverinfo="text",
+                                text=hovertext, colors=heat.colors(100)) %>% 
+                          plotly::add_segments(x=which(b_indx)-1,xend=which(b_indx)-1,y=0,yend=nn, line=list(color="black"),  showlegend=F) %>%
+                          plotly::add_segments(y=which(b_indx)-1,yend=which(b_indx)-1,x=0,xend=nn, line=list(color="black"),  showlegend=F) %>%
+                          plotly::layout(margin=list(l=0,r=0,t=0,b=0), xaxis=ax, yaxis=ax)
+                      }
+                      if(!is.null(filename)){
+                        temp <- file.create(paste0(filename,".html"))
+                        if(!temp)
+                          stop("Error in filename. Cannot create png")
+                        else{
+                          htmlwidgets::saveWidget(p, paste0(filename,".html"))
+                        }  
+                      }
+                      else 
+                        print(p)
+                      options(warn = storeWarn) 
+                    }
+                    else{
+                      b_indx <- chrom.ind == b
+                      if(!is.null(filename)){
+                        temp <- file.create(paste0(filename,".png"))
+                        if(!temp)
+                          stop("Error in filename. Cannot create png")
+                        else
+                          png(paste0(filename,".png"), width=nn+1,height=nn+1)
+                      }
+                      par(mar=rep(0,4),oma=c(0,0,0,0),xaxt='n',yaxt='n',bty='n',ann=F)
+                      image(temprf, x=1:nn, y=1:nn, zlim=c(0,0.5), col=heat.colors(100))
+                      abline(v=which(b_indx))
+                      abline(h=which(b_indx))
+                      if(!is.null(filename))
+                        dev.off()
+                    }
                   }
                   else
                     stop("Not yet implemented.")
@@ -684,9 +723,10 @@ Please select one of the following:
                 plotSyn = function(){
                   LGorder <- unlist(private$LG)
                   orgOrder <- sort(LGorder)
+                  LGbreaks <- lapply(private$LG, function(y) y[])
                   LGbreaks <- cumsum(unlist(lapply(private$LG, length))) + 0.5
                   LGbreaks <- LGbreaks[-length(LGbreaks)]
-                  chrBreaks <- which(diff(private$chrom)==1) + 0.5
+                  chrBreaks <- which(diff(as.numeric(private$chrom))==1) + 0.5
                   
                   plot(orgOrder,LGorder, pch=20,cex=0.8, xaxt="n", yaxt="n",ylab="Assembly Ordering", xlab="Linkage Group Ordering", 
                        ylim=c(min(orgOrder),max(orgOrder)), xlim=c(min(LGorder), max(LGorder)))
