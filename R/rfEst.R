@@ -128,7 +128,7 @@
 #'           
 #' 
 rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
-                      sexSpec=F, seqErr=T, trace=F, noFam=as.integer(1), method = "optim", ...){
+                      sexSpec=F, seqErr=T, trace=F, noFam=as.integer(1), method = "optim", nThreads=0, ...){
   
   ## Do some checks
   # if(!is.list(ref) | !is.list(alt) | !is.list(OPGP))
@@ -242,7 +242,7 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
                          method="BFGS", control=optim.arg,
                          ref=ref,alt=alt,bcoef_mat=bcoef_mat,Kab=Kab,
                          nInd=nInd,nSnps=nSnps,OPGP=OPGP,noFam=noFam,
-                         seqErr=seqErr,extra=ep)
+                         seqErr=seqErr,extra=ep,nThreads=nThreads)
     }
     # Print out the output from the optim procedure (if specified)
     if(trace){
@@ -316,7 +316,7 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
       optim.MLE <- optim(para,ll_fs_mp_scaled_err,method="BFGS",control=optim.arg,
                          ref=ref,alt=alt,bcoef_mat=bcoef_mat,Kab=Kab,
                          nInd=nInd,nSnps=nSnps,OPGP=OPGP,noFam=noFam,
-                         seqErr=seqErr)
+                         seqErr=seqErr,nThreads=nThreads)
     }
     # Print out the output from the optim procedure (if specified)
     if(trace){
@@ -370,7 +370,7 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
     alt_mat = do.call(what = "rbind",alt)
     
     EMout <- .Call("EM_HMM", init_r, ep, ref_mat, alt_mat, OPGPmat,
-                   noFam, unlist(nInd), nSnps, sexSpec, seqErr, EM.arg, as.integer(ss_rf))
+                   noFam, unlist(nInd), nSnps, sexSpec, seqErr, EM.arg, as.integer(ss_rf), nThreads=nThreads)
     
     EMout[[3]] = EMout[[3]] + sum(log(choose(ref_mat+alt_mat,ref_mat)))
     
@@ -390,7 +390,7 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
 
 ## recombination estimates for case where the phase is unkonwn.
 ## The r.f.'s are sex-specific and constrained to the range [0,1]
-rf_est_FS_UP <- function(ref, alt, config, ep, method="optim", trace=F, ...){
+rf_est_FS_UP <- function(ref, alt, config, ep, method="optim", trace=F, nThreads=0, ...){
   
   ## Check imputs
   if( any( ref<0 | !is.finite(ref)) || any(!(ref == round(ref))))
@@ -511,7 +511,7 @@ rf_est_FS_UP <- function(ref, alt, config, ep, method="optim", trace=F, ...){
     seqErr=!is.null(ep)
     
     EMout <- .Call("EM_HMM_UP", rep(0.5,(nSnps-1)*2), ep, ref, alt, config,
-                   as.integer(1), nInd, nSnps, seqErr, EM.arg, as.integer(ss_rf))
+                   as.integer(1), nInd, nSnps, seqErr, EM.arg, as.integer(ss_rf), nThreads=nThreads)
     return(list(rf_p=EMout[[1]][ps],rf_m=EMout[[1]][nSnps-1+ms],
                 ep=EMout[[2]],
                 loglik=EMout[[3]]))

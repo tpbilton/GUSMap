@@ -738,7 +738,7 @@ Please select one of the following:
                         at = apply(cbind(c(min(LGorder),LGbreaks),c(LGbreaks,max(LGorder))),1,mean))
                 }, 
                 ## Function for computing the rf's for each chromosome 
-                rf_est = function(chr=NULL, init_r=0.01, ep=0.001, method="optim", sexSpec=F, seqErr=T, mapped=T){
+                rf_est = function(chr=NULL, init_r=0.01, ep=0.001, method="optim", sexSpec=F, seqErr=T, mapped=T, nThreads=0){
                   ## do some checks
                   if( !is.null(init_r) & !is.numeric(init_r) )
                     stop("Starting values for the recombination fraction needs to be a numeric vector or integer or a NULL object")
@@ -769,13 +769,13 @@ Please select one of the following:
                         !is.null(private$para$OPGP[i][[x]]) && (length(private$para$OPGP[i][[x]]) != ncol(ref_temp[[x]])))){
                         tempOPGP <- list()
                         for(fam in 1:private$noFam){
-                          tempOPGP <- c(tempOPGP,list(as.integer(infer_OPGP_FS(ref_temp[[fam]],alt_temp[[fam]],private$config[[fam]][indx_chr], method="EM"))))                        
+                          tempOPGP <- c(tempOPGP,list(as.integer(infer_OPGP_FS(ref_temp[[fam]],alt_temp[[fam]],private$config[[fam]][indx_chr], method="EM", nThreads=nThreads))))
                           }
                         private$para$OPGP <- tempOPGP
                       }
                       ## estimate the rf's
                       MLE <- rf_est_FS(init_r=init_r, ep=ep, ref=ref_temp, alt=alt_temp, OPGP=private$para$OPGP,
-                                         sexSpec=sexSpec, seqErr=seqErr, method=method)
+                                         sexSpec=sexSpec, seqErr=seqErr, method=method, nThreads=nThreads)
                       if(sexSpec){
                         private$para$rf_p[i]   <- list(MLE$rf_p)
                         private$para$rf_m[i]   <- list(MLE$rf_m)
@@ -810,13 +810,13 @@ Please select one of the following:
                         !is.null(private$para$OPGP[i][[x]]) && (length(private$para$OPGP[i][[x]]) != ncol(ref_temp[[x]])))){
                         tempOPGP <- list()
                         for(fam in 1:private$noFam){
-                          tempOPGP <- c(tempOPGP,list(as.integer(infer_OPGP_FS(ref_temp[[fam]],alt_temp[[fam]],private$config[[fam]][indx_chr], method="EM"))))                        
+                          tempOPGP <- c(tempOPGP,list(as.integer(infer_OPGP_FS(ref_temp[[fam]],alt_temp[[fam]],private$config[[fam]][indx_chr], method="EM", nThreads=nThreads))))
                         }
                         private$para$OPGP[i] <- tempOPGP
                       }
                       ## estimate the rf's
                       MLE <- rf_est_FS(init_r=init_r, ep=ep, ref=ref_temp, alt=alt_temp, OPGP=private$para$OPGP[i],
-                                       sexSpec=sexSpec, seqErr=seqErr, method=method)
+                                       sexSpec=sexSpec, seqErr=seqErr, method=method, nThreads=nThreads)
                       if(sexSpec){
                         private$para$rf_p[i]   <- list(MLE$rf_p)
                         private$para$rf_m[i]   <- list(MLE$rf_m)

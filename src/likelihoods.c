@@ -23,7 +23,11 @@
 #include <Rmath.h>
 #include <math.h>
 #include "probFun.h"
-
+#ifdef _OPENMP
+    #include <omp.h>
+#else
+    inline int omp_get_max_threads() { return 1; }
+#endif
 
 //////////// likelihood functions for multipoint likelihood in full sib-families using GBS data /////////////////////
 // Input variables for likelihoods
@@ -45,9 +49,9 @@
 // r.f constrainted to range [0,1/2].
 // OPGP's (or phase) are assumed to be known
 // Include error parameters
-SEXP ll_fs_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nInd, SEXP nSnps){
+SEXP ll_fs_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nInd, SEXP nSnps, SEXP nThreads){
   // Initialize variables
-  int s1, s2, ind, snp, nInd_c, nSnps_c, *pOPGP;
+  int s1, s2, ind, snp, nInd_c, nSnps_c, nThreads_c, *pOPGP, maxThreads;
   double *pll, *pr, *pKaa, *pKab, *pKbb;
   double alphaTilde[4], alphaDot[4], sum, w_new;
   // Load R input variables into C
@@ -64,8 +68,22 @@ SEXP ll_fs_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nI
   PROTECT(ll = allocVector(REALSXP, 1));
   pll = REAL(ll);
   double llval = 0;
+
+  // set up number of threads
+  nThreads_c = asInteger(nThreads);
+  maxThreads = omp_get_max_threads();
+  if (nThreads_c <= 0) {
+    // if nThreads is set to zero then use everything
+    nThreads_c = maxThreads;
+  }
+  else if (nThreads_c > maxThreads) {
+    // don't allow more threads than the maximum available
+    nThreads_c = maxThreads;
+  }
   
   // Now compute the likelihood
+  #pragma omp parallel for reduction(+:llval) num_threads(nThreads_c) \
+                           private(sum, s1, alphaDot, alphaTilde, snp, s2, w_new)
   for(ind = 0; ind < nInd_c; ind++){
     // Compute forward probabilities at snp 1
     sum = 0;
@@ -109,7 +127,7 @@ SEXP ll_fs_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nI
       }
     }
   }
-  
+
   pll[0] = -1*llval;
   // Clean up and return likelihood value
   UNPROTECT(1);

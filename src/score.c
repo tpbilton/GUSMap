@@ -23,6 +23,11 @@
 #include <Rmath.h>
 #include <math.h>
 #include "probFun.h"
+#ifdef _OPENMP
+    #include <omp.h>
+#else
+    inline int omp_get_max_threads() { return 1; }
+#endif
 
 
 // Derivative function for rf's
@@ -141,11 +146,11 @@ double der_epsilon(int OPGP, double epsilon, int a, int b, int elem){
 }
 
 // rf's are equal and error parameter
-SEXP score_fs_scaled_err_c(SEXP r, SEXP epsilon, SEXP ref, SEXP alt, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nInd, SEXP nSnps){
+SEXP score_fs_scaled_err_c(SEXP r, SEXP epsilon, SEXP ref, SEXP alt, SEXP Kaa, SEXP Kab, SEXP Kbb,
+        SEXP OPGP, SEXP nInd, SEXP nSnps, SEXP nThreads){
   // Initialize variables
-  int s1, s2, ind, snp, snp_der, nInd_c, nSnps_c, *pOPGP, *pref, *palt;
-  double *pscore, *pr, *pKaa, *pKab, *pKbb, epsilon_c, delta;
-  double alphaTilde[4], alphaDot[4], sum, sum_der, w_new, w_prev;
+  int ind, snp, snp_der, nInd_c, nSnps_c, nThreads_c, *pOPGP, *pref, *palt, maxThreads;
+  double *pscore, *pr, *pKaa, *pKab, *pKbb, epsilon_c;
   // Load R input variables into C
   nInd_c = INTEGER(nInd)[0];
   nSnps_c = INTEGER(nSnps)[0];
@@ -163,13 +168,33 @@ SEXP score_fs_scaled_err_c(SEXP r, SEXP epsilon, SEXP ref, SEXP alt, SEXP Kaa, S
   PROTECT(score = allocVector(REALSXP, nSnps_c));
   pscore = REAL(score);
   //SEXP pout = PROTECT(allocVector(VECSXP, 3));
-  double llval = 0, phi[4][nSnps_c], phi_prev[4][nSnps_c], score_c[nSnps_c];
+
+  // set up number of threads
+  nThreads_c = asInteger(nThreads);
+  maxThreads = omp_get_max_threads();
+  if (nThreads_c <= 0) {
+    // if nThreads is set to zero then use everything
+    nThreads_c = maxThreads;
+  }
+  else if (nThreads_c > maxThreads) {
+    // don't allow more threads than the maximum available
+    nThreads_c = maxThreads;
+  }
+  
+  double llval = 0, score_c[nSnps_c];
   for(snp = 0; snp < nSnps_c; snp++){
     score_c[snp] = 0;
   }
-  
+
   // Now compute the likelihood and score function
+  #pragma omp parallel for reduction(+:llval) num_threads(nThreads_c) \
+                           private(snp, snp_der)
   for(ind = 0; ind < nInd_c; ind++){
+    int s1, s2;
+    double phi[4][nSnps_c], phi_prev[4][nSnps_c];
+    double alphaTilde[4], alphaDot[4], sum, sum_der, w_new, w_prev;
+    double delta;
+
     // Compute forward probabilities at snp 1
     sum = 0;
     for(s1 = 0; s1 < 4; s1++){
@@ -238,15 +263,15 @@ SEXP score_fs_scaled_err_c(SEXP r, SEXP epsilon, SEXP ref, SEXP alt, SEXP Kaa, S
       sum_der = 0;
       for(s2 = 0; s2 < 4; s2++)
         sum_der = sum_der + phi[s2][snp_der]/w_prev;
-      sum_der = sum_der + score_c[snp_der];
-      score_c[snp_der] = sum_der;
+      #pragma omp atomic
+      score_c[snp_der] += sum_der;
     }
     for(snp_der = nSnps_c-1; snp_der < nSnps_c; snp_der++){
       sum_der = 0;
       for(s2 = 0; s2 < 4; s2++)
         sum_der = sum_der + phi[s2][snp_der]/w_prev;
-      sum_der = sum_der + score_c[snp_der];
-      score_c[snp_der] = sum_der;
+      #pragma omp atomic
+      score_c[snp_der] += sum_der;
     }
   }
   // Compute the score for each parameter
