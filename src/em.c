@@ -195,7 +195,6 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam, SEXP nIn
     nInd_c[fam] = INTEGER(nInd)[fam];
     indSum[fam] = nTotal;
     nTotal = nTotal + nInd_c[fam];
-    //indSum[fam] = nTotal - nInd_c[fam];
   }
   nIter = REAL(para)[0];
   delta = REAL(para)[1];
