@@ -68,7 +68,7 @@ ll_fs_ss_mp_scaled_err <- function(para,ref,alt,bcoef_mat,Kab,OPGP,nInd,nSnps,ps
 }
 
 ## r.f.'s are sex-specific and constrained to the range [0,1] (for unphased data)
-ll_fs_up_ss_scaled_err <- function(para,ref,alt,bcoef_mat,Kab,config,nInd,nSnps,ps,ms,npar,seqErr){
+ll_fs_up_ss_scaled_err <- function(para,ref,alt,bcoef_mat,Kab,config,nInd,nSnps,ps,ms,npar,seqErr,nThreads=0){
   r <- matrix(0,ncol=2,nrow=nSnps-1)
   r[ps,1] <- GUSbase:::inv.logit(para[1:npar[1]])
   r[ms,2] <- GUSbase:::inv.logit(para[npar[1]+1:npar[2]])
@@ -81,7 +81,7 @@ ll_fs_up_ss_scaled_err <- function(para,ref,alt,bcoef_mat,Kab,config,nInd,nSnps,
   # define the density values for the emission probs
   Kaa <- bcoef_mat*(1-ep)^ref*ep^alt
   Kbb <- bcoef_mat*(1-ep)^alt*ep^ref
-  .Call("ll_fs_up_ss_scaled_err_c",r,Kaa,Kab,Kbb,config,nInd,nSnps)
+  .Call("ll_fs_up_ss_scaled_err_c",r,Kaa,Kab,Kbb,config,nInd,nSnps,nThreads)
 }
 
 #### Score functions written in C in the file 'score.c'

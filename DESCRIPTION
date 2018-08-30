@@ -5,7 +5,7 @@ Title: Genotyping Uncertainty with Sequencing data for linkage MAPping (GUSMap)
 Authors@R: person("Timothy P.", "Bilton", role = c("aut", "cre"), email = "tbilton@maths.otago.ac.nz")
 Author: Timothy P. Bilton [aut, cre]
 Maintainer: Timothy P. Bilton <tbilton@maths.otago.ac.nz>
-Depends: R (>= 3.4.0), GUSbase, plotly
+Depends: R (>= 3.4.0), GUSbase, plotly, doParallel
 Imports: R6, smacof, princurve, Rdpack (>= 0.8-0)
 RdMacros: Rdpack
 Description: Package for constructing linkage maps using outcrossed full-sib family populations that have been sequenced using next generation multiplexing sequencing methods.

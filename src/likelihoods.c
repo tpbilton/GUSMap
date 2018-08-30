@@ -212,11 +212,10 @@ SEXP ll_fs_ss_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP
 // sex-specific
 // r.f constrainted to range [0,1].
 // OPGP's (or phase) are not known
-SEXP ll_fs_up_ss_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP config, SEXP nInd, SEXP nSnps){
+SEXP ll_fs_up_ss_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP config, SEXP nInd, SEXP nSnps, SEXP nThreads){
   // Initialize variables
-  int s1, s2, ind, snp, nInd_c, nSnps_c, *pconfig;
+  int ind, nInd_c, nSnps_c, *pconfig, nThreads_c, maxThreads;
   double *pll, *pr, *pKaa, *pKab, *pKbb;
-  double alphaTilde[4], alphaDot[4], sum, w_new;
   // Load R input variables into C
   nInd_c = INTEGER(nInd)[0];
   nSnps_c = INTEGER(nSnps)[0];
@@ -232,8 +231,24 @@ SEXP ll_fs_up_ss_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP config,
   pll = REAL(ll);
   double llval = 0;
   
+  // set up number of threads
+  nThreads_c = asInteger(nThreads);
+  maxThreads = omp_get_max_threads();
+  if (nThreads_c <= 0) {
+    // if nThreads is set to zero then use everything
+    nThreads_c = maxThreads;
+  }
+  else if (nThreads_c > maxThreads) {
+    // don't allow more threads than the maximum available
+    nThreads_c = maxThreads;
+  }
+  
   // Now compute the likelihood
+  #pragma omp parallel for reduction(+:llval) num_threads(nThreads_c)
   for(ind = 0; ind < nInd_c; ind++){
+    int s1, s2, snp;
+    double alphaTilde[4], alphaDot[4], sum, w_new;
+
     // Compute forward probabilities at snp 1
     sum = 0;
     for(s1 = 0; s1 < 4; s1++){

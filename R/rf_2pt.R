@@ -59,8 +59,9 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
     stop("There are some missing segregation types in the data.")
   
   ## Set up the Clusters
-  cl <- makeCluster(nClust)
-  registerDoSNOW(cl)
+  #cl <- makeCluster(nClust)
+  #registerDoSNOW(cl)
+  registerDoParallel(nClust)
 
   cat("\nComputing 2-point recombination fraction estimates ...\n")
   cat("Paternal informative SNPs\n")
@@ -434,7 +435,8 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
     }
     return(rf)
   }
-  stopCluster(cl) 
+  #stopCluster(cl) 
+  stopImplicitCluster()
   
   ## Build the rf and LOD matrices
   origOrder <- order(c(indx_BI,indx_PI,indx_MI))
@@ -465,8 +467,9 @@ rf_2pt_multi <- function(ref, alt, config, group, nClust, noFam, init_r = 0.25){
   nSnps_PI = length(indx_PI)
   
   ## Set up the Clusters
-  cl <- makeCluster(nClust)
-  registerDoSNOW(cl)
+  #cl <- makeCluster(nClust)
+  #registerDoSNOW(cl)
+  registerDoParallel(nClust)
   
   cat("\nComputing 2-point recombination fraction estimates ...\n")
   cat("Paternal informative SNPs\n")
@@ -745,7 +748,8 @@ rf_2pt_multi <- function(ref, alt, config, group, nClust, noFam, init_r = 0.25){
   }
   
   #rf.MI.PI <- replicate(2, matrix(NA, nrow=nSnps_MI, ncol=nSnps_PI),simplify=FALSE)
-  stopCluster(cl) 
+  #stopCluster(cl) 
+  stopImplicitCluster()
   
   ## Build the rf and LOD matrices
   origOrder <- order(c(indx_BI,indx_PI,indx_MI))
