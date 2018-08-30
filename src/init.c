@@ -26,7 +26,7 @@
 static const R_CallMethodDef callMethods[] = {
   {"ll_fs_scaled_err_c",       (DL_FUNC) &ll_fs_scaled_err_c,		    8},
   {"ll_fs_ss_scaled_err_c",    (DL_FUNC) &ll_fs_ss_scaled_err_c,	  7},
-  {"ll_fs_up_ss_scaled_err_c", (DL_FUNC) &ll_fs_up_ss_scaled_err_c,	8},
+  {"ll_fs_up_ss_scaled_err_c", (DL_FUNC) &ll_fs_up_ss_scaled_err_c,	10},
   {"score_fs_scaled_c",        (DL_FUNC) &score_fs_scaled_c,        7},
   {"score_fs_scaled_err_c",    (DL_FUNC) &score_fs_scaled_err_c,    11},
   {"EM_HMM",                   (DL_FUNC) &EM_HMM,                   13},

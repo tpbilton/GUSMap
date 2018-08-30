@@ -78,10 +78,7 @@ ll_fs_up_ss_scaled_err <- function(para,ref,alt,bcoef_mat,Kab,config,nInd,nSnps,
     ep = 0
   ## define likelihood
   llval = 0
-  # define the density values for the emission probs
-  Kaa <- bcoef_mat*(1-ep)^ref*ep^alt
-  Kbb <- bcoef_mat*(1-ep)^alt*ep^ref
-  .Call("ll_fs_up_ss_scaled_err_c",r,Kaa,Kab,Kbb,config,nInd,nSnps,nThreads)
+  .Call("ll_fs_up_ss_scaled_err_c",r,bcoef_mat,ep,ref,alt,Kab,config,nInd,nSnps,nThreads)
 }
 
 #### Score functions written in C in the file 'score.c'

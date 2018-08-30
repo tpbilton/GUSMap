@@ -212,19 +212,22 @@ SEXP ll_fs_ss_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP
 // sex-specific
 // r.f constrainted to range [0,1].
 // OPGP's (or phase) are not known
-SEXP ll_fs_up_ss_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP config, SEXP nInd, SEXP nSnps, SEXP nThreads){
+SEXP ll_fs_up_ss_scaled_err_c(SEXP r, SEXP bcoef_mat, SEXP ep, SEXP ref, SEXP alt, SEXP Kab, SEXP config, SEXP nInd, SEXP nSnps, SEXP nThreads){
   // Initialize variables
   int ind, nInd_c, nSnps_c, *pconfig, nThreads_c, maxThreads;
-  double *pll, *pr, *pKaa, *pKab, *pKbb;
+  int *palt, *pref;
+  double *pll, *pr, *pKab, *pbcoef_mat, ep_c;
   // Load R input variables into C
   nInd_c = INTEGER(nInd)[0];
   nSnps_c = INTEGER(nSnps)[0];
+  ep_c = REAL(ep)[0];
   // Define the pointers to the other input R variables
   pconfig = INTEGER(config);
-  pKaa = REAL(Kaa);
   pKab = REAL(Kab);
-  pKbb = REAL(Kbb);
   pr = REAL(r);  
+  pbcoef_mat = REAL(bcoef_mat);
+  pref = INTEGER(ref);
+  palt = INTEGER(alt);
   // Define the output variable
   SEXP ll;
   PROTECT(ll = allocVector(REALSXP, 1));
@@ -241,6 +244,15 @@ SEXP ll_fs_up_ss_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP config,
   else if (nThreads_c > maxThreads) {
     // don't allow more threads than the maximum available
     nThreads_c = maxThreads;
+  }
+
+  // define the density values for the emission probs
+  double pKaa[nSnps_c * nInd_c];
+  double pKbb[nSnps_c * nInd_c];
+  # pragma omp parallel for
+  for (long i = 0; i < nSnps_c * nInd_c; i++) {
+    pKaa[i] = pbcoef_mat[i] * pow(1.0 - ep_c, pref[i]) * pow(ep_c, palt[i]);
+    pKbb[i] = pbcoef_mat[i] * pow(1.0 - ep_c, palt[i]) * pow(ep_c, pref[i]);
   }
   
   // Now compute the likelihood
