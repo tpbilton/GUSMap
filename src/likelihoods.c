@@ -247,10 +247,11 @@ SEXP ll_fs_up_ss_scaled_err_c(SEXP r, SEXP bcoef_mat, SEXP ep, SEXP ref, SEXP al
   }
 
   // define the density values for the emission probs
-  double pKaa[nSnps_c * nInd_c];
-  double pKbb[nSnps_c * nInd_c];
-  # pragma omp parallel for
-  for (long i = 0; i < nSnps_c * nInd_c; i++) {
+  long size = (long) nSnps_c * nInd_c;
+  double pKaa[size];
+  double pKbb[size];
+  #pragma omp parallel for
+  for (long i = 0; i < size; i++) {
     pKaa[i] = pbcoef_mat[i] * pow(1.0 - ep_c, pref[i]) * pow(ep_c, palt[i]);
     pKbb[i] = pbcoef_mat[i] * pow(1.0 - ep_c, palt[i]) * pow(ep_c, pref[i]);
   }
