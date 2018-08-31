@@ -49,19 +49,22 @@
 // r.f constrainted to range [0,1/2].
 // OPGP's (or phase) are assumed to be known
 // Include error parameters
-SEXP ll_fs_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nInd, SEXP nSnps, SEXP nThreads){
+SEXP ll_fs_scaled_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef_mat, SEXP Kab, SEXP OPGP, SEXP nInd,
+                        SEXP nSnps, SEXP nThreads){
   // Initialize variables
-  int s1, s2, ind, snp, nInd_c, nSnps_c, nThreads_c, *pOPGP, maxThreads;
-  double *pll, *pr, *pKaa, *pKab, *pKbb;
+  int s1, s2, ind, snp, nInd_c, nSnps_c, nThreads_c, *pOPGP, maxThreads, *pref, *palt;
+  double *pll, *pr, *pKab, *pbcoef_mat, ep_c;
   double alphaTilde[4], alphaDot[4], sum, w_new;
   // Load R input variables into C
   nInd_c = INTEGER(nInd)[0];
   nSnps_c = INTEGER(nSnps)[0];
+  ep_c = REAL(ep)[0];
   // Define the pointers to the other input R variables
   pOPGP = INTEGER(OPGP);
-  pKaa = REAL(Kaa);
+  pbcoef_mat = REAL(bcoef_mat);
   pKab = REAL(Kab);
-  pKbb = REAL(Kbb);
+  pref = INTEGER(ref);
+  palt = INTEGER(alt);
   pr = REAL(r);  
   // Define the output variable
   SEXP ll;
@@ -80,6 +83,17 @@ SEXP ll_fs_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nI
     // don't allow more threads than the maximum available
     nThreads_c = maxThreads;
   }
+  
+  // define the density values for the emission probs
+  long size = (long) nSnps_c * nInd_c;
+  double pKaa[size];
+  double pKbb[size];
+  #pragma omp parallel for
+  for (long i = 0; i < size; i++) {
+    pKaa[i] = pbcoef_mat[i] * pow(1.0 - ep_c, pref[i]) * pow(ep_c, palt[i]);
+    pKbb[i] = pbcoef_mat[i] * pow(1.0 - ep_c, palt[i]) * pow(ep_c, pref[i]);
+  }
+  
   
   // Now compute the likelihood
   #pragma omp parallel for reduction(+:llval) num_threads(nThreads_c) \

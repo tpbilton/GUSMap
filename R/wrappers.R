@@ -25,7 +25,7 @@
 #' @useDynLib GUSMap
 
 ## r.f.'s are equal
-ll_fs_mp_scaled_err <- function(para,ref,alt,bcoef_mat,Kab,OPGP,nInd,nSnps,noFam,seqErr,extra=0,nThreads=0){
+ll_fs_mp_scaled_err <- function(para,ref,alt,bcoef_mat,Kab,OPGP,nInd,nSnps,noFam,seqErr,extra=0,nThreads=1){
   ## untransform the parameters
   r <- GUSbase:::inv.logit2(para[1:(nSnps-1)])
   if(seqErr)
@@ -34,14 +34,8 @@ ll_fs_mp_scaled_err <- function(para,ref,alt,bcoef_mat,Kab,OPGP,nInd,nSnps,noFam
     ep = extra
   ## define likelihood
   llval = 0
-  # define the density values for the emission probs
-  Kaa <- Kbb <- vector(mode = "list", length=noFam)
-  for(fam in 1:noFam){
-    Kaa[[fam]] <- bcoef_mat[[fam]]*(1-ep)^ref[[fam]]*ep^alt[[fam]]
-    Kbb[[fam]] <- bcoef_mat[[fam]]*(1-ep)^alt[[fam]]*ep^ref[[fam]]
-  }
   for(fam in 1:noFam)
-    llval = llval + .Call("ll_fs_scaled_err_c",r,Kaa[[fam]],Kab[[fam]],Kbb[[fam]],OPGP[[fam]],nInd[[fam]],nSnps,nThreads)
+    llval = llval + .Call("ll_fs_scaled_err_c",r,ep,ref[[fam]], alt[[fam]], bcoef_mat[[fam]], Kab[[fam]], OPGP[[fam]],nInd[[fam]],nSnps,nThreads)
   return(llval)
 }
 
@@ -68,7 +62,7 @@ ll_fs_ss_mp_scaled_err <- function(para,ref,alt,bcoef_mat,Kab,OPGP,nInd,nSnps,ps
 }
 
 ## r.f.'s are sex-specific and constrained to the range [0,1] (for unphased data)
-ll_fs_up_ss_scaled_err <- function(para,ref,alt,bcoef_mat,Kab,config,nInd,nSnps,ps,ms,npar,seqErr,nThreads=0){
+ll_fs_up_ss_scaled_err <- function(para,ref,alt,bcoef_mat,Kab,config,nInd,nSnps,ps,ms,npar,seqErr,nThreads=1){
   r <- matrix(0,ncol=2,nrow=nSnps-1)
   r[ps,1] <- GUSbase:::inv.logit(para[1:npar[1]])
   r[ms,2] <- GUSbase:::inv.logit(para[npar[1]+1:npar[2]])
@@ -83,7 +77,7 @@ ll_fs_up_ss_scaled_err <- function(para,ref,alt,bcoef_mat,Kab,config,nInd,nSnps,
 
 #### Score functions written in C in the file 'score.c'
 ## r.f.'s are equal
-score_fs_mp_scaled_err <- function(para,ref,alt,bcoef_mat,Kab,OPGP,nInd,nSnps,noFam,seqErr=T,extra=0,nThreads=0){
+score_fs_mp_scaled_err <- function(para,ref,alt,bcoef_mat,Kab,OPGP,nInd,nSnps,noFam,seqErr=T,extra=0,nThreads=1){
   ## untransform the parameters
   r <- GUSbase:::inv.logit2(para[1:(nSnps-1)])
   if(seqErr)
@@ -91,22 +85,16 @@ score_fs_mp_scaled_err <- function(para,ref,alt,bcoef_mat,Kab,OPGP,nInd,nSnps,no
   else
     ep = extra
   ## define likelihood
-  score = numeric(nSnps)
-  # define the density values for the emission probs
-  Kaa <- Kbb <- vector(mode = "list", length=noFam)
-  for(fam in 1:noFam){
-    Kaa[[fam]] <- bcoef_mat[[fam]]*(1-ep)^ref[[fam]]*ep^alt[[fam]]
-    Kbb[[fam]] <- bcoef_mat[[fam]]*(1-ep)^alt[[fam]]*ep^ref[[fam]]
-  }
   if(seqErr){
     score = numeric(nSnps)
     for(fam in 1:noFam)
       score = score + .Call("score_fs_scaled_err_c",r,ep,ref[[fam]],alt[[fam]],
-                            Kaa[[fam]],Kab[[fam]],Kbb[[fam]],OPGP[[fam]],nInd[[fam]],nSnps,nThreads)
+                            bcoef_mat[[fam]],Kab[[fam]],OPGP[[fam]],nInd[[fam]],nSnps,nThreads)
   } else{
     score = numeric(nSnps - 1)
     for(fam in 1:noFam)
-      score = score + .Call("score_fs_scaled_c",r,Kaa[[fam]],Kab[[fam]],Kbb[[fam]],OPGP[[fam]],nInd[[fam]],nSnps)
+      score = score + .Call("score_fs_scaled_c",r,ep,ref[[fam]], alt[[fam]], bcoef_mat[[fam]],
+                            Kab[[fam]],OPGP[[fam]],nInd[[fam]],nSnps)
   }
   return(-score)
 }

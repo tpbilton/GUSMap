@@ -46,8 +46,8 @@ double der_rf(int s1, int s2, double rval){
 }
 
 
-// Derivative funcations for epsilon
-double partial_der_epsilon(int geno, double ep, int a, int d){
+// Derivative funcations for ep
+double partial_der_ep(int geno, double ep, int a, int d){
   switch(geno){
   case 1:
       return binomial(a,d-a) *powl(ep,d-a) * powl(1-ep,a) * ((d-a)-d*ep);
@@ -60,97 +60,97 @@ double partial_der_epsilon(int geno, double ep, int a, int d){
 }
 
 
-double der_epsilon(int OPGP, double epsilon, int a, int b, int elem){
+double der_ep(int OPGP, double ep, int a, int b, int elem){
   if((a == 0) & (b == 0))
     return 0;
   int d = a + b;
   switch(OPGP){
   case 1:
     if(elem == 1)
-      return partial_der_epsilon(3, epsilon, a, d);
+      return partial_der_ep(3, ep, a, d);
     else if ((elem == 2)|(elem == 3))  
       return 0;
     else if (elem == 4)
-      return partial_der_epsilon(1, epsilon, a, d);
+      return partial_der_ep(1, ep, a, d);
   case 2:
     if(elem == 3)
-      return partial_der_epsilon(3, epsilon, a, d);
+      return partial_der_ep(3, ep, a, d);
     else if ((elem == 1)|(elem == 4))
       return 0;
     else if (elem == 2)
-      return partial_der_epsilon(1, epsilon, a, d);
+      return partial_der_ep(1, ep, a, d);
   case 3:
     if(elem == 2) 
-      return partial_der_epsilon(3, epsilon, a, d);
+      return partial_der_ep(3, ep, a, d);
     else if ((elem == 1)|(elem == 4))
       return 0;
     else if (elem == 3)
-      return partial_der_epsilon(1, epsilon, a, d);
+      return partial_der_ep(1, ep, a, d);
   case 4:
     if(elem == 4) 
-      return partial_der_epsilon(3, epsilon, a, d);
+      return partial_der_ep(3, ep, a, d);
     else if ((elem == 2)|(elem == 3))
       return 0;
     else if (elem == 1)
-      return partial_der_epsilon(1, epsilon, a, d);
+      return partial_der_ep(1, ep, a, d);
   case 5:
     if ((elem == 1)|(elem == 2))
       return 0;
     else if ((elem == 3)|(elem == 4))
-      return partial_der_epsilon(1, epsilon, a, d);
+      return partial_der_ep(1, ep, a, d);
   case 6:
     if ((elem == 1)|(elem == 2))
-      return partial_der_epsilon(1, epsilon, a, d);
+      return partial_der_ep(1, ep, a, d);
     else if ((elem == 3)|(elem == 4))
       return 0;
   case 7:
     if ((elem == 1)|(elem == 2))
-      return partial_der_epsilon(3, epsilon, a, d);
+      return partial_der_ep(3, ep, a, d);
     else if ((elem == 3)|(elem == 4))
       return 0;
   case 8:
     if ((elem == 1)|(elem == 2))
       return 0;
     else if ((elem == 3)|(elem == 4))
-      return partial_der_epsilon(3, epsilon, a, d);
+      return partial_der_ep(3, ep, a, d);
   case 9:
     if ((elem == 1)|(elem == 3))
       return 0;
     else if ((elem == 2)|(elem == 4))
-      return partial_der_epsilon(1, epsilon, a, d);
+      return partial_der_ep(1, ep, a, d);
   case 10:
     if ((elem == 1)|(elem == 3))
-      return partial_der_epsilon(1, epsilon, a, d);
+      return partial_der_ep(1, ep, a, d);
     else if ((elem == 2)|(elem == 4))
       return 0;
   case 11:
     if ((elem == 1)|(elem == 3))
-      return partial_der_epsilon(3, epsilon, a, d);
+      return partial_der_ep(3, ep, a, d);
     else if ((elem == 2)|(elem == 4))
       return 0;
   case 12:
     if ((elem == 1)|(elem == 3))
       return 0;
     else if ((elem == 2)|(elem == 4))
-      return partial_der_epsilon(3, epsilon, a, d);
+      return partial_der_ep(3, ep, a, d);
   case 13:
-    return partial_der_epsilon(1, epsilon, a, d);
+    return partial_der_ep(1, ep, a, d);
   case 14:
     return 0;
   case 15:
     return 0;
   case 16:
-    return partial_der_epsilon(3, epsilon, a, d);
+    return partial_der_ep(3, ep, a, d);
   } // end of Switch
   return -999;
 }
 
 // rf's are equal and error parameter
-SEXP score_fs_scaled_err_c(SEXP r, SEXP epsilon, SEXP ref, SEXP alt, SEXP Kaa, SEXP Kab, SEXP Kbb,
+SEXP score_fs_scaled_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef_mat, SEXP Kab, 
         SEXP OPGP, SEXP nInd, SEXP nSnps, SEXP nThreads){
   // Initialize variables
   int ind, snp, snp_der, nInd_c, nSnps_c, nThreads_c, *pOPGP, *pref, *palt, maxThreads;
-  double *pscore, *pr, *pKaa, *pKab, *pKbb, epsilon_c;
+  double *pscore, *pr, *pKab, ep_c, *pbcoef_mat;
   // Load R input variables into C
   nInd_c = INTEGER(nInd)[0];
   nSnps_c = INTEGER(nSnps)[0];
@@ -158,11 +158,10 @@ SEXP score_fs_scaled_err_c(SEXP r, SEXP epsilon, SEXP ref, SEXP alt, SEXP Kaa, S
   pOPGP = INTEGER(OPGP);
   pref = INTEGER(ref);
   palt = INTEGER(alt);
-  pKaa = REAL(Kaa);
   pKab = REAL(Kab);
-  pKbb = REAL(Kbb);
+  pbcoef_mat = REAL(bcoef_mat);
   pr = REAL(r);
-  epsilon_c = REAL(epsilon)[0];
+  ep_c = REAL(ep)[0];
   // Define the output variable
   SEXP score;
   PROTECT(score = allocVector(REALSXP, nSnps_c));
@@ -179,6 +178,16 @@ SEXP score_fs_scaled_err_c(SEXP r, SEXP epsilon, SEXP ref, SEXP alt, SEXP Kaa, S
   else if (nThreads_c > maxThreads) {
     // don't allow more threads than the maximum available
     nThreads_c = maxThreads;
+  }
+  
+  // define the density values for the emission probs
+  long size = (long) nSnps_c * nInd_c;
+  double pKaa[size];
+  double pKbb[size];
+  #pragma omp parallel for
+  for (long i = 0; i < size; i++) {
+    pKaa[i] = pbcoef_mat[i] * pow(1.0 - ep_c, pref[i]) * pow(ep_c, palt[i]);
+    pKbb[i] = pbcoef_mat[i] * pow(1.0 - ep_c, palt[i]) * pow(ep_c, pref[i]);
   }
   
   double llval = 0, score_c[nSnps_c];
@@ -201,8 +210,8 @@ SEXP score_fs_scaled_err_c(SEXP r, SEXP epsilon, SEXP ref, SEXP alt, SEXP Kaa, S
       alphaDot[s1] = 0.25 * Qentry(pOPGP[0], pKaa[ind], pKab[ind], pKbb[ind], s1+1);
       sum = sum + alphaDot[s1];
       alphaTilde[s1] = alphaDot[s1];
-      // Compute the derivative for epsilon
-      phi_prev[s1][nSnps_c-1] = 0.25 * der_epsilon(pOPGP[0], epsilon_c, pref[ind], palt[ind], s1+1);
+      // Compute the derivative for ep
+      phi_prev[s1][nSnps_c-1] = 0.25 * der_ep(pOPGP[0], ep_c, pref[ind], palt[ind], s1+1);
     }
 
     // add contribution to likelihood
@@ -239,7 +248,7 @@ SEXP score_fs_scaled_err_c(SEXP r, SEXP epsilon, SEXP ref, SEXP alt, SEXP Kaa, S
         sum_der = 0;
         for(s1 = 0; s1 < 4; s1++){  
           sum_der = sum_der + ((phi_prev[s1][nSnps_c-1] * delta + alphaTilde[s1] * 
-            der_epsilon(pOPGP[snp], epsilon_c, pref[ind + nInd_c*snp], palt[ind + nInd_c*snp], s2+1)) * Tmat(s1, s2, pr[snp-1]));
+            der_ep(pOPGP[snp], ep_c, pref[ind + nInd_c*snp], palt[ind + nInd_c*snp], s2+1)) * Tmat(s1, s2, pr[snp-1]));
         }
         phi[s2][nSnps_c-1] = sum_der/w_prev;
       }
@@ -286,20 +295,23 @@ SEXP score_fs_scaled_err_c(SEXP r, SEXP epsilon, SEXP ref, SEXP alt, SEXP Kaa, S
 }
 
 // rf's are equal and no error parameter
-SEXP score_fs_scaled_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nInd, SEXP nSnps){
+SEXP score_fs_scaled_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef_mat, SEXP Kab,
+                       SEXP OPGP, SEXP nInd, SEXP nSnps){
   // Initialize variables
-  int s1, s2, ind, snp, snp_der, nInd_c, nSnps_c, *pOPGP;
-  double *pscore, *pr, *pKaa, *pKab, *pKbb, delta;
+  int s1, s2, ind, snp, snp_der, nInd_c, nSnps_c, *pOPGP, *palt, *pref;
+  double *pscore, *pr, *pbcoef_mat, *pKab, ep_c, delta;
   double alphaTilde[4], alphaDot[4], sum, sum_der, w_new, w_prev;
   // Load R input variables into C
   nInd_c = INTEGER(nInd)[0];
   nSnps_c = INTEGER(nSnps)[0];
   // Define the pointers to the other input R variables
+  pref = INTEGER(ref);
+  palt = INTEGER(alt);
   pOPGP = INTEGER(OPGP);
-  pKaa = REAL(Kaa);
   pKab = REAL(Kab);
-  pKbb = REAL(Kbb);
+  pbcoef_mat = REAL(bcoef_mat);
   pr = REAL(r);
+  ep_c = REAL(ep)[0];
   // Define the output variable
   SEXP score;
   PROTECT(score = allocVector(REALSXP, nSnps_c-1));
@@ -308,6 +320,16 @@ SEXP score_fs_scaled_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nIn
   double llval = 0, phi[4][nSnps_c-1], phi_prev[4][nSnps_c-1], score_c[nSnps_c-1];
   for(snp = 0; snp < nSnps_c-1; snp++){
     score_c[snp] = 0;
+  }
+  
+  // define the density values for the emission probs
+  long size = (long) nSnps_c * nInd_c;
+  double pKaa[size];
+  double pKbb[size];
+  // #pragma omp parallel for
+  for (long i = 0; i < size; i++) {
+    pKaa[i] = pbcoef_mat[i] * pow(1.0 - ep_c, pref[i]) * pow(ep_c, palt[i]);
+    pKbb[i] = pbcoef_mat[i] * pow(1.0 - ep_c, palt[i]) * pow(ep_c, pref[i]);
   }
   
   // Now compute the likelihood and score function

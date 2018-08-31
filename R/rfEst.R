@@ -131,55 +131,9 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
                       sexSpec=F, seqErr=T, trace=F, noFam=as.integer(1), method = "optim", nThreads=0, ...){
   
   ## Do some checks
-  # if(!is.list(ref) | !is.list(alt) | !is.list(OPGP))
-  #   stop("Arguments for read count matrices and vector of OPGPs are required to be list objects")
-  # if( !is.numeric(noFam) || noFam < 1 || noFam != round(noFam) || !is.finite(noFam))
-  #   stop("The number of families needs to be a finite positive number")
-  # if(noFam != length(ref) | noFam != length(alt) | noFam != length(OPGP) )
-  #   stop("The number of read count matrices or OPGP vectors do not match the number of families specified")
-  # if( !is.null(init_r) & !is.numeric(init_r) )
-  #   stop("Starting values for the recombination fraction needs to be a numeric vector or integer or a NULL object")
-  # if( !is.logical(seqErr) ){
-  #   seqErr = T
-  #   warning("Argument for specifying whether sequencing errors are to be estimated invalid. Setting to default.")
-  # }
-  # if( (length(ep) != 1 || !is.numeric(ep) || (ep <= 0 | ep >= 1)) )
-  #   stop("Value for the error parameters needs to be a single numeric value in the interval (0,1) or a NULL object")
-  # if( !is.logical(trace) || is.na(trace) )
-  #   trace = FALSE
-  # if( !is.logical(sexSpec) || is.na(sexSpec) )
-  #   sexSpec = FALSE
-  #if(!(method %in% c("EM","optim","optim_old")))
-  #  stop("Specified optimization method is unknown. Please select one of 'EM' or 'optim'")
-  
-  ## Check the read count matrices
-  # if(any(unlist(lapply(ref,function(x) !is.numeric(x) || any( x<0 | !is.finite(x)) || any(!(x == round(x)))))))
-  #   stop("At least one read count matrix for the reference allele is missing or invalid")
-  # if(any(unlist(lapply(alt,function(x) !is.numeric(x) || any( x<0 | !is.finite(x)) || any(!(x == round(x)))))))
-  #   stop("At least one read count matrix for the alternate allele is missing or invalid")
-  # if(any(unlist(lapply(OPGP, function(x) !is.numeric(x) || !is.vector(x) || any(!(x %in% 1:16)) ))))
-  #   stop("At least OPGP vector is missing or invalid")
-  
   nInd <- lapply(ref,nrow)  # number of individuals
   nSnps <- ncol(ref[[1]])   # number of SNPs
-  
-  #if(sum(unlist(nInd))*nSnps > 25000)          # if data set is too large, there are memory issues with R for EM algorithm
-  #  method = "optim"
-  
-  ## check inputs are of required type for C functions
-  # if(!is.numeric(init_r)|is.integer(init_r))
-  #   init_r <- as.numeric(init_r)
-  # for(fam in 1:noFam){
-  #   if(!is.integer(ref[[fam]]))
-  #     ref[[fam]] <- matrix(as.integer(ref[[fam]]), nrow=nInd[[fam]], ncol=nSnps)
-  #   if(!is.integer(alt[[fam]]))
-  #     alt[[fam]] <- matrix(as.integer(alt[[fam]]), nrow=nInd[[fam]], ncol=nSnps)
-  #   if(!is.integer(OPGP[[fam]]))
-  #     OPGP[[fam]] <- as.integer(OPGP[[fam]])
-  # }
-  # if(!is.integer(noFam))
-  #   noFam <- as.integer(noFam)
-  
+
   if(method=="optim"){
     # Arguments for the optim function
     optim.arg <- list(...)
