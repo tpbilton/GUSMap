@@ -443,7 +443,7 @@ rf_est_FS_UP <- function(ref, alt, config, ep, method="optim", trace=F, nThreads
       optim.MLE <- optim(para,ll_fs_up_ss_scaled_err,method="BFGS",control=optim.arg,
                          ref=ref,alt=alt,bcoef_mat=bcoef_mat,Kab=Kab,
                          nInd=nInd,nSnps=nSnps,config=config,ps=ps,ms=ms,npar=npar,
-                         seqErr=seqErr)
+                         seqErr=seqErr,nThreads=nThreads)
       # Print out the output from the optim procedure (if specified)
       if(trace){
         print(optim.MLE)
