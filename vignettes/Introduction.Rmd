@@ -4,17 +4,164 @@ author: "Timothy P. Bilton"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteIndexEntry{Introduction to GUSMap}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
-)
+knitr::opts_chunk$set( collapse = TRUE, comment = "#>" )
 ```
+
+In this tutorial, we will describe how to use GUSMap to perform linkage mapping and explain some of the functionality available. We will use a simualated dataset of a full-sib family (F1 population) consisting of ? offspring with 3 chromosomes.  
+
+
+
+Some important up front comments regarding GUSMap:
+1. Having high read depth on the parents (by sequencing more than once) can be hugely helpful to correctly infer the segregation type of more SNPs. However, for the progeny, it is of more value (and cost-efficient) to have more individuals in the family than sequence fewer at lower depth.
+2. GUSMap is designed for low coverage data and so it is expected that no pre-filtering of the data is required. In particular, GUSMap is specifically designed to handle low-coverage data and the issues surrounding depth issues. In additional, GUSMap has serveral of its own filtering steps.
+
+## Loading Data
+
+At present, GUSMap can read in data stored in Variant Call Format (VCF) file, provided that there is some form of allelic depth information (e.g., the number of reads for the reference and alternate allele). This is done using the `VCFtoRA` function which takes in the name to a VCF file and converts it into what we call a reference/alternate (RA) file.
+
+```{r loadData}
+rafile <- VCFtoRA(infilename = ?, direct = "./", ped=T)
+```
+
+The first argument (`infilename = `) is the name of the VCF file. The second argument (`direct = ./`) specifies which directionary to write the RA file to relative to the current working directory. The last argument specifies where or not to initalize a pedigree file. Pedigree files are inportant later in the process for creating a full-sib family object and will discussed later. Currently, `VCFtoRA` requires one of the fields **AD**, **AO and RO**, or **DP4** to be present in the VCF file to extract allelic depth information. One other thing to note is that `VCFtoRA` returns the file location of the created RA dataset and the initialized pedigree file (if initialized).
+```{r rafile}
+rafile
+```
+
+The RA file created is a a tab-delimited with columns, CHROM (the chromosome name taken from the "#CHROM" column in the VCF file), POS (the position of the SNP taken from the "POS" column in the VCF file), and SAMPLES which consists of the sampleIDs used in the VCF. For example, the first five columns and rows of the ? dataset is.
+
+
+Note: Indels are removed, multiple alternative alleles are removed and ./. is translated into 0,0.
+
+An RA file can then be loaded into GUSMap using the `readRA()` function. For our example,
+```{r readRA}
+RAdata <- readRA(rafile, sampthres = 0.01, excsamp = NULL)
+```
+
+The second argument is to remove any samples with 
+The thrid argument allows the user to discard any samples which are known to be probmatic and want to be removed. The input for `excsamp` must correspond to the sample IDs in the RA file.  
+
+
+```{r RAdata}
+RAdata
+```
+
+## Linkage mapping in GUSMap
+
+In this section, we will discuss linkage mapping using GUSMap. The main steps to the process are:
+
+1. Create a full-sib family and perform appropriate filtering
+2. Constructing linkage groups
+3. Ordering markers across each linakge group
+4. Computing maps for the ordered linkage groups
+
+In the following sections, we shall discuss how each of these steps are performed in GUSMap.
+
+#### Constructing a full-sib family
+
+To create a 'full-sib' family (or a F1 population) object.
+```{r makeFS}
+mySpecies <- makeFS(RAdata, pedfile=rafile$ped, 
+                      filter = list(MAF = 0.05, MISS = 0.5,
+                        BIN = 100, DEPTH = 5, PVALUE = 0.01))
+```
+
+The `makeFS()` function takes an `RA` object and performs
+
+There are five different types of filtering available in GUSMap:
+* Minor allele frequency (`MAF`): SNPs are removed if the MAF is below the threshold since in full-sib families, the expected allele frequency ratios are 0.5 for BI SNPs and 0.75 (or 0.25) for PI and MI SNPs.
+* Percentage of missing data (`MISS`): SNPs are removed if the number of individuals without a single read for a given SNP is less than the threshold. 
+*      (`BIN`): This filter is performed to  
+* Parental Depth (`DEPTH`): SNPs are removed if the read depth of each parent is below the threshold value. This filtering is performed since low read depth can result in parental heterozygous genotypes to be seen as homozygous resulting in incorrectly inferred segreation type.  
+* Segregation test (`PVALUE`): A segregation test is performed to removed any SNPs in which the segregation type has been incorrectly inferred.
+
+
+
+### Linkage Groups:
+
+##### Computing 2-point recombination fraction estimates
+
+Linkage group formation in GUSMap is based on 2-point recombination fraction estimates and associated LOD scores between all pairs if SNPs. These are computed using the function `$createLG()`. 
+```{r 2pt_rf}
+mySpecies$rf_2pt(nClust=3)
+```
+
+The `$rf_2pt` function is parallelized to speed up computational time, where the `nClust` argument sepcifies how many cores to use in the parallelization. Be careful not to set this to more than what is available on your computer. Note: this step can take some, especially if there are a large noumber of SNPs. 
+
+##### Genome Assembly Validation 
+
+Once the 2-point recombination fraction estimates and associated LOD scores have been computed, we can plot the resulting estimates on heatmaps.
+```{r plotChr}
+mySpecies$plotChr()
+```
+
+This is helpful for examining genome assemblies if the SNPs where called using a reference genome. One can still plot the 2-point rf's estimates for *de novo* assemblies, although the resulting plot should look fairly random and so is usually not very informative.
+
+##### Forming linkage groups
+
+Using our 2-point rf estimates and LOD scores, we can proceed to forming linkage groups. 
+```{r createLG}
+mySpecies$createLG(parent = "both", LODthres = 5, nComp = 10)
+```
+
+The process of creating linkage groups in GUSMap is as follows:
+
+1. the two SNPs with the highest LOD score are grouped together to form the first linkage group. If the highest LOD score is less than the LOD threshold, then the SNPs are not grouped togehter and no linkage groups are formed. In this case, lower your LOD threshold.
+2. The SNP was the 
+3. Once there are no more SNPs with an average LOD with the largest `nComp` SNPs is less than the LOD threshold, then we proceed back to step 1 and form a new linkage group. 
+4. Stop when no more linkage groups can be formed and no more SNPs are added to a linkage group or all the SNPs have been 
+
+`parent = "maternal"` to create linkage groups for maternal SNPs only and `parent = "paternal"` to create linkage groups for paternal SNPs only. The second argument is the LOD threshold to use in forming the linkage groups. 
+
+Once the linkage groups have been formed, it is a good idea to look how well the grouping has performed by examining the heatmap of the 2-point rf estimates with the SNPs grouped according to the linkage groups
+```{r plotLG}
+
+```
+
+##### Editing Linkage Groups
+
+ 
+
+```{r removeSNP}
+mySpecies$removeSNP(snps = c(4,10))
+```
+
+```{r removeLG}
+mySpecies$removeLG(LG = c(14,15))
+```
+
+```{r mergeLG}
+mySpecies$mergeLG(LG = c(4,5))
+```
+
+Note: At this stage there is no undo funcationality in GUSMap. So, once you have removed a SNP or linkage group, or merge two linkage groups. However, if you do edit the linkage groups unintentionally, then you can just recreate the linkage groups using the `$createLG` and proceed as you going before (and hence it helps to save you code in a script).
+
+#### Adding Both-Informative SNPs
+
+When the maternal and parental linkage groups have been tidies up and any probmatic SNPs removed, we can proceed to map the BI SNPs to the linkage groups and merge the linkage groups across the two parental lines. 
+```{r addBIsnps}
+mySpecies$addBIsnps(LODthres = 10, nComp = 10)
+```
+
+Once again the linkage groups should be examine using heatmaps of the 2-point rf estimates and editing accordingly.
+
+### Ordering Linkage Groups
+
+Once we are happy with the linkage groups we have formed, we can proceed to order the markers (SNPs) in each linkage group. In GUSMap, marker ordering is performed using the multidimensional scaling approach as described by ? (2018). 
+
+```{r orderLG}
+mySpecies$orderLG() 
+```
+
+
+
+
 
 
 

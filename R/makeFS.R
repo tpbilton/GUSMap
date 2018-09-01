@@ -21,7 +21,8 @@
 #' 
 #' The segregation type of each SNP is infer based on the genotypes of the parents. The parental genotypes are called homozygous for the 
 #' reference is there is only reference reads seen, heterozygous if at least one read for the reference and alternate allele are seen
-#' and homozygous for the alternate if only reads for the alternate allele is seen. The \code{BIN} filter is implemented to remove any SNPs
+#' and homozygous for the alternate if only reads for the alternate allele is seen. 
+#' The \code{BIN} filter is implemented to remove any SNPs
 #' with incorrect segregation type. The segregation test procedure for performing the segregation test is described in the supplementary methods 
 #' of the publication by \insertCite{bilton2018genetics1;textual}{GUSMap} (Section 4 of File S1).
 #' 
@@ -34,15 +35,15 @@
 #' @section Filtering:
 #' The filtering criteria currently implemented are:
 #' \itemize{
-#' \item{Proportion of missing data (\code{BIN}): }{SNPs are binned together if the distance between them is less than threshold value of base pairs (default is 0).
-#' One SNP is then randomly selected from each bin and retained for final analysis. This filtering is to ensure that there is only one SNP on each tag.}
-#' \item{Parental read depth (\code{DEPTH}): }{SNPs are discarded if the read depth of either parent is less than the threshold value (default is 6). 
-#' This filter is to remove SNPs where the parental information is insufficient to infer segregation type.}
 #' \item{Minor allele frequency (\code{MAF}): }{SNPs are discarded if their MAF is less than the threshold (default is 0.05)}
 #' \item{Proportion of missing data (\code{MISS}): }{SNPs are discarded if the proportion of individuals with no reads (e.g. missing genotype)
 #'  is greater than the threshold value (default is 0.5).}
+#' \item{Bin size for SNP selection (\code{BIN}): }{SNPs are binned together if the distance between them is less than the threshold value of base pairs (default is 0).
+#' One SNP is then randomly selected from each bin and retained for final analysis. This filtering is to ensure that there is only one SNP on each tag.}
+#' \item{Parental read depth (\code{DEPTH}): }{SNPs are discarded if the read depth of either parent is less than the threshold value (default is 6). 
+#' This filter is to remove SNPs where the parental information is insufficient to infer segregation type accurately.}
 #' \item{Segregation test P-value (\code{PVALUE}): }{SNPs are discarded if the p-value from a segregation test is smaller than the threshold (default is 0.01).
-#'  This removes SNPs with the wrong segregation type.}
+#'  This is filter out SNPs where the segregation type has been inferred wrong.}
 #' }
 #' 
 #' @section Pedigree File:
@@ -56,7 +57,8 @@
 #' \item Family: The name of the Family for a group of progeny with the same parents. Note that this is not necessary (it works all the full-sib families) but if
 #' given must be the same for all the progeny.
 #' }
-#' Grandparents can also be supplied but are only used to infer parental genotypes when the associated read depth is below the threshold \code{DEPTH}.
+#' Grandparents can also be supplied but are only used to infer parental genotypes 
+#' when the associated read depth is greater than or equal the threshold \code{DEPTH}.
 #' 
 #' @return 
 #' An R6 object of class RA
@@ -78,7 +80,8 @@
 #' @export
 
 ### Make a full-sib family population
-makeFS <- function(RAobj, pedfile, family=NULL, filter=list(MAF=0.05, MISS=0.2, BIN=0, DEPTH=5, PVALUE=0.01)){
+makeFS <- function(RAobj, pedfile, family=NULL, 
+                   filter=list(MAF=0.05, MISS=0.2, BIN=0, DEPTH=5, PVALUE=0.01)){
   #inferSNPs = FALSE, perInfFam=1){
   inferSNPs = FALSE; perInfFam=1 # some variables for multiple familes needed for later
   ## Do some checks

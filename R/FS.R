@@ -25,9 +25,18 @@
 #'                 filter=list(MAF=0.05, MISS=0.2, BIN=0, DEPTH=5, PVALUE=0.01))
 #'
 #' ## Functions (Methods) of FS object
+#' FSobj$addBIsnps(LODthres = 10, nComp = 10)
+#' FSobj$createLG(parent = "both", LODthres = 10, nComp = 10)
 #' FSobj$maskSNP(snps)
+#' FSobj$mergeLG(LG)
+#' FSobj$orderLG( )
+#' FSobj$plotChr(  )
+#' FSobj$plotLG(  )
+#' FSobj$removeLG(LG)
+#' FSobj$removeSNP(snps)
 #' FSobj$rf_2pt(nClust=2)
 #' FSobj$unmaskSNP(snps)
+#' FSobj$write()
 #' 
 #' @details
 #' An FS object is created from the \code{\link{makeFS}} function and contains RA data,
@@ -36,9 +45,20 @@
 #' 
 #' @section Methods(Functions):
 #' \describe{
-#' \item{\code{\link{$maskSNP}}}{Mask SNPs from the data set.}
-#' \item{\code{\link{$rf_2pt}}}{Compute the 2-point recombination fraction between all SNP pairs.}
-#' \item{\code{\link{$unmaskSNP}}}{Unmask SNPs from the data set.}
+#' \item{\code{\link{$addBIsnps}}}{Add Both-Informative (BI) snps to and merge the maternal and/or
+#' paternal linkage groups.}
+#' \item{\code{\link{$createLG}}}{Create linkage groups.}
+#' \item{\code{\link{$maskSNP}}}{Mask SNP(s) in the dataset.}
+#' \item{\code{\link{$mergeLG}}}{Merge linkage groups.}
+#' \item{\code{\link{$orderLG}}}{Order the SNPs in the linkage group(s).}
+#' \item{\code{\link{$plotChr}}}{Plot the heatmap of the 2-point recombination fraction 
+#' estimates (or LOD scores) when SNPs are ordered according to the genome assembly}
+#' \item{\code{\link{$plotLG}}}{Plot the heatmap of the 2-point recombination fraction 
+#' estimates (or LOD scores) when SNPs are ordered according to their linkage groups.}
+#' \item{\code{\link{$removeLG}}}{Remove linkage group(s).}
+#' \item{\code{\link{$removeSNP}}}{Remove SNP(s) from linkage group(s)}
+#' \item{\code{\link{$rf_2pt}}}{Compute the 2-point recombination fraction (and LOD score) between all SNP pairs.}
+#' \item{\code{\link{$unmaskSNP}}}{Unmask SNP(s) in the data set.}
 #' }
 #' @format NULL
 #' @author Timothy P. Bilton
