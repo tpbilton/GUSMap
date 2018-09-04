@@ -1,5 +1,5 @@
 #### Function for plotting linkage groups (or a single linkage group)
-plotLG <- function(mat, LG, filename=NULL, names=NULL, chrS=2, lmai=2, chrom=T){
+plotLG <- function(mat, LG, filename=NULL, names=NULL, chrS=2, lmai=2, chrom=T, type="rf"){
   
   if(length(LG) == 1){
     chrS = 0; lmai = 0
@@ -12,7 +12,7 @@ plotLG <- function(mat, LG, filename=NULL, names=NULL, chrS=2, lmai=2, chrom=T){
   }
   else
     chrom.ind <- 1:ncol(mat)
-
+  
   ## Subset the matrix
   mat <- cbind(mat,rep(0.5,b-1))
   mat <- rbind(mat,rep(0.5,b))
@@ -24,7 +24,12 @@ plotLG <- function(mat, LG, filename=NULL, names=NULL, chrS=2, lmai=2, chrom=T){
     if(!is.null(filename))
       png(filename,width=npixels+72*lmai,height=npixels,res=72)
     par(xaxt='n',yaxt='n',mai=c(0,lmai,0,0),bty='n',ann=F)
-    image(1:npixels,1:npixels,mat,zlim=c(0,0.5),col=heat.colors(100))
+    ## what matrix to plot
+    if(type == "rf")
+      image(1:npixels,1:npixels,mat,zlim=c(0,0.5),col=heat.colors(100))
+    else if (type == "LOD")
+      image(1:npixels,1:npixels,mat,zlim = c(0,50), 
+            col=colorRampPalette(rev(c("red","orange","yellow","white")), bias=5)(100))
     if(is.null(names))
       mtext(paste("LG",1:length(LG),"  "),
                   at=floor(apply(cbind(c(0,breaks),c(breaks,npixels)),1,median)),side=2, line=0,cex=chrS,las=1)
@@ -39,8 +44,12 @@ plotLG <- function(mat, LG, filename=NULL, names=NULL, chrS=2, lmai=2, chrom=T){
     npixels <- length(chrom.ind)
     if(!is.null(filename))
       png(filename,width=npixels,height=npixels)
-    par(xaxt='n',yaxt='n',mar=c(0,0,0,0),bty='n',ann=F)
-    image(1:npixels,1:npixels,mat,zlim=c(0,0.5),col=heat.colors(100))
+    ## what matrix to plot
+    if(type == "rf")
+      image(1:npixels,1:npixels,mat,zlim=c(0,0.5),col=heat.colors(100))
+    else if (type == "LOD")
+      image(1:npixels,1:npixels,mat,zlim = c(0,50), 
+            col=colorRampPalette(rev(c("red","orange","yellow","white")), bias=5)(100))
     abline(h=breaks)
     abline(v=breaks)
     if(!is.null(filename))

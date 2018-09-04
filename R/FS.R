@@ -241,11 +241,13 @@ FS <- R6Class("FS",
                         if(mergeTo == "maternal"){
                           private$LG_mat[[matgroups[1]]] <- mergedLG
                           private$LG_mat[matgroups[-1]] <- NULL
+                          private$config[private$LG_pat[patgroups]] <- private$config[private$LG_pat[patgroups]] + 2
                           private$LG_pat[patgroups] <- NULL
                         } else if(mergeTo == "paternal"){
                           private$LG_pat[[patgroups[1]]] <- mergedLG
-                          private$LG_mat[matgroups] <- NULL
                           private$LG_pat[patgroups[-1]] <- NULL
+                          private$config[private$LG_mat[matgroups]] <- private$config[private$LG_mat[matgroups]] - 2
+                          private$LG_mat[matgroups] <- NULL
                         }
                       } else{
                         ## remove the LGs that were merged
@@ -268,7 +270,7 @@ FS <- R6Class("FS",
                     ## drop remaining groups
                     private$LG[LG[-1]] <- NULL
                   }
-                  return(invisible())
+                  return(invisible(NULL))
                 },
                 ## function for masking SNPs
                 maskSNP = function(snps){
@@ -288,7 +290,7 @@ FS <- R6Class("FS",
                 },
                 #####################################################################
                 ## Function for computing the 2-point rf estimates
-                rf_2pt = function(nClust=4, err=FALSE){
+                rf_2pt = function(nClust = 4, err = FALSE){
                   ## do some checks
                   if(!is.numeric(nClust) || !is.vector(nClust) || length(nClust)!=1 || nClust < 0 || is.infinite(nClust) )
                     stop("Number of clusters for parallelization needs to be a positive finite integer number")
@@ -331,7 +333,9 @@ Please select one of the following:
                     private$LG_mat <- createLG(private$group, private$LOD, "maternal", LODthres, nComp, masked=private$masked)
                   if(parent == "paternal" || parent == "both")
                     private$LG_pat <- createLG(private$group, private$LOD, "paternal", LODthres, nComp, masked=private$masked)
-                  return(invisible())
+                  if(!is.null(private$LG))
+                    private$LG <- NULL
+                  return(invisible(NULL))
                 },
                 ## function for adding the unmapped (or inferred SNPs) to the linkage groups
                 # addSNPs = function(LODthres=10, nComp=10){
@@ -728,9 +732,9 @@ Please select one of the following:
                       LG <- sapply(names, function(x) which((private$chrom == x) & !private$masked & (private$config[[1]] %in% c(1,2,3,4,5))), simplify=F)
                     ## plot the chromsomes rf info
                     if(mat == "rf")
-                      plotLG(mat=private$rf, LG=LG, filename=filename, names=names, chrS=chrS, lmai=lmai, chrom=T)
+                      plotLG(mat=private$rf, LG=LG, filename=filename, names=names, chrS=chrS, lmai=lmai, chrom=T, type="rf")
                     else if(mat == "LOD")
-                      plotLG(mat=private$LOD, LG=LG, filename=filename, names=names, chrS=chrS, lmai=lmai, chrom=T)
+                      plotLG(mat=private$LOD, LG=LG, filename=filename, names=names, chrS=chrS, lmai=lmai, chrom=T, type="LOD")
                     else
                       stop("Matrix to be plotted not found.") ## shouldn't get here
                     return(invisible())
@@ -758,7 +762,7 @@ Please select one of the following:
                         at = apply(cbind(c(min(LGorder),LGbreaks),c(LGbreaks,max(LGorder))),1,mean))
                 }, 
                 ## Function for computing the rf's for each chromosome 
-                rf_est = function(chr=NULL, init_r=0.01, ep=0.001, method="optim", sexSpec=F, seqErr=T, mapped=T, nThreads=0){
+                rf_est = function(chr=NULL, init_r=0.01, ep=0.001, method="optim", sexSpec=F, seqErr=T, mapped=T, nThreads=1){
                   ## do some checks
                   if( !is.null(init_r) & !is.numeric(init_r) )
                     stop("Starting values for the recombination fraction needs to be a numeric vector or integer or a NULL object")

@@ -184,7 +184,7 @@ SEXP score_fs_scaled_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef_mat, 
   long size = (long) nSnps_c * nInd_c;
   double pKaa[size];
   double pKbb[size];
-  #pragma omp parallel for
+  #pragma omp parallel for num_threads(nThreads_c)
   for (long i = 0; i < size; i++) {
     pKaa[i] = pbcoef_mat[i] * pow(1.0 - ep_c, pref[i]) * pow(ep_c, palt[i]);
     pKbb[i] = pbcoef_mat[i] * pow(1.0 - ep_c, palt[i]) * pow(ep_c, pref[i]);
