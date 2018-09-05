@@ -149,19 +149,25 @@ FS <- R6Class("FS",
                     else{
                       ## remove SNP from the maternal linkage groups
                       for(lg in 1:length(private$LG_mat)){
-                        if(any(private$LG_mat[[lg]] %in% snps))
-                          private$LG_mat[[lg]] <- private$LG_mat[[lg]][-which(private$LG_mat[[lg]] %in% snps)]
+                        if(any(private$LG_mat[[lg]] %in% snps)){
+                          lgremove <- which(private$LG_mat[[lg]] %in% snps)
+                          if(length(lgremove) > 0)
+                            private$LG_mat[[lg]] <- private$LG_mat[[lg]][-lgremove]
+                        }
                       }
                       ## remove SNP from the paternal linkage groups
                       for(lg in 1:length(private$LG_pat)){
-                        if(any(private$LG_pat[[lg]] %in% snps))
-                          private$LG_pat[[lg]] <- private$LG_pat[[lg]][-which(private$LG_pat[[lg]] %in% snps)]
+                        if(any(private$LG_pat[[lg]] %in% snps)){
+                          lgremove <- which(private$LG_pat[[lg]] %in% snps)
+                          if(length(lgremove))
+                            private$LG_pat[[lg]] <- private$LG_pat[[lg]][-lgremove]
+                        }
                       }
                       ## check that there are no LGs that are now empty
-                      empty_mat <- lapply(private$LG_mat, length) != 0
+                      empty_mat <- lapply(private$LG_mat, length) == 0
                       if(any(empty_mat))
                         private$LG_mat <- private$LG_mat[which(empty_mat)]
-                      empty_pat <- lapply(private$LG_pat, length) != 0
+                      empty_pat <- lapply(private$LG_pat, length) == 0
                       if(any(empty_pat))
                         private$LG_pat <- private$LG_pat[which(empty_pat)]
                     }
@@ -241,12 +247,12 @@ FS <- R6Class("FS",
                         if(mergeTo == "maternal"){
                           private$LG_mat[[matgroups[1]]] <- mergedLG
                           private$LG_mat[matgroups[-1]] <- NULL
-                          private$config[private$LG_pat[patgroups]] <- private$config[private$LG_pat[patgroups]] + 2
+                          private$config[[1]][private$LG_pat[patgroups][[1]]] <- private$config[[1]][private$LG_pat[patgroups][[1]]] + 2
                           private$LG_pat[patgroups] <- NULL
                         } else if(mergeTo == "paternal"){
                           private$LG_pat[[patgroups[1]]] <- mergedLG
                           private$LG_pat[patgroups[-1]] <- NULL
-                          private$config[private$LG_mat[matgroups]] <- private$config[private$LG_mat[matgroups]] - 2
+                          private$config[[1]][private$LG_mat[matgroups][[1]]] <- private$config[[1]][private$LG_mat[matgroups][[1]]] - 2
                           private$LG_mat[matgroups] <- NULL
                         }
                       } else{
