@@ -101,7 +101,7 @@ In the following sections, we shall discuss how each of these steps are performe
 Construction of a 'full-sib' family (e.g., F1 population) object is achieved using the `makeFS` function.
 ```{r makeFS}
 mySpecies <- makeFS(RAobj = RAdata, pedfile = vcffile$ped, 
-                      filter = list(MAF = 0.05, MISS = 0.5,
+                      filter = list(MAF = 0.05, MISS = 0.2,
                         BIN = 100, DEPTH = 5, PVALUE = 0.01))
 ```
 
@@ -216,11 +216,18 @@ Once again the linkage groups should be examine using heatmaps of the 2-point rf
 
 Once we are happy with the linkage groups that we have formed, we can proceed to order the markers (SNPs) in each linkage group. In GUSMap, marker ordering is performed using the multidimensional scaling approach as described by ? (2018) and is implmented in the `$orderLG` function.
 ```{r orderLG}
-mySpecies$orderLG(mapfun = "morgan", weights = "none", ndim = 30) 
+mySpecies$orderLG(mapfun = "morgan", weight = "none", ndim = 30) 
 ```
 
 ```{r removeSNP_2}
-mySpecies$removeSNP(snps=c(166,173, 310))
+mySpecies$removeSNP(snps=c(c(367,373,161,396,422,59,25,465,450,194,338,31,363,205,373,409,372,203,331,354,410,335,365,463,438,419,209,340),
+    c(151,157,187,179,237,282,277,255,226,228,283,154,149,249,279,135,138,234,260,253,301,299,294,254,229,143,142),
+    c(38,114,67,103,99,64,34,278,123,24,7,87,121,66,87,106,62,78,42,333,33)))
+```
+
+
+```{r rf_est}
+mySpecies$rf_est(nThreads = 2)
 ```
 
 

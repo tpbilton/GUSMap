@@ -174,10 +174,13 @@ FS <- R6Class("FS",
                   }
                   else{
                     ## remove SNPs from the combined groups
-                    for(lg in 1:length(private$LG))
-                      private$LG[[lg]] <- private$LG[[lg]][-which(private$LG[[lg]] %in% snps)]
+                    for(lg in 1:length(private$LG)){
+                      lgremove <- which(private$LG[[lg]] %in% snps)
+                      if(length(lgremove) > 0)
+                        private$LG[[lg]] <- private$LG[[lg]][-lgremove]
+                    }
                     ## check for empty LGs
-                    empty <- lapply(private$LG, length) != 0
+                    empty <- lapply(private$LG, length) == 0
                     if(any(empty))
                       private$LG <- private$LG[which(empty)]
                   }
