@@ -462,6 +462,22 @@ makeFS <- function(RAobj, pedfile, family=NULL,
       cat("Maternal/Paternal-informative (MI or PI):", length(group_infer$SI),"\n")
     }
     cat("Number of progeny:", nInd_all[[fam]],"\n")
+    
+    ## Create the summary info:
+    temp <- ref_all[[1]] + alt_all[[1]]
+    summaryInfo <- list()
+    summaryInfo$data <- paste0(c(
+      "Single Family Linkage analysis:\n\n",
+      "Data Summary:\n",
+      "Data file:\t", RAobj$.__enclos_env__$private$infilename,"\n",
+      "Mean Depth:\t", round(mean(temp),4),"\n",
+      "Mean Call Rate:\t",round(sum(temp!=0)/length(temp),4),"\n",
+      "Number of ...\n",
+      "  Progeny:\t",unlist(nInd),"\n",
+      "  MI SNPs:\t",length(group$MI),"\n",
+      "  PI SNPs:\t",length(group$PI),"\n",
+      "  BI SNPs:\t",length(group$BI),"\n",
+      "  Total SNPs:\t",length(unlist(group)),"\n\n"))
   }
   else{
     noInfoFam <- ceiling(perInfFam*noFam)
@@ -514,6 +530,7 @@ makeFS <- function(RAobj, pedfile, family=NULL,
     
     group_infer <- NULL
     config_infer_all <- NULL
+    summaryInfo  <- NULL
   }
   
   ## Update the R6 object and return it
@@ -521,7 +538,7 @@ makeFS <- function(RAobj, pedfile, family=NULL,
     genon = genon_all, ref = ref_all, alt = alt_all, chrom = chrom_all, pos = pos_all,
     group = group, group_infer = group_infer, config = config_all, config_infer = config_infer_all,
     nInd = nInd_all, nSnps = sum(indx_all), noFam = noFam, indID = indID_all, SNP_Names = SNP_Names,
-    masked=rep(FALSE,sum(indx_all)), famInfo=famInfo)
+    masked=rep(FALSE,sum(indx_all)), famInfo=famInfo, summaryInfo=summaryInfo)
   )
   
   return(FSobj)

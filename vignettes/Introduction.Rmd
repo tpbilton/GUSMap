@@ -101,7 +101,7 @@ In the following sections, we shall discuss how each of these steps are performe
 Construction of a 'full-sib' family (e.g., F1 population) object is achieved using the `makeFS` function.
 ```{r makeFS}
 mySpecies <- makeFS(RAobj = RAdata, pedfile = vcffile$ped, 
-                      filter = list(MAF = 0.05, MISS = 0.2,
+                      filter = list(MAF = 0.05, MISS = 0.5,
                         BIN = 100, DEPTH = 5, PVALUE = 0.01))
 ```
 
@@ -162,7 +162,7 @@ The process of creating linkage groups in GUSMap is as follows:
 
 Once the linkage groups have been formed, it is a good idea to look how well the grouping has performed by examining the heatmap of the 2-point rf estimates with the SNPs grouped according to the linkage groups.
 ```{r plotLG_mat}
-mySpecies$plotLG(parent = "both")
+mySpecies$plotLG(parent = "both", interactive = F)
 ```
 
 So we see that there 4 MI linkage groups and 2 PI linkage groups. We would expect there to be 3 linkage groups since there are 3 chromosomes so we have one too many MI linkage group and one too few PI linkage group. In general, the linkage between SNPs from different linkage groups appear relately unlinked with high rf estimates. However,  we see that linkage group 2 has high rf with linkage group 6 which suggests that these two linkage groups should be joined together. Since linkage group 6 has many more SNPs that linkage group 2, it seems most likely that the segregation type for the SNPs in linkage group 2 were incorrectly inferred to be MI instead of PI (possibly due to sequencing errors and low read depth). Lastly, the heatmap suggests that linkage group 5 is actually two separate linkage groups and so need to be split up. 
@@ -216,19 +216,33 @@ Once again the linkage groups should be examine using heatmaps of the 2-point rf
 
 Once we are happy with the linkage groups that we have formed, we can proceed to order the markers (SNPs) in each linkage group. In GUSMap, marker ordering is performed using the multidimensional scaling approach as described by ? (2018) and is implmented in the `$orderLG` function.
 ```{r orderLG}
-mySpecies$orderLG(mapfun = "morgan", weight = "none", ndim = 30) 
+mySpecies$orderLG(mapfun = "haldane", weight = "LOD2", ndim = 30) 
 ```
 
 ```{r removeSNP_2}
-mySpecies$removeSNP(snps=c(c(367,373,161,396,422,59,25,465,450,194,338,31,363,205,373,409,372,203,331,354,410,335,365,463,438,419,209,340),
-    c(151,157,187,179,237,282,277,255,226,228,283,154,149,249,279,135,138,234,260,253,301,299,294,254,229,143,142),
-    c(38,114,67,103,99,64,34,278,123,24,7,87,121,66,87,106,62,78,42,333,33)))
+mySpecies$removeSNP(c(c(217,177,436,450,459,467,64,28,375,34,401,230,410,449,451,376,500,515,405,411,513,427,418,423,228,453,360,367,368,392,243,434),
+                    c(253,300,164,169,310,166,173,201,312,336,315,213,209,225,259,277,334,283,143,156,255,301,317,316,344,345,157),
+                    c(37,69,136,112,108,311,29,42,126,115,133,72,84,26,370,67,71,94,6,9)))
+
+#mySpecies$removeSNP(snps=c(c(367,373,161,396,422,59,25,465,450,194,338,31,363,205,373,409,372,203,331,354,410,335,365,463,438,419,209,340),
+#    c(151,157,187,179,237,282,277,255,226,228,283,154,149,249,279,135,138,234,260,253,301,299,294,254,229,143,142),
+#    c(38,114,67,103,99,64,34,278,123,24,7,87,121,66,87,106,62,78,42,333,33)))
 ```
 
 
 ```{r rf_est}
 mySpecies$rf_est(nThreads = 2)
 ```
+
+
+
+
+Finally, the results of the analysis in GUSMap can be written to a file using the `$writeLG` function.
+```{r writeLG}
+mySpecies$writeLG(file = "mySpecies")
+```
+
+
 
 
 
