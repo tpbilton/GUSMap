@@ -8,7 +8,7 @@
 FSobj$rf_2pt(nClust=2)
 }
 \description{
-Compute 2-point recombination fraction estimates using the method of \insertCite{bilton2018genetics1;textual}{GUSMap}
+Compute 2-point recombination fraction estimates using the method of \insertCite{bilton2018genetics1;textual}{GUSMap}.
 }
 \author{
 Timothy P. Bilton

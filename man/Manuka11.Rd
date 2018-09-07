@@ -8,15 +8,15 @@ Manuka11()
 }
 \value{
 A character string of the complete path to the manuka data set contained in the package
-and a pedigree file that goes with the data.
+and associated pedigree file.
 }
 \description{
-Function for extracting the path to the (VCF) file of the Manuka data used in the publication by \insertCite{bilton2018genetics1;textual}{GUSMap}
-and a pedigree file that goes with the data.
+Function for extracting the path to the Variant Call Format (VCF) file of the Manuka data used in the publication by \insertCite{bilton2018genetics1;textual}{GUSMap}
+and a associated pedigree file.
 }
 \details{
-The data consists of 680 SNPs, genotyped using genotyping-by-sequencing
-methods. The data is in VCF format (see this \href{https://samtools.github.io/hts-specs/VCFv4.2.pdf}{page} 
+The data consists of a full-sib family with 177 progeny and 680 SNPs, genotyped using the genotyping-by-sequencing
+method. The data is in VCF format (see this \href{https://samtools.github.io/hts-specs/VCFv4.2.pdf}{page} 
 for specification of VCF format). The pedigree file contains five columns, namely
 \itemize{
 \item SampleID: A unique character string of the sample ID. These correspond to those found in the VCF file
@@ -25,7 +25,7 @@ Note that some samples can be from the same individual.
 \item Mother: The ID of the mother as given in the IndividualID. Note, if the mother is unknown then this should be left blank.
 \item Father: The ID of the father as given in the IndividualID. Note, if the father is unknown then this should be left blank.
 \item Family: The name of the Family for a group of progeny with the same parents. Note that this is not necessary but if
-given must be the same for all the progeny.
+given must be the same for all the progeny in the same family.
 }
 }
 \examples{

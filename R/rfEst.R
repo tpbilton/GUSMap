@@ -15,13 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
-### R Script of functions for computing the recombination fraction estimate 
-### for linkage analysis using sequencing data.
-### Author: Timothy Bilton
-### Date: 06/02/18
-
-## Function for computing the recombination fraction when the parental phase is known
-#' Estimation of adjacent recombination fractions in full-sib families.
+## Function for computing linkage maps   when the parental phase is known
+#' Compute ordered linkage maps
 #' 
 #' Estimate the recombination fractions based on the hidden Markov model (HMM)
 #' for low coverage sequencing data in full-sib families.

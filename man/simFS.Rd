@@ -5,10 +5,10 @@
 \title{Simulation of sequencing data for a single full-sib family.}
 \usage{
 simFS(rVec_f, rVec_m = rVec_f, epsilon = 0, config, nInd, meanDepth,
-  thres = NULL, noFam = 1, noChr = 1, NoDS = 1,
-  formats = list(gusmap = F, onemap = F, lepmap = F, joinmap = F, crimap
-  = F), rd_dist = "Neg_Binom", filename = "sim", direct = "./",
-  seed1 = 1, seed2 = 1)
+  thres = NULL, noFam = 1, noChr = 1, NoDS = 1, formats = list(gusmap
+  = F, onemap = F, lepmap = F, joinmap = F, crimap = F),
+  rd_dist = "Neg_Binom", filename = "sim", direct = "./", seed1 = 1,
+  seed2 = 1)
 }
 \arguments{
 \item{rVec_f, rVec_m}{Numeric vector of true paternal and maternal

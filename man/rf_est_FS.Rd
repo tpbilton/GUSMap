@@ -2,10 +2,11 @@
 % Please edit documentation in R/rfEst.R
 \name{rf_est_FS}
 \alias{rf_est_FS}
-\title{Estimation of adjacent recombination fractions in full-sib families.}
+\title{Compute ordered linkage maps}
 \usage{
 rf_est_FS(init_r = 0.01, ep = 0.001, ref, alt, OPGP, sexSpec = F,
-  seqErr = T, trace = F, noFam = 1, method = "optim", ...)
+  seqErr = T, trace = F, noFam = as.integer(1), method = "optim",
+  nThreads = 0, ...)
 }
 \arguments{
 \item{init_r}{Vector of starting values for the recombination fractions}

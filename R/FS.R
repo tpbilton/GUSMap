@@ -24,19 +24,21 @@
 #' FSobj <- makeFS(RAobj, pedfile, family=NULL, 
 #'                 filter=list(MAF=0.05, MISS=0.2, BIN=0, DEPTH=5, PVALUE=0.01))
 #'
-#' ## Functions (Methods) of FS object
+#' ## Functions (Methods) of an FS object
 #' FSobj$addBIsnps(LODthres = 10, nComp = 10)
+#' FSobj$computeMap( )
 #' FSobj$createLG(parent = "both", LODthres = 10, nComp = 10)
 #' FSobj$maskSNP(snps)
 #' FSobj$mergeLG(LG)
-#' FSobj$orderLG( )
+#' FSobj$orderLG(chrom = NULL, mapfun = "haldane", weight="LOD2", ndim=30, spar = NULL)
 #' FSobj$plotChr(  )
 #' FSobj$plotLG(  )
+#' FSobj$print(what = NULL)
 #' FSobj$removeLG(LG)
 #' FSobj$removeSNP(snps)
-#' FSobj$rf_2pt(nClust=2)
+#' FSobj$rf_2pt(nClust = 2)
 #' FSobj$unmaskSNP(snps)
-#' FSobj$write()
+#' FSobj$writeLG(file, direct = "./", LG = NULL)
 #' 
 #' @details
 #' An FS object is created from the \code{\link{makeFS}} function and contains RA data,
@@ -45,20 +47,24 @@
 #' 
 #' @section Methods(Functions):
 #' \describe{
-#' \item{\code{\link{$addBIsnps}}}{Add Both-Informative (BI) snps to and merge the maternal and/or
-#' paternal linkage groups.}
-#' \item{\code{\link{$createLG}}}{Create linkage groups.}
+#' \item{\code{\link{$addBIsnps}}}{Add Both-Informative (BI) snps to the maternal and/or
+#' paternal linkage groups and merge the parental linkage groups.}
+#' \item{\code{\link{$createLG}}}{Create linkage group(s).}
+#' \item{\code{\link{$computeMap}}}{Compute linkage maps for a given marker order.}
 #' \item{\code{\link{$maskSNP}}}{Mask SNP(s) in the dataset.}
 #' \item{\code{\link{$mergeLG}}}{Merge linkage groups.}
 #' \item{\code{\link{$orderLG}}}{Order the SNPs in the linkage group(s).}
 #' \item{\code{\link{$plotChr}}}{Plot the heatmap of the 2-point recombination fraction 
-#' estimates (or LOD scores) when SNPs are ordered according to the genome assembly}
+#' estimates (or LOD scores) when SNPs are ordered according to the genome assembly.}
 #' \item{\code{\link{$plotLG}}}{Plot the heatmap of the 2-point recombination fraction 
 #' estimates (or LOD scores) when SNPs are ordered according to their linkage groups.}
+#' \item{\code{\link{$plotLM}}}{Plot linkage maps.}
+#' \item{\code{\link{$plotSyn}}}{Produce a Synety plot.}
 #' \item{\code{\link{$removeLG}}}{Remove linkage group(s).}
-#' \item{\code{\link{$removeSNP}}}{Remove SNP(s) from linkage group(s)}
+#' \item{\code{\link{$removeSNP}}}{Remove SNP(s) from linkage group(s).}
 #' \item{\code{\link{$rf_2pt}}}{Compute the 2-point recombination fraction (and LOD score) between all SNP pairs.}
 #' \item{\code{\link{$unmaskSNP}}}{Unmask SNP(s) in the data set.}
+#' \item{\code{\link{$writeLG}}}{Write linkage mapping results to a file.}
 #' }
 #' @format NULL
 #' @author Timothy P. Bilton
@@ -106,7 +112,7 @@ FS <- R6Class("FS",
                     if(what == "data")
                       cat(private$summaryInfo$data, sep="")
                     else if(what == "LG"){
-                      if(is.null(private$LG_mat & private$LG_pat))
+                      if(is.null(private$LG_mat) & is.null(private$LG_pat))
                         stop("Linkage groups have not been formed. Use the '$createLG' function to form linkage groups.")
                       else{
                         cat("Linkage Group Summary (excluding BI SNPs):\n")
@@ -563,7 +569,7 @@ Please select one of the following:
                   return(invisible(NULL))
                 },
                 ## Function for ordering linkage groups
-                orderLG = function(chrom = NULL, mapfun = "morgan", weight="LOD2", ndim=2, spar=NULL){
+                orderLG = function(chrom = NULL, mapfun = "morgan", weight="LOD2", ndim=30, spar=NULL){
                   ## do some checks
                   if(is.null(private$LG))
                     stop("There are no combined linkage groups. Please use the $addBISNPs to create combined LGs")
@@ -729,6 +735,7 @@ Please select one of the following:
                       options(warn = storeWarn) 
                     }
                     else{
+                      temp_par <- par()
                       b_indx <- chrom.ind == b
                       if(!is.null(filename)){
                         temp <- file.create(paste0(filename,".png"))
@@ -743,6 +750,7 @@ Please select one of the following:
                       abline(h=which(b_indx))
                       if(!is.null(filename))
                         dev.off()
+                      suppressWarnings(par(temp_par))
                     }
                   }
                   else
@@ -761,6 +769,8 @@ Please select one of the following:
   paternal: Add BI SNPs to PI LGs
   both:     Add BI SNPs to both MI and PI LGs")
                   
+                  temp_par <- par() # save the current plot margins
+                  
                   ## workout which SNPs to plot to plot
                   if(private$noFam == 1){
                     ## workout the indices for the chromosomes
@@ -778,6 +788,7 @@ Please select one of the following:
                       plotLG(mat=private$LOD, LG=LG, filename=filename, names=names, chrS=chrS, lmai=lmai, chrom=T, type="LOD")
                     else
                       stop("Matrix to be plotted not found.") ## shouldn't get here
+                    suppressWarnings(par(temp_par)) # reset the plot margins
                     return(invisible())
                   }
                   else{
@@ -788,13 +799,23 @@ Please select one of the following:
                 plotLM = function(LG = NULL, fun="haldane", col="black"){
                   
                   nLGs = length(private$LG)
-                  if(!is.vector(fun) || length(fun) != 1 || fun %in% c("morgan", "haldane", "kosambi"))
+                  if(!is.vector(fun) || length(fun) != 1 || any(!(fun %in% c("morgan", "haldane", "kosambi"))))
                     stop("Input argument for mapping distance is invalid")
-                  
-                  if(length(col) == 1)
-                    col <- rep(col,nLGs)
-                  else if(length(col) != nLGs)
-                    stop("")
+                  ## check the color input
+                  if(!is.vector(is.character(col)) || !is.character(col))
+                    stop("Input argument for colors of the linkage maps is invalid.")
+                  else{
+                    tc <- unname(sapply(col, function(y) tryCatch(is.matrix(col2rgb(y)), error = function(e) FALSE)))
+                    if(any(!tc))
+                      stop("At least one color in the color list is undefined")
+                    else
+                      col = rgb(t(col2rgb(col)), max=255)
+                    if(length(col) == 1)
+                      col <- rep(col,nLGs)
+                    else if(length(col) != nLGs)
+                      stop("Number of colors specified does not equal the number of linkage groups")
+                  }
+                  temp_par <- par() # save the current plot margins
                   
                   ellipseEq_pos <- function(x) c2 + sqrt(b^2*(1-round((x-c1)^2/a^2,7)))
                   ellipseEq_neg <- function(x) c2 - sqrt(b^2*(1-round((x-c1)^2/a^2,7)))
@@ -816,21 +837,24 @@ Please select one of the following:
                     c2=sum(mapDist[[lg]])+0.01*yCoor;
                     curve(ellipseEq_pos, from=cent-err,to=cent+err,add=T,col=col[lg])
                   }
-                  mtext(names, side=1, at=seq(0.25,0.25*nLGs,0.25))
+                  suppressWarnings(par(temp_par)) # reset the plot margins
+                  #if(!is.null(names))
+                  #  mtext(names, side=1, at=seq(0.25,0.25*nLGs,0.25))
                 },
                 ## compare order with original and ordered markers
                 plotSyn = function(){
+                  ## work out the LG and original orders
                   LGorder <- unlist(private$LG)
                   orgOrder <- sort(LGorder)
+                  ## determine the breask on the plot
                   temp <- cumsum(unlist(lapply(private$LG, length)))
                   LGbreaks <- orgOrder[temp[-length(temp)]] + 0.5
-                  LGbreaks <- LGbreaks[-length(LGbreaks)]
                   chrBreaks <- which(diff(as.numeric(private$chrom))==1) + 0.5
-                  
+                  ## plot the synteny plot
+                  par(mfrow=c(1,1))
                   plot(orgOrder,LGorder, pch=20,cex=0.8, xaxt="n", yaxt="n",ylab="Assembly Order", xlab="Linkage Group Order", 
                        ylim=c(min(orgOrder),max(orgOrder)), xlim=c(min(LGorder), max(LGorder)), bty='n')
                   abline(v=c(min(LGorder)-1,LGbreaks,max(LGorder)+1))
-                  
                   abline(h=c(min(orgOrder)-1,chrBreaks,max(orgOrder)+1))
                   abline(v=LGbreaks)
                   mtext(text = unique(private$chrom[orgOrder]), side = 2, line = -1,
@@ -839,42 +863,42 @@ Please select one of the following:
                         at = apply(cbind(c(min(LGorder),LGbreaks),c(LGbreaks,max(LGorder))),1,mean))
                 }, 
                 ## Function for computing the rf's for each chromosome 
-                rf_est = function(chr=NULL, init_r=0.01, ep=0.001, method="optim", sexSpec=F, seqErr=T, mapped=T, nThreads=1){
+                computeMap = function(chrom=NULL, init_r=0.01, ep=0.001, method="optim", sexSpec=F, seqErr=T, mapped=T, nThreads=1){
                   ## do some checks
                   if( !is.null(init_r) & !is.numeric(init_r) )
                     stop("Starting values for the recombination fraction needs to be a numeric vector or integer or a NULL object")
                   if( (length(ep) != 1 || !is.numeric(ep) || (ep <= 0 | ep >= 1)) )
                     stop("Value for the error parameters needs to be a single numeric value in the interval (0,1) or a NULL object")
                   ## for existing chromosome orders
-                  nChr <- length(private$LG)
+                  nchrom <- length(private$LG)
                   if(!mapped){
-                    if(!is.null(chr) && !is.vector(chr))
-                      stop("Chromosomes names must be a character vector.")
-                    if(is.null(chr)) # compute distances for all chromosomes
-                      chr <- unique(private$chrom)
-                    else if(!(any(chr %in% private$chrom[!private$masked])))
+                    if(!is.null(chrom) && !is.vector(chrom))
+                      stop("chromosomes names must be a character vector.")
+                    if(is.null(chrom)) # compute distances for all chromosomes
+                      chrom <- unique(private$chrom)
+                    else if(!(any(chrom %in% private$chrom[!private$masked])))
                       stop("At least one chromosome not found in the data set.")
                     else
-                      chr <- as.character(chr) # ensure that the chromsome names are characters
-                    nChr <- length(unique(private$chrom))
+                      chrom <- as.character(chrom) # ensure that the chromsome names are characters
+                    nchrom <- length(unique(private$chrom))
                     cat("Computing recombination fractions:\n")
                     if(is.null(private$para))
-                      private$para <- list(OPGP=vector(mode = "list",length = nChr),rf_p=vector(mode = "list",length = nChr),
-                                           rf_m=vector(mode = "list",length = nChr),ep=vector(mode = "list",length = nChr),
-                                           loglik=vector(mode = "list",length = nChr))
-                    else if(length(private$para$rf_p) != nChr)
-                      private$para <- list(OPGP=vector(mode = "list",length = nChr),rf_p=vector(mode = "list",length = nChr),
-                                           rf_m=vector(mode = "list",length = nChr),ep=vector(mode = "list",length = nChr),
-                                           loglik=vector(mode = "list",length = nChr))
-                    for(i in chr){
-                      cat("Chromosome: ",i,"\n")
-                      indx_chr <- which((private$chrom == i) & !private$masked)
-                      ref_temp <- lapply(private$ref, function(x) x[,indx_chr])
-                      alt_temp <- lapply(private$alt, function(x) x[,indx_chr])
+                      private$para <- list(OPGP=vector(mode = "list",length = nchrom),rf_p=vector(mode = "list",length = nchrom),
+                                           rf_m=vector(mode = "list",length = nchrom),ep=vector(mode = "list",length = nchrom),
+                                           loglik=vector(mode = "list",length = nchrom))
+                    else if(length(private$para$rf_p) != nchrom)
+                      private$para <- list(OPGP=vector(mode = "list",length = nchrom),rf_p=vector(mode = "list",length = nchrom),
+                                           rf_m=vector(mode = "list",length = nchrom),ep=vector(mode = "list",length = nchrom),
+                                           loglik=vector(mode = "list",length = nchrom))
+                    for(i in chrom){
+                      cat("chromosome: ",i,"\n")
+                      indx_chrom <- which((private$chrom == i) & !private$masked)
+                      ref_temp <- lapply(private$ref, function(x) x[,indx_chrom])
+                      alt_temp <- lapply(private$alt, function(x) x[,indx_chrom])
                       ## estimate OPGP's
                       tempOPGP <- list()
                       for(fam in 1:private$noFam){
-                        tempOPGP <- c(tempOPGP,list(as.integer(infer_OPGP_FS(ref_temp[[fam]],alt_temp[[fam]],private$config[[fam]][indx_chr], method="EM", nThreads=nThreads))))
+                        tempOPGP <- c(tempOPGP,list(as.integer(infer_OPGP_FS(ref_temp[[fam]],alt_temp[[fam]],private$config[[fam]][indx_chrom], method="EM", nThreads=nThreads))))
                         }
                       private$para$OPGP <- tempOPGP
                       ## estimate the rf's
@@ -895,29 +919,29 @@ Please select one of the following:
                     ## Check the input
                     if((length(private$LG) == 0) && length(is.null(private$LG) == 0))
                       stop("No linkage groups have been formed.")
-                    if(is.null(chr)) # compute distances for all chromosomes
-                      chr <- 1:nChr
-                    else if(!is.vector(chr) || chr < 0 || chr > length(private$LG) || round(chr) != chr)
-                      stop("Chromosomes input must be an integer vector between 1 and the number of linkage groups")
+                    if(is.null(chrom)) # compute distances for all chromosomes
+                      chrom <- 1:nchrom
+                    else if(!is.vector(chrom) || chrom < 0 || chrom > length(private$LG) || round(chrom) != chrom)
+                      stop("chromosomes input must be an integer vector between 1 and the number of linkage groups")
                     ## Compute rf's
                     cat("Computing recombination fractions:\n")
-                    if(!is.null(private$para))
-                      private$para <- list(OPGP=vector(mode = "list",length = nChr),rf_p=vector(mode = "list",length = nChr),
-                                           rf_m=vector(mode = "list",length = nChr),ep=vector(mode = "list",length = nChr),
-                                           loglik=vector(mode = "list",length = nChr))
+                    if(is.null(private$para))
+                      private$para <- list(OPGP=vector(mode = "list",length = nchrom),rf_p=vector(mode = "list",length = nchrom),
+                                           rf_m=vector(mode = "list",length = nchrom),ep=vector(mode = "list",length = nchrom),
+                                           loglik=vector(mode = "list",length = nchrom))
                     else if(length(private$para$rf) != length(private$LG))
-                      private$para <- list(OPGP=vector(mode = "list",length = nChr),rf_p=vector(mode = "list",length = nChr),
-                                           rf_m=vector(mode = "list",length = nChr),ep=vector(mode = "list",length = nChr),
-                                           loglik=vector(mode = "list",length = nChr))
-                    for(i in chr){
-                      cat("Chromosome: ",i,"\n")
-                      indx_chr <- private$LG[[i]]
-                      ref_temp <- lapply(private$ref, function(x) x[,indx_chr])
-                      alt_temp <- lapply(private$alt, function(x) x[,indx_chr])
+                      private$para <- list(OPGP=vector(mode = "list",length = nchrom),rf_p=vector(mode = "list",length = nchrom),
+                                           rf_m=vector(mode = "list",length = nchrom),ep=vector(mode = "list",length = nchrom),
+                                           loglik=vector(mode = "list",length = nchrom))
+                    for(i in chrom){
+                      cat("chromosome: ",i,"\n")
+                      indx_chrom <- private$LG[[i]]
+                      ref_temp <- lapply(private$ref, function(x) x[,indx_chrom])
+                      alt_temp <- lapply(private$alt, function(x) x[,indx_chrom])
                       ## estimate OPGP's
                       tempOPGP <- list()
                       for(fam in 1:private$noFam){
-                        tempOPGP <- c(tempOPGP,list(as.integer(infer_OPGP_FS(ref_temp[[fam]],alt_temp[[fam]],private$config[[fam]][indx_chr], method="EM", nThreads=nThreads))))
+                        tempOPGP <- c(tempOPGP,list(as.integer(infer_OPGP_FS(ref_temp[[fam]],alt_temp[[fam]],private$config[[fam]][indx_chrom], method="EM", nThreads=nThreads))))
                       }
                       private$para$OPGP[i] <- tempOPGP
                       ## estimate the rf's
@@ -949,7 +973,7 @@ Please select one of the following:
                   tab[nrow(tab), 1] <- "TOTAL"
                   if(ncol(tab) > 7)
                     tab[nrow(tab),8] <- ""
-                  private$summaryInfo$map <- list("Linkage Group Summary:\n", tab)
+                  private$summaryInfo$map <- list("Linkage Map Summaries:\n", tab)
                   cat(private$summaryInfo$map[[1]])
                   prmatrix(tab, rowlab = rep("",nrow(tab)), quote=F)
                   return(invisible(NULL))
@@ -963,16 +987,6 @@ Please select one of the following:
                     alt <- rbind(alt,private$alt[[fam]])
                   }
                   cometPlot(ref, alt, model=model, alpha=alpha, filename=filename, cex=cex, maxdepth=maxdepth)
-                },
-                ###### Function for extracting variables from the FS object
-                extractVar = function(nameList){
-                  if(!is.character(nameList) || !is.vector(nameList) || any(is.na(nameList)))
-                  res <- NULL
-                  for(name in nameList){
-                    res <- c(res,list(private[[name]]))
-                  }
-                  names(res) <- nameList
-                  return(res)
                 },
                 #### Write output
                 writeLG = function(file, direct = "./", LG = NULL){

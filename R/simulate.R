@@ -15,19 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
-#### R script contains functions for performing Monte Carlo simulations
-### Author: Timothy Bilton
-### Date: 06/02/18
-
-## Function for simulating sequencing data for a single full-sib family
-#' Simulation of sequencing data for a single full-sib family.
+#' Simulation sequencing data for a single full-sib family.
 #' 
 #' Simulate genotypes and sequencing depth for the progeny of a full-sib family
-#' and write the data to various linkage mapping software formats.
 #' 
 #' The \code{simFS} function simulates sequencing data for the progeny of a
 #' full-sib family according to the simulation parameters assuming no
-#' interference. The processed for the simulation is as follows;
+#' interference. The process for the simulation is as follows;
 #' \itemize{
 #' \item Inheritance vectors are simulated according to the true recombination
 #' fractions, assuming no interference.
@@ -42,11 +36,6 @@
 #' is assumed to be equal.
 #' }
 #' 
-#' If none of the methods in \code{formats} argument is specified to be TRUE,
-#' then no files are created and the simulated data is returned to an object
-#' (see examples below). Otherwise, datasets are created and written to files
-#' in the correct format for the various programs specified.
-#' 
 #' The value for the \code{config} vector are 1=both-informative (ABxAB),
 #' 2=paternal-informative A (ABxAA), 3=paternal-informative B (ABxBB),
 #' 4=maternal-informative (AAxAB), 5=maternal-informative (BBxAB), 6 =
@@ -54,99 +43,60 @@
 #' and 9 = uninformative (BBxBB).
 #' 
 #' @param rVec_f,rVec_m Numeric vector of true paternal and maternal
-#' recombination fractions (in the interval [0,0.5]). If only a single number
-#' is given, then recombination between adjacent loci are equal.
+#' recombination fractions (in the interval [0,0.5]). Currently, only a single value 
+#' is allowed making the rf across all the loci.
 #' @param epsilon Numeric value of the sequencing error rate.
-#' @param config Numeric vector of the segregation types for all the loci.
-#' @param nInd Positive integer value. The number of individuals.
-#' @param meanDepth Positive numeric value. The mean depth of the read depth
+#' @param config List containing the config vector for each family.
+#' Each element of the list must be a vector with integer values between 1 and 9.
+#' @param nInd List containing the number of individuals in each family for the simulated.
+#' Each element of the list must be positive integer value.
+#' @param meanDepth Positive numeric value for the mean depth of the read depth
 #' distribution.
-#' @param thres Numerical Value. Threshold value for which genotype calls with
-#' a depth less than the threshold are set to missing.
-#' @param NoDS Number of data sets to be simulated.
-#' @param formats A list object where the element corresponding to the software
-#' name is TRUE will produce data in that format. Currently handles software
-#' for GUSMap, CRI-MAP, JoinMap, OneMap and Lep-MAP2.
-#' @param rd_dist String. The distribution for which the read depths are
+#' @param thres Numeric value for the threshold value for which genotype calls with
+#' a read depth less than the threshold are set to missing.
+#' @param noFam Positive integer value giving the number of families in the simulated data.
+#' @param noChr Positive integer value giving the number of chromosomes in the simulated data.
+#' @param rd_dist Character value for the distribution for which the read depths are
 #' simulated from. Currently, only negative binomial ("Neg_Binom") and Poisson
 #' ("Pois") are implemented.
-#' @param filename String. Common filename for the data sets generated from the
-#' simulation.
 #' @param seed1 Numeric value. Random seed used for the simulation of the
 #' parental phase (or OPGP).
 #' @param seed2 Numeric value. Random seed used for the simulation of the data
 #' sets.
-#' @return If at least one method in \code{formats} argument is specified to be
-#' TRUE, a file containing the simulation parameters is written and files
-#' containing the simulated data for each of the methods is written. The naming
-#' of the files (if \code{filename="sim"}) is as follows;
-#' \itemize{
-#' \item Simulation parameters: sim[No]_info.txt
-#' \item GUSMap Genotypes: sim[No]_genon_SEQ.txt
-#' \item GUSMap Read depths: sim[No]_ref_SEQ.txt
-#' \item GUSMap Read depths: sim[No]_alt_SEQ.txt
-#' \item OneMap format: sim[No]_OneMap.txt
-#' \item LepMap2 format: sim[No]_LepMap.txt
-#' \item CriMap format: chr1_sim[No].gen
-#' \item JoinMap format: sim[No]_JoinMap.loc
-#' }
-#' where
-#' "No" is the number of the data set simulated (from 1 up to \code{NoDS}).
-#' 
-#' If none of the methods in \code{formats} argument is specified to be TRUE,
-#' then a list containing the following elements will be returned;
-#' \itemize{
-#' \item genon: Matrix of genotypes for the simulated sequencing data.
-#' \item ref: Matrix of the allele counts for the reference allele.
-#' \item alt: Matrix of the allele counts for the alternate allele.
-#' \item trueGeno: Matrix of the true genotypes calls simulated.
-#' \item rVec_f: Vector of adjacent paternal recombination fractions.
-#' \item rVec_m: Vector of adjacent maternal recombination fractions.
-#' \item nInd: Number of individuals.
-#' \item nSnps: Number of SNPs.
-#' \item config: Vector of segregation types used in the simulation.
-#' \item OPGP: Vector of OPGPs used in the simulation.
-#' \item meanDepth: Mean of the distribution used to simulate the read depths.
-#' \item rd_dist: Distribution from the which the read depths where simulated.
-#' \item epsilon: Numeric value of the sequencing error rate used in the
-#' simulation.
+#' @return An FS object containing the simulated data.
 #' }
 #' @author Timothy P. Bilton
 #' @examples
 #' 
 #' ## simulate full sib family
-#' config <- c(2,1,1,4,2,4,1,1,4,1,2,1)
-#' set.seed(3)
-#' F1data <- simFS(runif(11,0.01,0.05), config=config, nInd=50, meanDepth=5)
-#' ## to look at the simulated data and simulation parameters
-#' str(F1data)
+#' config <- list(c(2,1,1,4,2,4,1,1,4,1,2,1))
+#' F1data <- simFS(0.001, config=config, nInd=list(50), meanDepth=5)
+#' ## to look at the simulated data
+#' FAdata
 #' 
-#' ## simulate full sib family assuming recombination is equal between loci
-#' config <- c(2,1,1,4,2,4,1,1,4,1,2,1)
-#' F1data <- simFS(0.01, config=config, nInd=50, meanDepth=5)
-#' 
-#' ## To write the simulated data to files (in GUSMap format only). 
-#' config <- c(2,1,1,4,2,4,1,1,4,1,2,1)
-#' simFS(0.01, config=config, nInd=50, meanDepth=5, formats=list(gusmap=TRUE), filename="simTest")
+#' ## Simulate mulitple families and chromosomes
+#' config <- list(c(2,1,1,4,2,4,1,1,4,1,2,1),
+#'                  c(1,4,4,2,4,1,1,2,4,1))
+#' F1data <- simFS(0.001, config=config, nInd=list(50,45), meanDepth=5)
 #' 
 #' @export simFS
 
 ## Function for simulating sequencing data for a single full-sib family
-simFS <- function(rVec_f, rVec_m=rVec_f, epsilon=0, config, nInd, meanDepth, thres=NULL, noFam=1, noChr=1, NoDS=1,
-                  formats=list(gusmap=F,onemap=F,lepmap=F,joinmap=F,crimap=F), rd_dist="Neg_Binom",
-                  filename="sim", direct="./", seed1=1, seed2=1){
+simFS <- function(rVec_f, rVec_m=rVec_f, epsilon=0, config, nInd=100, meanDepth=5, thres=NULL, noFam=1, noChr=1,
+                  rd_dist="Neg_Binom", seed1=1, seed2=1){
   
   ## perform some checks for data input
   if(!is.numeric(noFam) || length(noFam) != 1 || noFam < 1 || !is.finite(noFam))
     stop("Number of families parameter must be a single finite positive numeric number")
   if(!is.numeric(noChr) || length(noChr) != 1 || noChr < 1 || !is.finite(noChr))
     stop("Number of chromosomes parameter must be a single finite positive numeric number")
-  if( !is.numeric(rVec_f) || !is.numeric(rVec_m) || any(rVec_f < 0) || any(rVec_m < 0) ||
-      any(rVec_f > 0.5) || any(rVec_m > 0.5) )
+  if( !is.numeric(rVec_f) || !is.numeric(rVec_m) || length(rVec_f) != 1 || length(rVec_m) != 1 || 
+      any(rVec_f < 0) || any(rVec_m < 0) || any(rVec_f > 0.5) || any(rVec_m > 0.5) )
     stop("Recombination factions are required to be a numeric number between 0 and 0.5")
   if( !is.numeric(epsilon) || length(epsilon) != 1 || epsilon < 0 || epsilon > 1 )
     stop("Sequencing error parameter is not single numeric number between 0 and 1")
-  if(length(nInd) != noFam || any(!is.numeric(nInd)) || any(nInd < 1) || any(nInd != round(nInd)) || any(!is.finite(nInd)) )
+  if(length(nInd) != noFam || any(!is.numeric(nInd)) || any(nInd < 1) || 
+     any(nInd != round(nInd)) || any(!is.finite(nInd)) )
     stop("Number of individuals or number of SNPs are not a positive integer")
   if(length(config) != noFam || !is.list(config))
     stop("Segregation information needs to be a list equal to the nunber of chromosome.")
@@ -163,8 +113,8 @@ simFS <- function(rVec_f, rVec_m=rVec_f, epsilon=0, config, nInd, meanDepth, thr
   }
   if( !is.numeric(meanDepth) || meanDepth <= 0 || !is.finite(meanDepth) )
     stop("The mean of the read depth distribution is not a finitie positive number.")
-  if( !is.numeric(NoDS) || NoDS < 1 || NoDS != round(NoDS) || !is.finite(NoDS))
-    stop("Imput for the number of data sets needs to be a finite positive number")
+#  if( !is.numeric(NoDS) || NoDS < 1 || NoDS != round(NoDS) || !is.finite(NoDS))
+#    stop("Imput for the number of data sets needs to be a finite positive number")
   if( !is.null(thres) & !is.numeric(thres) )
     stop("The read depth threshold value is not a finite numeric number")
   if( !is.numeric(seed1) || !is.numeric(seed2) )
@@ -174,15 +124,15 @@ simFS <- function(rVec_f, rVec_m=rVec_f, epsilon=0, config, nInd, meanDepth, thr
   nSnps <- lapply(config[[1]], function(x) as.integer(length(x)))
   
   ## booleen variable to indicate whether to write out files
-  writeFiles <- any(c(isTRUE(formats$gusmap),isTRUE(formats$onemap),isTRUE(formats$lepmap),isTRUE(formats$crimap),isTRUE(formats$joinmap)))
+  #writeFiles <- any(c(isTRUE(formats$gusmap),isTRUE(formats$onemap),isTRUE(formats$lepmap),isTRUE(formats$crimap),isTRUE(formats$joinmap)))
   
   ## If to write files: check that file directory is in correct format
-  if(writeFiles){
-    if(!is.character(filename) || length(filename)!=1)
-      stop("Name to write data sets to need to be a string of length 1")
-    if(!is.character(direct) || length(direct)!=1)
-      stop("Name to write data sets to need to be a string of length 1")
-  }
+  # if(writeFiles){
+  #   if(!is.character(filename) || length(filename)!=1)
+  #     stop("Name to write data sets to need to be a string of length 1")
+  #   if(!is.character(direct) || length(direct)!=1)
+  #     stop("Name to write data sets to need to be a string of length 1")
+  # }
   
   OPGP <- replicate(n = noChr, vector(mode = "list", length = noFam), simplify = F)
   genon <- ref <- alt <- vector(mode = "list", length=noFam)
@@ -210,93 +160,90 @@ simFS <- function(rVec_f, rVec_m=rVec_f, epsilon=0, config, nInd, meanDepth, thr
       
       #### Simulate the data sets
       set.seed(seed2 + fam*5 + chr*119)
-      for(sim in 1:NoDS){
-        
-        #### Simulate the true Meiosis for each individual at each SNP.
-        mIndx <- matrix(c(sample(c(0,1),size=2*nInd[fam],replace=T)),ncol=1)
-        for(i in 1:(nSnps[[chr]]-1)){
-          newmIndx_f <- numeric(nInd[fam])
-          newmIndx_m <- numeric(nInd[fam])
-          for(j in 1:(nInd[fam])){
-            newmIndx_f[j] <- sample(c(0,1),size=1,prob=c(rVec_f[[i]][(mIndx[j,i]==0)+1],rVec_f[[i]][(mIndx[j,i]==1)+1]))
-            newmIndx_m[j] <- sample(c(0,1),size=1,prob=c(rVec_m[[i]][(mIndx[j+nInd[fam],i]==0)+1],rVec_m[[i]][(mIndx[j+nInd[fam],i]==1)+1]))
-          }
-          mIndx <- cbind(mIndx,c(newmIndx_f,newmIndx_m))
-        }
-        # Determine the true genotype calls
-        geno <- rbind(sapply(1:nSnps[[chr]],function(x) parHap[mIndx[1:nInd[fam],x]+1,x]),sapply(1:nSnps[[chr]],function(x) parHap[mIndx[1:nInd[fam]+nInd[fam],x]+3,x]))
-        geno <- sapply(1:nSnps[[chr]],function(y) {
-          tempGeno <- geno[,y]
-          sapply(1:nInd[fam], function(x) paste(sort(c(tempGeno[x],tempGeno[x+nInd[fam]])),collapse=""))
-        })
-        geno <- (geno=="AA")*2 + (geno=="AB")*1
-        
-        ### Now generate the sequencing data
-        # 1: Simulate Depths
-        depth <- matrix(0,nrow=nInd[fam], ncol=nSnps[[chr]])
-        if(rd_dist=="NegBinom")
-          depth[which(!is.na(geno))] <- rnbinom(sum(!is.na(geno)),mu=meanDepth,size=2) 
-        else   
-          depth[which(!is.na(geno))] <- rpois(sum(!is.na(geno)),meanDepth)
-        # 2: simulate sequencing genotypes (with sequencing error rate of epsilon)
-        aCounts <- matrix(rbinom(nInd[fam]*nSnps[[chr]],depth,geno/2),ncol=nSnps[[chr]])
-        bCounts <- depth - aCounts
-        aCountsFinal <- matrix(rbinom(nInd[fam]*nSnps[[chr]],aCounts,prob=1-epsilon),ncol=nSnps[[chr]]) + matrix(rbinom(nInd[fam]*nSnps[[chr]],bCounts,prob=epsilon),ncol=nSnps[[chr]])
-        SEQgeno <- aCountsFinal/depth
-        SEQgeno[which(SEQgeno^2-SEQgeno<0)] <- 0.5
-        SEQgeno <- 2* SEQgeno  ## GBS genotype call
-          
-        ## Write data to file
-        if(writeFiles)
-          genoToOtherFormats(SEQgeno,aCountsFinal,depth-aCountsFinal,config[[fam]][[chr]],formats=formats,filename=paste0(filename,sim,"_fam",fam,"_chr",chr),direct=direct,thres=thres,sim=sim)
-        
-      }
+      #### Simulate the true Meiosis for each individual at each SNP.
+       mIndx <- matrix(c(sample(c(0,1),size=2*nInd[fam],replace=T)),ncol=1)
+       for(i in 1:(nSnps[[chr]]-1)){
+         newmIndx_f <- numeric(nInd[fam])
+         newmIndx_m <- numeric(nInd[fam])
+         for(j in 1:(nInd[fam])){
+           newmIndx_f[j] <- sample(c(0,1),size=1,prob=c(rVec_f[[i]][(mIndx[j,i]==0)+1],rVec_f[[i]][(mIndx[j,i]==1)+1]))
+           newmIndx_m[j] <- sample(c(0,1),size=1,prob=c(rVec_m[[i]][(mIndx[j+nInd[fam],i]==0)+1],rVec_m[[i]][(mIndx[j+nInd[fam],i]==1)+1]))
+         }
+         mIndx <- cbind(mIndx,c(newmIndx_f,newmIndx_m))
+       }
+       # Determine the true genotype calls
+       geno <- rbind(sapply(1:nSnps[[chr]],function(x) parHap[mIndx[1:nInd[fam],x]+1,x]),sapply(1:nSnps[[chr]],function(x) parHap[mIndx[1:nInd[fam]+nInd[fam],x]+3,x]))
+       geno <- sapply(1:nSnps[[chr]],function(y) {
+         tempGeno <- geno[,y]
+         sapply(1:nInd[fam], function(x) paste(sort(c(tempGeno[x],tempGeno[x+nInd[fam]])),collapse=""))
+       })
+       geno <- (geno=="AA")*2 + (geno=="AB")*1
+       
+       ### Now generate the sequencing data
+       # 1: Simulate Depths
+       depth <- matrix(0,nrow=nInd[fam], ncol=nSnps[[chr]])
+       if(rd_dist=="NegBinom")
+         depth[which(!is.na(geno))] <- rnbinom(sum(!is.na(geno)),mu=meanDepth,size=2) 
+       else   
+         depth[which(!is.na(geno))] <- rpois(sum(!is.na(geno)),meanDepth)
+       # 2: simulate sequencing genotypes (with sequencing error rate of epsilon)
+       aCounts <- matrix(rbinom(nInd[fam]*nSnps[[chr]],depth,geno/2),ncol=nSnps[[chr]])
+       bCounts <- depth - aCounts
+       aCountsFinal <- matrix(rbinom(nInd[fam]*nSnps[[chr]],aCounts,prob=1-epsilon),ncol=nSnps[[chr]]) + matrix(rbinom(nInd[fam]*nSnps[[chr]],bCounts,prob=epsilon),ncol=nSnps[[chr]])
+       SEQgeno <- aCountsFinal/depth
+       SEQgeno[which(SEQgeno^2-SEQgeno<0)] <- 0.5
+       SEQgeno <- 2* SEQgeno  ## GBS genotype call
+       
+       ## Write data to file
+       #if(writeFiles)
+       #  genoToOtherFormats(SEQgeno,aCountsFinal,depth-aCountsFinal,config[[fam]][[chr]],formats=formats,filename=paste0(filename,sim,"_fam",fam,"_chr",chr),direct=direct,thres=thres,sim=sim)
+       
+    }
       ## Write simulation parameters to a file
-      if(writeFiles)
-        dput(list(nInd=nInd,nSnps=nSnps,NoDS=NoDS,rVec_f=unlist(lapply(rVec_f,function(x) x[1])),
-                  rVec_m=unlist(lapply(rVec_m,function(x) x[1])),
-                  config=config,OPGP=OPGP,meanDepth=meanDepth,rd_dist=rd_dist),
-             paste0(trim_fn(paste0(direct,"/",filename)),"_fam",fam,"_chr",chr,"info.txt"))
+      # if(writeFiles)
+      #   dput(list(nInd=nInd,nSnps=nSnps,NoDS=NoDS,rVec_f=unlist(lapply(rVec_f,function(x) x[1])),
+      #             rVec_m=unlist(lapply(rVec_m,function(x) x[1])),
+      #             config=config,OPGP=OPGP,meanDepth=meanDepth,rd_dist=rd_dist),
+      #        paste0(trim_fn(paste0(direct,"/",filename)),"_fam",fam,"_chr",chr,"info.txt"))
       ## return simulated data and parameter values ued to generate the data
-      else{
-        genon[[fam]] <- cbind(genon[[fam]], SEQgeno)
-        ref[[fam]]   <- cbind(ref[[fam]], aCountsFinal)
-        alt[[fam]]   <- cbind(alt[[fam]], matrix(as.integer(depth-aCountsFinal), nrow=nInd, ncol=nSnps[[chr]]))
-      }
+      #else{
+    genon[[fam]] <- cbind(genon[[fam]], SEQgeno)
+    ref[[fam]]   <- cbind(ref[[fam]], aCountsFinal)
+    alt[[fam]]   <- cbind(alt[[fam]], matrix(as.integer(depth-aCountsFinal), nrow=nInd, ncol=nSnps[[chr]]))
+    #}
     }
+  #if(!writeFiles){
+  chrom <- sapply(1:noChr, function(x) rep(x,nSnps[[x]]), simplify = F)
+  pos  <-  sapply(1:noChr, function(x) 1:(nSnps[[x]]), simplify = F)
+  
+  temp <- matrix(unlist(lapply(config, unlist)), nrow=noFam, byrow=T)
+  
+  group <- list()
+  group$BI <- which(apply(temp,2,function(x) all(x==1)))
+  group$PI <- which(apply(temp,2,function(x) all(x %in% c(2,3))))
+  group$MI <- which(apply(temp,2,function(x) all(x %in% c(4,5))))
+  
+  temp <- sort(unlist(group))
+  
+  for(fam in 1:noFam){
+    genon[[fam]] <- genon[[fam]][,temp]
+    ref[[fam]] <- ref[[fam]][,temp]
+    alt[[fam]] <- alt[[fam]][,temp]
   }
-  if(!writeFiles){
-    chrom <- sapply(1:noChr, function(x) rep(x,nSnps[[x]]), simplify = F)
-    pos  <-  sapply(1:noChr, function(x) 1:(nSnps[[x]]), simplify = F)
-    
-    temp <- matrix(unlist(lapply(config, unlist)), nrow=noFam, byrow=T)
-    
-    group <- list()
-    group$BI <- which(apply(temp,2,function(x) all(x==1)))
-    group$PI <- which(apply(temp,2,function(x) all(x %in% c(2,3))))
-    group$MI <- which(apply(temp,2,function(x) all(x %in% c(4,5))))
-    
-    temp <- sort(unlist(group))
-    
-    for(fam in 1:noFam){
-      genon[[fam]] <- genon[[fam]][,temp]
-      ref[[fam]] <- ref[[fam]][,temp]
-      alt[[fam]] <- alt[[fam]][,temp]
-    }
-    nSnps <- as.integer(length(temp))
-
-    obj <- RA$new(
-      list(genon = genon, ref = ref, alt = alt, chrom = unlist(chrom)[temp], pos = unlist(pos)[temp],
-           SNP_Names = NULL, indID = 1:nInd, nSnps = nSnps, nInd = lapply(as.list(nInd), as.integer), 
-           gform = "simFS", AFrq = NULL, infilename="Simulated dataset")
-    )
-    newObj <- FS$new(obj)
-    
-    newObj$.__enclos_env__$private$updatePrivate(
-      list(group = group, config = lapply(config, function(x) unlist(x)[temp]), noFam = noFam)
-    )
-    return(newObj)
-  }
+  nSnps <- as.integer(length(temp))
+  
+  obj <- RA$new(
+    list(genon = genon, ref = ref, alt = alt, chrom = unlist(chrom)[temp], pos = unlist(pos)[temp],
+         SNP_Names = NULL, indID = 1:nInd, nSnps = nSnps, nInd = lapply(as.list(nInd), as.integer), 
+         gform = "simFS", AFrq = NULL, infilename="Simulated dataset")
+  )
+  newObj <- FS$new(obj)
+  
+  newObj$.__enclos_env__$private$updatePrivate(
+    list(group = group, config = lapply(config, function(x) unlist(x)[temp]), noFam = noFam)
+  )
+  return(newObj)
+  #}
 }
 
 ### Function for writing simulated sequencing data to various software formats

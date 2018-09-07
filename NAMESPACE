@@ -2,9 +2,7 @@
 
 export(FS)
 export(Manuka11)
-export(infer_OPGP_FS)
 export(makeFS)
-export(rf_est_FS)
 export(simFS)
 importFrom(GUSbase,inv.logit)
 importFrom(GUSbase,inv.logit2)
