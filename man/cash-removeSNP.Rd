@@ -4,10 +4,12 @@
 \alias{$removeSNP}
 \title{FS method: Remove SNP from Linkage Group}
 \usage{
-FSobj$removeSNP(snps)
+FSobj$removeSNP(snps, where = NULL)
 }
 \arguments{
 \item{snps}{An integer vector giving the indices of the SNP to be removed.}
+
+\item{where}{Character vector specifying which set of linkage groups to remove SNPs from (see details).}
 }
 \description{
 Method for removing SNPs from linkage groups in an FS object.
@@ -19,6 +21,13 @@ given in the output for the FS object. More than one linkage group can be delete
 
 Note: When the linkage group(s) are deleted, the indices of the remaining linkage groups 
 changes. Print the FS object to investiage what these after running this function.
+
+When \code{where = "LG"}, SNPs will be removed from the paternal and maternal linkage 
+groups created via the \code{\link{$createLG}} function. On the other hand, if 
+\code{where = "LG_BI"}, then SNPs will be removed from the combined linkage groups 
+created from the \code{\link{$addBIsnps}} function (e.g., the linkage groups which include the BI SNPs).
+When \code{where = NULL}, SNPs will be removed from the combined linkage groups if availabve,
+otherwise they will be removed from the maternal and paternal linkage groups.
 }
 \examples{
 ## Simulate some sequencing data

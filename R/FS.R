@@ -29,18 +29,18 @@
 #' FSobj$createLG(parent = "both", LODthres = 10, nComp = 10)
 #' FSobj$computeMap(chrom=NULL, init_r=0.01, ep=0.001, method="optim", sexSpec=F, seqErr=T, mapped=T, nThreads=1)
 #' FSobj$maskSNP(snps)
-#' FSobj$mergeLG(LG, merteTo = NULL)
+#' FSobj$mergeLG(LG, where = NULL, mergeTo = NULL)
 #' FSobj$orderLG(chrom = NULL, mapfun = "haldane", weight="LOD2", ndim=30, spar = NULL)
-#' FSobj$plotChr(parent = "maternal", mat=c("rf"), filename=NULL, chrS=2, lmai=2)
-#' FSobj$plotLG(parent  = "maternal", LG=NULL, mat="rf", filename=NULL, interactive=TRUE)
+#' FSobj$plotChr(parent = "maternal", mat="rf", filename=NULL, chrS=2, lmai=2)
+#' FSobj$plotLG(parent  = "maternal", LG=NULL, mat="rf", filename=NULL, interactive=TRUE, what = NULL)
 #' FSobj$plotLM(LG = NULL, fun="haldane", col="black")
 #' FSobj$plotSyn()
 #' FSobj$print(what = NULL, ...)
-#' FSobj$removeLG(LG)
-#' FSobj$removeSNP(snps)
+#' FSobj$removeLG(LG, where = NULL)
+#' FSobj$removeSNP(snps, where = NULL)
 #' FSobj$rf_2pt(nClust = 2, err=FALSE)
 #' FSobj$unmaskSNP(snps)
-#' FSobj$writeLG(file, direct = "./", LG = NULL)
+#' FSobj$writeLM(file, direct = "./", LG = NULL)
 #' 
 #' @details
 #' An FS object is created from the \code{\link{makeFS}} function and contains RA data,
@@ -67,7 +67,7 @@
 #' \item{\code{\link{$removeSNP}}}{Remove SNP(s) from linkage group(s).}
 #' \item{\code{\link{$rf_2pt}}}{Compute the 2-point recombination fraction (and LOD score) between all SNP pairs.}
 #' \item{\code{\link{$unmaskSNP}}}{Unmask SNP(s) in the data set.}
-#' \item{\code{\link{$writeLG}}}{Write linkage mapping results to a file.}
+#' \item{\code{\link{$writeLM}}}{Write linkage mapping results to a file.}
 #' }
 #' @format NULL
 #' @author Timothy P. Bilton
@@ -158,14 +158,18 @@ FS <- R6Class("FS",
                 },
                 #############################################################
                 ## Function for removing SNPs from the linkage groups
-                removeSNP = function(snps){
+                removeSNP = function(snps, where = NULL){
                   ## some checks
                   if( !is.vector(snps) || !is.numeric(snps)  || any(is.na(snps)) || !all(snps == round(snps)) || any(snps < 1) || any(snps > private$nSnps) )
                     stop(paste0("Input must be a vector of indices between 1 and ", private$nSnps))
                   snps <- unique(snps) ## make sure no double ups in SNPs
-                  if(is.null(private$LG)){
-                    if(is.null(private$LG_mat) || is.null(private$LG_pat))
-                      stop("No linkage groups exist. Please use the $createLG function to create some linkage groups")
+                  if(is.null(where)){
+                    if(is.null(private$LG)) where = "LG"
+                    else where = "LG_BI"
+                  }
+                  if(where == "LG"){
+                    if (is.null(private$LG_mat) & is.null(private$LG_pat))
+                      stop("Linakge groups have not been formed. Use the '$createLG' function to create linkage groups.")
                     else{
                       ## remove SNP from the maternal linkage groups
                       for(lg in 1:length(private$LG_mat)){
@@ -192,7 +196,9 @@ FS <- R6Class("FS",
                         private$LG_pat <- private$LG_pat[which(empty_pat)]
                     }
                   }
-                  else{
+                  else if(where == "LG_BI"){
+                    if(is.null(private$LG))
+                      stop("There are no combined linkage groups with BI SNPs. Use the '$addBIsnps' to create combined linkage groups.")
                     ## remove SNPs from the combined groups
                     for(lg in 1:length(private$LG)){
                       lgremove <- which(private$LG[[lg]] %in% snps)
@@ -204,90 +210,103 @@ FS <- R6Class("FS",
                     if(any(empty))
                       private$LG <- private$LG[which(empty)]
                   }
+                  else
+                    stop("invalid second argument ('where').")
                   return(invisible(NULL))
                 },
                 ## Function for removing linkage groups 
-                removeLG = function(LG){
-                  if(is.null(private$LG)){
-                    if(is.null(private$LG_mat) || is.null(private$LG_pat))
-                      stop("No linkage groups exist. Please use the $createLG function to create some linkage groups")
-                    else{
-                      nmat <- length(private$LG_mat)
-                      npat <- length(private$LG_pat)
-                      if(isValue(LG, type="pos_integer", minv=1, maxv=nmat+npat))
-                        stop(paste0("The LG indices must an integer vector between 1 and the number of linkage groups which is ",nmat+npat))
-                      else{
-                        private$LG_mat <- private$LG_mat[which(!(1:nmat %in% LG))]
-                        private$LG_pat <- private$LG_pat[which(!((nmat+1:npat) %in% LG))]
-                      }
-                    }
+                removeLG = function(LG, where = NULL){
+                  ## Check the where input
+                  if(is.null(where)){
+                    if(is.null(private$LG)) where = "LG"
+                    else where = "LG_BI"
                   }
-                  else{
+                  if(where == "LG_BI"){
+                    if(is.null(private$LG))
+                      stop("There are no combined linkage groups with BI SNPs. Use the '$addBIsnps' to create combined linkage groups.")
                     nLG <- length(private$LG)
                     if(isValue(LG, type="pos_integer", minv=1,maxv=nLG))
                       stop(paste0("The LG indices must be an integer vector between 1 and the number of linkage groups which is ",nLG))
                     else{
                       private$LG <- private$LG[which(!(1:nLG %in% LG))]
                     }
+                  }  else if(where == "LG"){
+                    if(is.null(private$LG_mat) || is.null(private$LG_pat))
+                      stop("No linkage groups exist. Please use the $createLG function to create some linkage groups")
+                    nmat <- length(private$LG_mat)
+                    npat <- length(private$LG_pat)
+                    if(isValue(LG, type="pos_integer", minv=1, maxv=nmat+npat))
+                      stop(paste0("The LG indices must an integer vector between 1 and the number of linkage groups which is ",nmat+npat))
+                    else{
+                      private$LG_mat <- private$LG_mat[which(!(1:nmat %in% LG))]
+                      private$LG_pat <- private$LG_pat[which(!((nmat+1:npat) %in% LG))]
+                    }
                   }
+                  else
+                    stop("invalid second argument ('where').")
                   return(invisible(NULL))
                 },
                 ## function for merging linkage groups
-                mergeLG = function(LG, mergeTo=NULL){
+                mergeLG = function(LG, where = NULL, mergeTo=NULL){
                   ## checks
                   if(!is.null(mergeTo) && (!is.character(mergeTo) || length(mergeTo) != 1 || !(mergeTo %in% c("maternal","paternal","none"))))
                     stop("Argument for which parent group is to be merged to is invalid")
-                  if(is.null(private$LG)){
+                  ## Check the where input
+                  if(is.null(where)){
+                    if(is.null(private$LG)) where = "LG"
+                    else where = "LG_BI"
+                  }
+                  if(where == "LG"){
                     ## Check that we have linkage groups
                     if(is.null(private$LG_mat) || is.null(private$LG_pat))
                       stop("No linkage groups exist. Please use the $createLG function to create some linkage groups")
-                    else{
-                      nmat <- length(private$LG_mat)
-                      npat <- length(private$LG_pat)
-                      ## check input
-                      if(isValue(LG, type="pos_integer", minv=1, maxv=nmat+npat))
-                        stop(paste0("The LG indices must be an integer vector between 1 and the number of linkage groups which is ",nmat+npat))
-                      LG <- unique(LG)
-                      if(length(LG) == 1)
-                        stop("Only one unique linkage group supplied. Need at least two linkage groups to merge")
-                      matgroups <- LG[which(LG %in% 1:nmat)]
-                      patgroups <- LG[which(LG %in% (nmat + 1:npat))] - nmat
-                      ## merge maternals 
-                      if(length(matgroups) > 1)
-                        private$LG_mat[[matgroups[1]]] <- unlist(private$LG_mat[matgroups])
-                      ## merge paternals
-                      if(length(patgroups) > 1)
-                        private$LG_pat[[patgroups[1]]] <- unlist(private$LG_pat[patgroups])
-                      ## merge between parent meiosis
-                      if(length(matgroups) > 0 & length(patgroups) > 0 & (is.null(mergeTo) || mergeTo != "none")){
-                        if(is.null(mergeTo)){
-                          mergeTo <- menu(c("maternal","paternal"),title="Merging maternal and paternal LGs...\nWhich parental meiosis to merge groups?")
-                          if(mergeTo == 0)
-                            stop("Linkage groups between parental meiosis were NOT merged.")
-                          mergeTo <- switch(mergeTo, "maternal", "paternal")
-                        }
-                        ## merge groups
-                        mergedLG <- unlist(c(private$LG_mat[matgroups[1]],private$LG_pat[patgroups[1]]))
-                        if(mergeTo == "maternal"){
-                          private$LG_mat[[matgroups[1]]] <- mergedLG
-                          private$LG_mat[matgroups[-1]] <- NULL
-                          private$config[[1]][private$LG_pat[patgroups][[1]]] <- private$config[[1]][private$LG_pat[patgroups][[1]]] + 2
-                          private$LG_pat[patgroups] <- NULL
-                        } else if(mergeTo == "paternal"){
-                          private$LG_pat[[patgroups[1]]] <- mergedLG
-                          private$LG_pat[patgroups[-1]] <- NULL
-                          private$config[[1]][private$LG_mat[matgroups][[1]]] <- private$config[[1]][private$LG_mat[matgroups][[1]]] - 2
-                          private$LG_mat[matgroups] <- NULL
-                        }
-                      } else{
-                        ## remove the LGs that were merged
-                        if(length(matgroups) > 1)
-                          private$LG_mat[matgroups[-1]] <- NULL
-                        if(length(patgroups) > 1)
-                          private$LG_pat[patgroups[-1]] <- NULL
+                    nmat <- length(private$LG_mat)
+                    npat <- length(private$LG_pat)
+                    ## check input
+                    if(isValue(LG, type="pos_integer", minv=1, maxv=nmat+npat))
+                      stop(paste0("The LG indices must be an integer vector between 1 and the number of linkage groups which is ",nmat+npat))
+                    LG <- unique(LG)
+                    if(length(LG) == 1)
+                      stop("Only one unique linkage group supplied. Need at least two linkage groups to merge")
+                    matgroups <- LG[which(LG %in% 1:nmat)]
+                    patgroups <- LG[which(LG %in% (nmat + 1:npat))] - nmat
+                    ## merge maternals 
+                    if(length(matgroups) > 1)
+                      private$LG_mat[[matgroups[1]]] <- unlist(private$LG_mat[matgroups])
+                    ## merge paternals
+                    if(length(patgroups) > 1)
+                      private$LG_pat[[patgroups[1]]] <- unlist(private$LG_pat[patgroups])
+                    ## merge between parent meiosis
+                    if(length(matgroups) > 0 & length(patgroups) > 0 & (is.null(mergeTo) || mergeTo != "none")){
+                      if(is.null(mergeTo)){
+                        mergeTo <- menu(c("maternal","paternal"),title="Merging maternal and paternal LGs...\nWhich parental meiosis to merge groups?")
+                        if(mergeTo == 0)
+                          stop("Linkage groups between parental meiosis were NOT merged.")
+                        mergeTo <- switch(mergeTo, "maternal", "paternal")
                       }
+                      ## merge groups
+                      mergedLG <- unlist(c(private$LG_mat[matgroups[1]],private$LG_pat[patgroups[1]]))
+                      if(mergeTo == "maternal"){
+                        private$LG_mat[[matgroups[1]]] <- mergedLG
+                        private$LG_mat[matgroups[-1]] <- NULL
+                        private$config[[1]][private$LG_pat[patgroups][[1]]] <- private$config[[1]][private$LG_pat[patgroups][[1]]] + 2
+                        private$LG_pat[patgroups] <- NULL
+                      } else if(mergeTo == "paternal"){
+                        private$LG_pat[[patgroups[1]]] <- mergedLG
+                        private$LG_pat[patgroups[-1]] <- NULL
+                        private$config[[1]][private$LG_mat[matgroups][[1]]] <- private$config[[1]][private$LG_mat[matgroups][[1]]] - 2
+                        private$LG_mat[matgroups] <- NULL
+                      }
+                    } else{
+                      ## remove the LGs that were merged
+                      if(length(matgroups) > 1)
+                        private$LG_mat[matgroups[-1]] <- NULL
+                      if(length(patgroups) > 1)
+                        private$LG_pat[patgroups[-1]] <- NULL
                     }
-                  } else{
+                  } else if(where == "LG_BI"){
+                    if(is.null(private$LG))
+                      stop("There are no combined linkage groups with BI SNPs. Use the '$addBIsnps' to create combined linkage groups.")
                     nLG <- length(private$LG)
                     ## check input
                     if(isValue(LG, type="pos_integer", minv=1,maxv=nLG))
@@ -299,7 +318,9 @@ FS <- R6Class("FS",
                     private$LG[[LG[1]]] <- unlist(private$LG[LG])
                     ## drop remaining groups
                     private$LG[LG[-1]] <- NULL
-                  }
+                  } 
+                  else
+                    stop("invalid second argument ('where').")
                   return(invisible(NULL))
                 },
                 ## function for masking SNPs
@@ -624,7 +645,7 @@ Please select one of the following:
                 #   return(invisible())
                 # },
                 ## Function for plotting linkage groups
-                plotLG = function(parent = "maternal", LG=NULL, mat="rf", filename=NULL, interactive=TRUE){
+                plotLG = function(parent = "maternal", LG=NULL, mat="rf", filename=NULL, interactive=TRUE, what = NULL){
                   ## do some checks
                   if(!is.vector(mat) || !is.character(mat) || length(mat) != 1 || !(mat %in% c('rf','LOD')))
                     stop("Argument specifying which matrix to plot (argument 1) must be either 'rf' or 'LOD'")
@@ -638,18 +659,26 @@ Please select one of the following:
                     stop("Argument sepcifting whether to produce an interactive heatmap or not is invalid.")
                   if(!is.null(filename) && (!is.vector(filename) || !is.character(filename) || length(filename) != 1))
                     stop("Specified filename is invalid")
+                  ## Check the what input
+                  if(is.null(what)){
+                    if(is.null(private$LG)) what = "LG"
+                    else what = "LG_BI"
+                  }
                   
                   if(private$noFam == 1){
                     ## Work out which LGs list to use
-                    if(is.null(private$LG)){
-                      if(!is.null(private$LG_pat) || !is.null(private$LG_mat))
-                        LGlist <- c(private$LG_mat,private$LG_pat)
-                      else
+                    if(what == "LG"){
+                      if(is.null(private$LG_pat) || is.null(private$LG_mat))
                         stop("No linkage groups are available to be plotted. Please use the $createLG function to create some linkage groups")
-                    }
-                    else
-                      LGlist <- private$LG
-
+                      else
+                        LGlist <- c(private$LG_mat,private$LG_pat)
+                    } else if(what == "LG_BI"){
+                      if(is.null(private$LG))
+                        stop("There are no combined linkage groups with BI SNPs. Use the '$addBIsnps' to create combined linkage groups.")
+                      else
+                        LGlist <- private$LG
+                    } else
+                      stop("invalid argument 'what'.")
                     ## Work out if we want a subset of the LGs
                     if(!is.null(LG)){
                       if(isValue(LG, type="pos_integer", minv=1, maxv=length(LGlist)))
@@ -783,8 +812,11 @@ Please select one of the following:
                 },
                 ## Function for plotting the linkage groups
                 plotLM = function(LG = NULL, fun="haldane", col="black"){
-                  
-                  nLGs = length(private$LG)
+                  if(is.null(private$para))
+                    stop("There are no linkage maps availabe to plot. Use the '$computeMap' function to compute linkage maps.")
+                  nLGs = length(private$para[[1]])
+                  if(isValue(LG, type="pos_integer", minv=1, maxv=nLGs))
+                    stop(paste0("The LG indices must be an integer vector between 1 and the number of linkage groups which is ",nLGs))
                   if(!is.vector(fun) || length(fun) != 1 || any(!(fun %in% c("morgan", "haldane", "kosambi"))))
                     stop("Input argument for mapping distance is invalid")
                   ## check the color input
@@ -829,6 +861,8 @@ Please select one of the following:
                 },
                 ## compare order with original and ordered markers
                 plotSyn = function(){
+                  if(is.null(private$LG))
+                    stop("There are no combined linkage groups availabe. Use the '$addBIsnps' function to compute combined linkage groups.")
                   ## work out the LG and original orders
                   LGorder <- unlist(private$LG)
                   orgOrder <- sort(LGorder)
@@ -908,7 +942,7 @@ Please select one of the following:
                     if(is.null(chrom)) # compute distances for all chromosomes
                       chrom <- 1:nchrom
                     else if(!is.vector(chrom) || chrom < 0 || chrom > length(private$LG) || round(chrom) != chrom)
-                      stop("chromosomes input must be an integer vector between 1 and the number of linkage groups")
+                      stop("Linkage group input must be an integer vector between 1 and the number of linkage groups")
                     ## Compute rf's
                     cat("Computing recombination fractions:\n")
                     if(is.null(private$para))
@@ -920,7 +954,7 @@ Please select one of the following:
                                            rf_m=vector(mode = "list",length = nchrom),ep=vector(mode = "list",length = nchrom),
                                            loglik=vector(mode = "list",length = nchrom))
                     for(i in chrom){
-                      cat("chromosome: ",i,"\n")
+                      cat("Linkage Group: ",i,"\n")
                       indx_chrom <- private$LG[[i]]
                       ref_temp <- lapply(private$ref, function(x) x[,indx_chrom])
                       alt_temp <- lapply(private$alt, function(x) x[,indx_chrom])
@@ -965,16 +999,16 @@ Please select one of the following:
                 },
                 ## Ratio of alleles for heterozygous genotype calls (observed vs expected)
                 # Slightly different than the one in RA class
-                cometPlot = function(model="random", alpha=NULL, filename="HeteroPlot", cex=1, maxdepth=500){
-                  ref <- alt <- NULL
-                  for(fam in 1:private$noFam){
-                    ref <- rbind(ref,private$ref[[fam]])
-                    alt <- rbind(alt,private$alt[[fam]])
-                  }
-                  cometPlot(ref, alt, model=model, alpha=alpha, filename=filename, cex=cex, maxdepth=maxdepth)
-                },
+                #cometPlot = function(model="random", alpha=NULL, filename="HeteroPlot", cex=1, maxdepth=500){
+                #  ref <- alt <- NULL
+                #  for(fam in 1:private$noFam){
+                #    ref <- rbind(ref,private$ref[[fam]])
+                #    alt <- rbind(alt,private$alt[[fam]])
+                #  }
+                #  cometPlot(ref, alt, model=model, alpha=alpha, filename=filename, cex=cex, maxdepth=maxdepth)
+                #},
                 #### Write output
-                writeLG = function(file, direct = "./", LG = NULL){
+                writeLM = function(file, direct = "./", LG = NULL){
                   ## do some checks
                   if(private$noFam == 1){
                     if(!is.vector(file) || !is.character(file) || length(file) != 1)
@@ -987,33 +1021,43 @@ Please select one of the following:
                     if(!file.create(outfile,showWarnings = F))
                       stop("Unable to create output file.")
                     ## Find out which LGs to write to file
-                    if(is.null(LG))
-                      LGlist <- private$LG
-                    else if(isValue(LG, type="pos_integer", minv=1, maxv=length(private$LG)))
-                      stop("LGs to write to file is invalid.")
-                    else
-                      LGlist <- private$LG[LG]
-                    ## compute the information to go in file
-                    nLG = length(LGlist)
-                    LGno <- rep(LG, unlist(lapply(LGlist, length)))
-                    LGindx <- sequence(lapply(LGlist, unlist(length)))
-                    chrom <- private$chrom[unlist(LGlist)]
-                    pos <- private$pos[unlist(LGlist)]
-                    rf_p <- unlist(lapply(private$para$rf_p[LG], function(y) format(round(cumsum(c(0,y)),6),digits=6,scientific=F)))
-                    rf_m <- unlist(lapply(private$para$rf_m[LG], function(y) format(round(cumsum(c(0,y)),6),digits=6,scientific=F)))
-                    ep <- format(rep(round(unlist(private$para$ep[LG]),8), unlist(lapply(LGlist, length))),digits=8,scientific=F)
-                    depth <- colMeans(private$ref[[1]][,unlist(LGlist)] + private$alt[[1]][,unlist(LGlist)])
-                    segType <- (c("BI","PI","PI","MI","MI","U"))[private$config[[1]][unlist(private$LG[LG])]]
-                    temp <- private$ref[[1]][,unlist(LGlist)] > 0 | private$alt[[1]][,unlist(LGlist)] > 0
-                    callrate <- colMeans(temp)
-                    ## write out file
-                    fwrite(list(LG=LGno, LGPOS=LGindx, CHROM=chrom, POS=pos, TYPE=segType, RF_PAT=rf_p, RF_MAT=rf_m,
-                                      ERR=ep, MEAN_DEPTH=depth, CALLRATE=callrate), file = outfile, sep="\t", nThread = 1)  
-                    cat(paste0("Linkage analysis results written to file:\nFilename:\t",filename)) 
-                    return(invisible(NULL))
+                    if(is.null(private$LG) && is.null(private$para))
+                      stop("No combined and linkage maps available to write to file.")
+                    if(!is.null(private$LG)){
+                      if(is.null(LG)){
+                        LGlist <- private$LG
+                        LG <- 1:length(private$LG)
+                      }
+                      else if(isValue(LG, type="pos_integer", minv=1, maxv=length(LG)))
+                        stop("LGs to write to file is invalid.")
+                      else
+                        LGlist <- private$LG[LG]
+                      ## compute the information to go in file
+                      nLG = length(LGlist)
+                      LGno <- rep(LG, unlist(lapply(LGlist, length)))
+                      LGindx <- sequence(lapply(LGlist, unlist(length)))
+                      chrom <- private$chrom[unlist(LGlist)]
+                      pos <- private$pos[unlist(LGlist)]
+                      depth <- colMeans(private$ref[[1]][,unlist(LGlist)] + private$alt[[1]][,unlist(LGlist)])
+                      segType <- (c("BI","PI","PI","MI","MI","U"))[private$config[[1]][unlist(private$LG[LG])]]
+                      temp <- private$ref[[1]][,unlist(LGlist)] > 0 | private$alt[[1]][,unlist(LGlist)] > 0
+                      callrate <- colMeans(temp)
+                      if(!is.null(private$para)){
+                        rf_p <- unlist(lapply(private$para$rf_p[LG], function(y) format(round(cumsum(c(0,y)),6),digits=6,scientific=F)))
+                        rf_m <- unlist(lapply(private$para$rf_m[LG], function(y) format(round(cumsum(c(0,y)),6),digits=6,scientific=F)))
+                        ep <- format(rep(round(unlist(private$para$ep[LG]),8), unlist(lapply(LGlist, length))),digits=8,scientific=F)
+                        out <- list(LG=LGno, LGPOS=LGindx, CHROM=chrom, POS=pos, TYPE=segType, RF_PAT=rf_p, RF_MAT=rf_m,
+                                    ERR=ep, MEAN_DEPTH=depth, CALLRATE=callrate)
+                      } else
+                        out <- list(LG=LGno, LGPOS=LGindx, CHROM=chrom, POS=pos, TYPE=segType, MEAN_DEPTH=depth, CALLRATE=callrate)
+                      ## write out file
+                      fwrite(out, file = outfile, sep="\t", nThread = 1)  
+                      cat(paste0("Linkage analysis results written to file:\nFilename:\t",filename)) 
+                      return(invisible(NULL))
+                    } else if(!is.null(private$para)){
+                      stop("Yet to be implemented")
+                    }
                   }
-                  else
-                    stop("Yet to be implemented")
                 }
                 ##############################################################
               ),

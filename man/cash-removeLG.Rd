@@ -4,10 +4,13 @@
 \alias{$removeLG}
 \title{FS method: Remove Linkage Groups}
 \usage{
-FSobj$removeLG(LG)
+FSobj$removeLG(LG, what = NULL)
 }
 \arguments{
-\item{LG}{An integer vector specifying the number of the linkage groups to be removed}
+\item{LG}{An integer vector specifying the number of the linkage groups to be removed.}
+
+\item{where}{Character vector specifying which list of linkage groups to remove linkage groups from. \code{"LG"} is for 
+the maternal and paternal linkage groups and \code{"LG_BI"} is for the combined linkage group list (see details).}
 }
 \description{
 Method for removing linkage group(s) from the list of linkage groups contained
@@ -17,6 +20,13 @@ in an FS object.
 In a linkage analysis in GUSMap, there may be need to remove linkage groups from the 
 list of created linkage groups. The indices of the linkage groups corresponds to the number
 given in the output for the FS object.
+
+When \code{where = "LG"}, linkage groups will be removed from the maternal and paternal linkage 
+group list created via the \code{\link{$createLG}} function. On the other hand, if 
+\code{where = "LG_BI"}, then linkage groups will be removed from the combined linkage group list 
+created from the \code{\link{$addBIsnps}} function (e.g., the linkage group list which include the BI SNPs).
+When \code{where = NULL}, linkage groups will be removed from the combined linkage groups if available,
+otherwise they will be removed from the maternal and paternal linkage group list.
 }
 \examples{
 ## simulate sequencing data

@@ -27,18 +27,26 @@
 #' Note: When the linkage group(s) are deleted, the indices of the remaining linkage groups 
 #' changes. Print the FS object to investiage what these after running this function.
 #' 
+#' When \code{where = "LG"}, SNPs will be removed from the paternal and maternal linkage 
+#' groups created via the \code{\link{$createLG}} function. On the other hand, if 
+#' \code{where = "LG_BI"}, then SNPs will be removed from the combined linkage groups 
+#' created from the \code{\link{$addBIsnps}} function (e.g., the linkage groups which include the BI SNPs).
+#' When \code{where = NULL}, SNPs will be removed from the combined linkage groups if availabve,
+#' otherwise they will be removed from the maternal and paternal linkage groups.
+#' 
 #' @usage
-#' FSobj$removeSNP(snps)
+#' FSobj$removeSNP(snps, where = NULL)
 #' 
 #' @param snps An integer vector giving the indices of the SNP to be removed.
+#' @param where Character vector specifying which set of linkage groups to remove SNPs from (see details).
 #' @author Timothy P. Bilton
 #' @name $removeSNP
 #' @seealso \code{\link{FS}}
 #' @examples 
 #' ## Simulate some sequencing data
 #' set.seed(6745)
-#' config <- list(list(sample(c(1,2,4), size=10, replace=T)), list(sample(c(1,2,4), size=10, replace=T)))
-#' F1data <- simFS(0.01, config=config, meanDepth=10, 
+#' config <- list(list(sample(c(1,2,4), size=20, replace=T)))
+#' F1data <- simFS(0.01, config=config, meanDepth=10, nInd=50) 
 #' ## Compute 2-point recombination fractions
 #' F1data$rf_2pt()
 #' ## create paternal and maternal linkage groups

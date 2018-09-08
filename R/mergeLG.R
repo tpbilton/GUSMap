@@ -31,10 +31,19 @@
 #' as MI linkage groups (\code{maternal}) or PI linkage groups (\code{paternal}). Otherwise,
 #' the user will be prompted to input which parental line to merge the linkage groups to.
 #' 
+#' When \code{where = "LG"}, linkage groups will be merged in the maternal and paternal linkage 
+#' group list created via the \code{\link{$createLG}} function. On the other hand, if 
+#' \code{where = "LG_BI"}, then linkage groups will be merged in the combined linkage group list 
+#' created from the \code{\link{$addBIsnps}} function (e.g., the linkage group list which include the BI SNPs).
+#' When \code{where = NULL}, linkage groups will be merged in the combined linkage groups if available,
+#' otherwise they will be merged in the maternal and paternal linkage group list.
+#' 
 #' @usage
-#' FSobj$mergeLG(LG, mergeTo = NULL)
+#' FSobj$mergeLG(LG, where = NULL, mergeTo = NULL)
 #' 
 #' @param LG An integer vector specifying the indices of the linkage groups to be merged. 
+#' @param where Character vector specifying which list of linkage groups to merge linkage groups from. \code{"LG"} is for 
+#' the maternal and paternal linkage groups and \code{"LG_BI"} is for the combined linkage group list.
 #' @param mergeTo Character value specifying whether the merged linkage groups are to be considered
 #' as MI linkage groups (\code{maternal}) or PI linkage groups (\code{paternal}). 
 #' @name $mergeLG
@@ -42,6 +51,7 @@
 #' @seealso \code{\link{FS}}
 #' @examples 
 #' ## simulate sequencing data
+#' set.seed(8932)
 #' config <- list(replicate(2,sample(c(1,2,4), size=30, replace=T), simplify = FALSE))
 #' F1data <- simFS(0.01, config=config, meanDepth=10, nInd=50)
 #' 

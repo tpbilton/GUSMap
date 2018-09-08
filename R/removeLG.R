@@ -25,10 +25,19 @@
 #' list of created linkage groups. The indices of the linkage groups corresponds to the number
 #' given in the output for the FS object. 
 #' 
-#' @usage
-#' FSobj$removeLG(LG)
+#' When \code{where = "LG"}, linkage groups will be removed from the maternal and paternal linkage 
+#' group list created via the \code{\link{$createLG}} function. On the other hand, if 
+#' \code{where = "LG_BI"}, then linkage groups will be removed from the combined linkage group list 
+#' created from the \code{\link{$addBIsnps}} function (e.g., the linkage group list which include the BI SNPs).
+#' When \code{where = NULL}, linkage groups will be removed from the combined linkage groups if available,
+#' otherwise they will be removed from the maternal and paternal linkage group list.
 #' 
-#' @param LG An integer vector specifying the number of the linkage groups to be removed
+#' @usage
+#' FSobj$removeLG(LG, what = NULL)
+#' 
+#' @param LG An integer vector specifying the number of the linkage groups to be removed.
+#' @param where Character vector specifying which list of linkage groups to remove linkage groups from. \code{"LG"} is for 
+#' the maternal and paternal linkage groups and \code{"LG_BI"} is for the combined linkage group list (see details).
 #' @name $removeLG
 #' @author Timothy P. Bilton
 #' @seealso \code{\link{FS}}
@@ -44,5 +53,4 @@
 #' 
 #' ## remove linkage groups 2 and 4
 #' F1data$removeLG(LG = c(2,4))
-
 NULL

@@ -388,6 +388,7 @@ makeFS <- function(RAobj, pedfile, family=NULL,
     chrom <- FSobj$.__enclos_env__$private$chrom
     pos <- FSobj$.__enclos_env__$private$pos
     ## Extract one SNP from each read.
+    set.seed(36475)
     if(filter$BIN > 0){
       oneSNP <- rep(FALSE,nSnps)
       oneSNP[unlist(sapply(unique(chrom), function(x){
