@@ -15,9 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
-#' Order linkage groups
+#' FS method: Order linkage groups
 #' 
-#' Method for ordering linakge groups in GUSMap
+#' Method for ordering marker in a linakge group
 #' 
 #' Linkage groups created using the \code{\link{$addBIsnps}} are ordered using the multidimensional scaling (MDS)
 #' approach described by \insertCite{preedy2016tag;textual}{GUSMap}. 
@@ -33,5 +33,20 @@
 #' 
 #' @name $orderLG
 #' @references 
-#' \insertRef{preedy2016tag}{GUSMap} 
+#' \insertRef{preedy2016tag}{GUSMap}
+#' @seealso \code{\link{FS}}
+#' @examples 
+#' ## Simulate some sequencing data
+#' set.seed(6745)
+#' config <- list(list(sample(c(1,2,4), size=10, replace=T)), list(sample(c(1,2,4), size=10, replace=T)))
+#' F1data <- simFS(0.01, config=config, meanDepth=10, 
+#' ## Compute 2-point recombination fractions
+#' F1data$rf_2pt()
+#' ## create paternal and maternal linkage groups
+#' F1data$createLG()
+#' ## Add the BI SNPs
+#' F1data$addBIsnps()
+#' 
+#' ## Order Linkage groups
+#' F1data$orderLG(ndim=5)
 NULL

@@ -2,8 +2,7 @@
 % Please edit documentation in R/createLG.R
 \name{$createLG}
 \alias{$createLG}
-\alias{createLG}
-\title{Create linakge groups}
+\title{FS method: Create linkage groups}
 \usage{
 FSobj$createLG(parent = "both", LODthres = 10, nComp = 10)
 }
@@ -39,6 +38,20 @@ function).
 
 Note: The LOD scores used in this function are computed using the {\code{\link{$rf_2pt}}} which needs to be
 run beforehand.
+}
+\examples{
+## Simulate some sequencing data
+set.seed(6745)
+config <- list(list(sample(c(1,2,4), size=30, replace=T)))
+F1data <- simFS(0.01, config=config, meanDepth=10, nInd=50)
+## Compute 2-point recombination fractions
+F1data$rf_2pt(nClust=1)
+
+## create paternal and maternal linkage groups
+F1data$createLG()
+}
+\seealso{
+\code{\link{FS}}
 }
 \author{
 Timothy P. Bilton

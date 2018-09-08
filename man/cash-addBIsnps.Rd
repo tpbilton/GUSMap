@@ -2,21 +2,65 @@
 % Please edit documentation in R/addBIsnps.R
 \name{$addBIsnps}
 \alias{$addBIsnps}
-\title{Add BI SNPs to existing Linkage groups}
+\title{FS method: Add BI SNPs to existing linkage groups}
 \usage{
 FSobj$addBIsnps(LODthres = 10, nComp = 30)
 }
 \arguments{
-\item{LODthres}{An positive numeric value for the LOD threshold used in the}
+\item{LODthres}{A positive numeric value specifying the LOD threshold used to add SNPs to the linkage groups.}
 
-\item{nComp}{An positive integer value}
+\item{nComp}{A positive integer value specifying how many SNPs in the linakge group to compute the average LOD score 
+with the unmapped SNP.}
 }
 \description{
-Method for adding Both-informative (BI) SNPs to paternal and maternal linkage groups
+Method for adding both-informative (BI) SNPs to paternal and maternal linkage groups
 and to combine maternal and paternal linkage groups.
 }
 \details{
-details here
+Each both-informative (BI) SNP is mapped to the maternal and paternal linkage groups using the following
+algorithm:
+\enumerate{
+\item For each MI (or PI) linkage group Compute the average LOD score between the unmapped BI SNP and a 
+specified number (\code{nComp}) of SNPs in the MI (or PI) linkage group that have the highest LOD score 
+with the unmapped BI SNP.
+\item Map the unmapped BI SNP to linkage group with the highest average LOD score if:
+\itemize{
+  \item The largest average LOD score is greater than the LOD threshold (\code{LODthres}).
+  \item All the other average LOD scores are less than the LOD threshold.
+  }
+}
+Each BI SNP is mapped to a MI linkage group and then independently to a PI linkage group using the above algorithm. The 
+MI and PI linkage groups are then merged together using the following algorithm:
+\enumerate{
+\item Compute the number of BI SNPs that mapped to the same pair of MI and PI linkage groups.
+\item Merge the pair of MI and PI linkage groups that has the largest number of BI SNPs mapped to them,
+provided that both linkage groups have not already been merged.
+\item Contiune step 2 until either every MI linkage group has been merged with a PI linkage group, or 
+every PI linkage group has been merged with a MI linkage group, or until no more MI or PI linkage groups can 
+can be merged to another non-merged linkage group.
+\item Merge the remaining (unmerged) MI or PI linkage groups to the combined linkage group with the most BI SNPs 
+in common (provided there are any).
+\item Contiune step 4 until all linkage groups have been merged or until no more linkage groups can be merged.
+}
+The performance of the linakge group algorithm depends on the value of \code{LODthres} and \code{nComp}. The user is
+advised to experiment with different values and examine the matrix of recombination fractions (using the \code{\link{$plotLG}}
+function).
+}
+\examples{
+## Simulate some sequencing data
+set.seed(6745)
+config <- list(list(sample(c(1,2,4), size=10, replace=T)), list(sample(c(1,2,4), size=10, replace=T)))
+F1data <- simFS(0.01, config=config, meanDepth=10, 
+## Compute 2-point recombination fractions
+F1data$rf_2pt()
+## create paternal and maternal linkage groups
+F1data$createLG()
+
+## Add the BI SNPs
+F1data$addBIsnps()
+}
+\seealso{
+\code{\link{FS}}
 }
 \author{
 Timothy P. Bilton

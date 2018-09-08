@@ -15,17 +15,55 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
-#' 2-point recombination fraction estimates
+#' FS method: Compute 2-point recombination fraction estimates and LOD scores
 #' 
-#' Compute 2-point recombination fraction estimates using the method of \insertCite{bilton2018genetics1;textual}{GUSMap}.
+#' Method for estimating 2-point recombination fraction and associated LOD scores.
+#' 
+#' In this function, the recombination fraction for all pairs of SNPs is computed. Estimation 
+#' is performed by optimimizing the hidden Markov model (HMM) likelihood given by 
+#' \insertCite{bilton2018genetics1;textual}{GUSMap} for two markers, where the parental phase 
+#' that is used is the one that maximizes the likelihood, given the segregation type that has been 
+#' inferred. The \code{err} specifies whether sequencing errors should
+#' also be estimated when computing the 2-point recombination fraction estimates. LOD scores associated 
+#' with each pair of SNPs are also computed.
+#' 
+#' Parallelization is used to speed up the estimation process using the \code{\link[foreach]{foreach}}
+#' function. The argument \code{nClust} specifies the number of cores to use in the parallelization. 
+#' Note: It is important that the number of cores you specify is not more than what is available on 
+#' your comupter (otherwise bad things can happen!).
+#' 
+#' Currently, only 2-point recombination fractions for a single full-sib family can be computed. However,
+#' there are plans to extend this function to multiple full-sib families in the future.
+#'  
+#' Note: This function can take a while, espically when there are a large number of SNPs. 
 #' 
 #' @usage
-#' FSobj$rf_2pt(nClust=2)
+#' FSobj$rf_2pt(nClust = 2, err = FALSE)
+#' 
+#' @param nClust An integer value for the number of cores to use in the parallelization of 
+#' computing the 2-point recombination fraction estimates. 
+#' @param err Locial value. If \code{TRUE}, a sequencing error parameter is also estimated as 
+#' part of the 2-point recombination fraction estimates. If \code{FALSE}, then the sequencing 
+#' error parameter is fixed at zero. 
 #' 
 #' @name $rf_2pt
+#' @seealso \code{\link{FS}}
 #' @author Timothy P. Bilton
+#' @references 
+#' \insertRef{bilton2018genetics1}{GUSMap}
+#' @examples
+#' ## simulate some sequencing data
+#' set.seed(6745)
+#' config <- list(list(sample(c(1,2,4), size=30, replace=T)))
+#' F1data <- simFS(0.01, config=config, meanDepth=10, nInd=50)
+#' 
+#' ## Compute 2-point recombination fractions
+#' F1data$rf_2pt(nClust=1)
+#' @aliases NULL
+
 
 ## function needed for foreach loop
+#' @rdname cash-rf_2pt
 comb <- function(...){
   mapply('rbind',...,SIMPLIFY=FALSE)
 }

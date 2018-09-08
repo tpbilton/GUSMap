@@ -15,113 +15,70 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
-## Function for computing linkage maps   when the parental phase is known
-#' Compute ordered linkage maps
+#' FS method: Compute ordered linkage maps
 #' 
-#' Estimate the recombination fractions based on the hidden Markov model (HMM)
-#' for low coverage sequencing data in full-sib families.
+#' Method for inferring parental phase (e.g., ordered parental genotype pair (OPGP)) and
+#' estimating recombination fractions in full-sib families.
 #' 
-#' The \code{ref} and \code{alt} matrices must have the rows
-#' representing the individuals and columns representing the SNPs. The entries
-#' of these two matrices must be a finite non-negative integer number. The
-#' number of families specified must match the number of genon (genotype calls)
-#' and depth matrices given. For the vector of starting values, \code{init_r},
-#' a single value can be given which sets all the starting values to be equal.
+#' This function infers the parental phase (or ordered parental genotype pair (OPGP)) and
+#' estimate adjacent recombination fractions using the hidden Markov model (HMM) approach as
+#' described in \insertCite{bilton2018genetics1;textual}{GUSMap}. 
 #' 
-#' The likelihood calculations are scaled using forward recursion to avoid
-#' overflow issues and so can be implemented on a large numbers of loci. If the
-#' OPGP vector is unknown for the families, then it can be inferred using the function
-#' \code{\link{infer_OPGP_FS}}.
+#' The optimization of the likelihood for the HMM are perform using either the Expectation-Maximumization (EM) algorithm
+#' (\code{method="EM"}) or using direct optimization via the \code{\link{optim}} function (\code{method="optim"}).
+#' The likelihood computations (and computation of derivatives if required) are scaled using 
+#' forward and backward recursion to avoid overflow issues and are performed in C. These computations 
+#' are also parallelization via the OpenMP package, where the argument \code{nThreads} specifies
+#' how many threads to use. Be careful not to set \code{nThreads} to more than the number of threads available
+#' on your computer (or bad things will happen). In addition, if the package is complied without OpenMP, then this 
+#' parallelization has no effect and likelihood is computed in serial.
 #' 
-#' Two different optimzation procedures are available, which are the EM algorithm and optim.
-#' To control the parameters to these procedures, addition arguments can be passed to the function.
-#' The arguments which have an effect are dependent on the optimization procedure.
-#' \itemize{
-#' \item EM: Only two arguments currently have an effect. 'reltol' specifies 
-#' the maximum difference between the likelihood value of successive iterations
-#' before the algorithm terminates. 'maxit' specifies the maximum number of iterations
-#' used in the algorithm
-#' \item optim: The extra arguments are passed directly to optim. Those see what 
-#' arguments are valid, visit the help page fro optim using '?optim'.
-#' }
+#' If \code{mapped = TRUE}, then linkage groups must have been formed from the \code{\link{$addBIsnps}} function
+#' first (and preferably ordered from the \code{\link{$orderLG}} function). 
 #' 
-#' @param init_r Vector of starting values for the recombination fractions
-#' @param ep Numeric value of the starting value for the sequencing error
-#' parameter. Default is NULL which means that the sequencing parameter is
-#' fixed at zero.
-#' @param ref List object with each element containing a matrix of allele
-#' counts for the reference allele for each family.
-#' @param alt List object with each element containing a matrix of allele
-#' counts for the alternate allele for each family.
-#' @param OPGP List object with each element containing a numeric vector of
-#' ordered parental genotype pairs (OPGPs) for each family. See Bilton (2017)
-#' for a classification of each OPGP.
-#' @param sexSpec Logical value. If TRUE, sex specific recombination fractions
+#' @usage 
+#' FSobj$computeMap(chrom=NULL, init_r=0.01, ep=0.001, method="optim", sexSpec=FALSE, 
+#'                     seqErr=TRUE, mapped=TRUE, nThreads=1)
+#' 
+#' @param chrom A integer vector giving the indices of the chromosomes (or linkage groups) to be computed.
+#' @param init_r A numeric value giving the initial values for the recombination fractions. Each 
+#' recombination fraction parameter is set to the same initial value.
+#' @param ep A numeric value giving the initial value for the sequencing error parameter.
+#' @param method A character string specifying whether optimization should be performed using
+#' direct maximization (\code{optim}) or via the Expectation-Maximum (EM) algorithm (\code{EM}).
+#' @param sexSpec Logical value. If \code{TRUE}, sex-specific recombination fractions are
 #' are estimated.
-#' @param trace Logical value. If TRUE, output from \code{optim()} are printed.
-#' @param noFam Numeric value. Specifies the number of full-sib families used
-#' to estimate the recombination fractions.
-#' @param method A character string specifying the optimzation procedure to be used.
-#' @param \ldots Additional arguments passed to the optimizer procedure. See details for more information.
-#' @return Function returns a list object. If non sex-specific recombination
-#' fractions are specified, the list contains;
-#' \itemize{
-#' \item rf: Vector of recombination fraction estimates.
-#' \item ep: Estimate of the sequencing error parameter.
-#' \item loglik: The log-likelihood value at the maximum likelihood estimates.
-#' }
-#' else, if sex-specific recombination fractions are
-#' desired, the list contains;
-#' \itemize{
-#' \item rf_p: Vector of the paternal recombination fraction estimates.
-#' \item rf_m: Vector of the maternal recombination fraction estimates.
-#' \item ep: Estimate of the sequencing error parameter.
-#' \item loglik: The log-likelihood value at the maximum likelihood estimates.
-#' }
-#' @author Timothy P. Bilton
-#' @seealso \code{\link{infer_OPGP_FS}}
-#' @references Bilton, T.P., Schofield, M.R., Black, M.A., Chagné, D., Wilcox,
-#' P.L., Dodds K.G. (2017). Accounting for errors in low coverage high-throughput
-#' sequencing data when constructing genetic maps using biparental outcrossed
-#' populations. Unpublished Manuscript.
+#' @param seqErr Locical value. If \code{TRUE}, the sequencing error parameter is estimated. Otherwise, the
+#' sequenicng error parameter is fixed to the value of the \code{ep} argument.
+#' @param mapped Locial value. If \code{TRUE}, the maps are computed using the marker order giving 
+#' in the linkage groups. Otherwise, the maps are computed using the original marker order  
+#' given by the assembly.
+#' @param nThreads An integer value giving the number of threads to use in computing the likelihood in parallel.
+#' @name $computeMap
+#' @author Timothy P. Bilton and Chris Scott
+#' @seealso \code{\link{FS}}
+#' @references
+#' \insertRef{bilton2018genetics1}{GUSMap}
 #' @examples
+#' #### Case 1: Compute linkage map from linkage groups
+#' ## Simulate some sequencing data
+#' set.seed(6745)
+#' config <- list(list(sample(c(1,2,4), size=30, replace=T)))
+#' F1data <- simFS(0.01, config=config, meanDepth=10, nInd=50)
+#' ## Compute 2-point recombination fractions
+#' F1data$rf_2pt(nClust=1)
+#' ## create and order linkage groups
+#' F1data$createLG()
+#' F1data$addBIsnps()
+#' F1data$orderLG(ndim=5)
 #' 
-#' ### Case 1: Single family
-#' ## simulate full sib family
-#' config <- c(2,1,1,4,2,4,1,1,4,1,2,1)
-#' F1data <- simFS(0.01, config=config, nInd=50, meanDepth=5)
+#' ## Compute the linkage map
+#' F1data$computeMap()
 #' 
-#' ## Determine the parental phase
-#' OPGP <- infer_OPGP_FS(F1data$ref, F1data$alt, config)
-#' 
-#' ## Estimate the recombination fractions
-#' rf_est_FS(ref = list(F1data$ref), alt = list(F1data$alt), OPGP = list(OPGP), noFam = 1)
-#' ## To change the optimzation parameters 
-#' ## Max number of iterations for the EM algorithm set at 100
-#' rf_est_FS(ref = list(F1data$ref), alt = list(F1data$alt), OPGP = list(OPGP),
-#'   noFam = 1, maxit=100)
-#' ## The algorithm will dtop when the difference between the likelihood at sucessive iterations is less
-#' ## than 0.00001
-#' rf_est_FS(ref = list(F1data$ref), alt = list(F1data$alt), OPGP = list(OPGP),
-#'   noFam = 1, reltol=1e-5)
-#' 
-#' ########################
-#' ### Case 2: Two families
-#' config_1 <- c(1,1,3,1,4,4,1,6,2,4,6,1)
-#' config_2 <- c(2,4,1,6,2,1,1,2,5,6,1,1)
-#' 
-#' Fam1 <- simFS(0.01, config=config_1, nInd=50, meanDepth=5)
-#' Fam2 <- simFS(0.01, config=config_2, nInd=50, meanDepth=5)
-#' 
-#' ## Determine the parental phase in each family
-#' OPGP_1 <- infer_OPGP_FS(Fam1$ref, Fam1$alt, config_1)
-#' OPGP_2 <- infer_OPGP_FS(Fam2$ref, Fam2$alt, config_2)
-#' 
-#' ## Estimate the recombination fractions
-#' rf_est_FS(ref = list(Fam1$ref,Fam2$ref),
-#'           alt = list(Fam1$alt,Fam2$alt), OPGP = list(OPGP_1,OPGP_2), noFam = 2)
-#'           
-#' 
+#' #### Case 2: Compute map using original assembly order
+#' F1data$computeMap(mapped = FALSE)
+#' @aliases NULL
+
 rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
                       sexSpec=F, seqErr=T, trace=F, noFam=as.integer(1), method = "optim", nThreads=0, ...){
   

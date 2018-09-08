@@ -26,17 +26,19 @@
 #'
 #' ## Functions (Methods) of an FS object
 #' FSobj$addBIsnps(LODthres = 10, nComp = 10)
-#' FSobj$computeMap( )
 #' FSobj$createLG(parent = "both", LODthres = 10, nComp = 10)
+#' FSobj$computeMap(chrom=NULL, init_r=0.01, ep=0.001, method="optim", sexSpec=F, seqErr=T, mapped=T, nThreads=1)
 #' FSobj$maskSNP(snps)
-#' FSobj$mergeLG(LG)
+#' FSobj$mergeLG(LG, merteTo = NULL)
 #' FSobj$orderLG(chrom = NULL, mapfun = "haldane", weight="LOD2", ndim=30, spar = NULL)
-#' FSobj$plotChr(  )
-#' FSobj$plotLG(  )
-#' FSobj$print(what = NULL)
+#' FSobj$plotChr(parent = "maternal", mat=c("rf"), filename=NULL, chrS=2, lmai=2)
+#' FSobj$plotLG(parent  = "maternal", LG=NULL, mat="rf", filename=NULL, interactive=TRUE)
+#' FSobj$plotLM(LG = NULL, fun="haldane", col="black")
+#' FSobj$plotSyn()
+#' FSobj$print(what = NULL, ...)
 #' FSobj$removeLG(LG)
 #' FSobj$removeSNP(snps)
-#' FSobj$rf_2pt(nClust = 2)
+#' FSobj$rf_2pt(nClust = 2, err=FALSE)
 #' FSobj$unmaskSNP(snps)
 #' FSobj$writeLG(file, direct = "./", LG = NULL)
 #' 
@@ -59,7 +61,8 @@
 #' \item{\code{\link{$plotLG}}}{Plot the heatmap of the 2-point recombination fraction 
 #' estimates (or LOD scores) when SNPs are ordered according to their linkage groups.}
 #' \item{\code{\link{$plotLM}}}{Plot linkage maps.}
-#' \item{\code{\link{$plotSyn}}}{Produce a Synety plot.}
+#' \item{\code{\link{$plotSyn}}}{Produce a Synteny plot.}
+#' \item{\code{\link{$print}}}{Print summary information for FS object.}
 #' \item{\code{\link{$removeLG}}}{Remove linkage group(s).}
 #' \item{\code{\link{$removeSNP}}}{Remove SNP(s) from linkage group(s).}
 #' \item{\code{\link{$rf_2pt}}}{Compute the 2-point recombination fraction (and LOD score) between all SNP pairs.}
@@ -96,24 +99,23 @@ FS <- R6Class("FS",
                 ### print methods
                 print = function(what = NULL, ...){
                   if(is.null(what)){
-                    if(is.null(private$para)){
-                      if(is.null(private$LG)){
-                        if(is.null(private$LG_mat) & is.null(private$LG_pat))
-                          what = "data"
-                        else what = "LG"
-                      } else what = "LG_BI"
-                    }
-                    else what = "map"
+                    what <- c(what, "data")
+                    if(!is.null(private$LG_mat) & !is.null(private$LG_pat))
+                      what <- c(what, "LG")
+                    if(!is.null(private$LG))
+                      what <- c(what, "LG_BI")
+                    if(!is.null(private$para))
+                      what <- c(what, "map")
                   } else if(!is.vector(what) || !is.character(what) || length(what) != 1 ||
-                            all(!(what %in% c("data","LG","LG_BI","map"))))
-                    stop("Argument for what output to produce is invalid")
+                            any(!(what %in% c("data","LG","LG_BI","map"))))
+                    stop("Argument for what output to print is invalid")
                   ## printe the required output
                   if(private$noFam == 1){
-                    if(what == "data")
+                    if(any(what == "data"))
                       cat(private$summaryInfo$data, sep="")
-                    else if(what == "LG"){
+                    if(any(what == "LG")){
                       if(is.null(private$LG_mat) & is.null(private$LG_pat))
-                        stop("Linkage groups have not been formed. Use the '$createLG' function to form linkage groups.")
+                        warning("Linkage groups have not been formed. Use the '$createLG' function to form linkage groups.")
                       else{
                         cat("Linkage Group Summary (excluding BI SNPs):\n")
                         MI <- unlist(lapply(private$LG_mat, length))
@@ -125,9 +127,9 @@ FS <- R6Class("FS",
                         prmatrix(tab, rowlab = rep("",nrow(tab)), quote=F)
                       }
                     }
-                    else if(what == "LG_BI"){
+                    if(any(what == "LG_BI")){
                       if(is.null(private$LG))
-                        stop("Linkage groups do not have any BI SNPs. Use the '$addBIsnps' to add BIsnps to the linkage groups.")
+                        warning("Linkage groups do not have any BI SNPs. Use the '$addBIsnps' to add BIsnps to the linkage groups.")
                       else{
                         cat("Linkage Group Summary (including BI SNPs):\n")
                         MI <- unlist(lapply(private$LG, function(x) sum(x %in% private$group$MI)))
@@ -141,12 +143,12 @@ FS <- R6Class("FS",
                         prmatrix(tab, rowlab = rep("",nrow(tab)), quote=F)
                       }
                     }
-                    else if(what == "map"){
+                    if(any(what == "map")){
                       if(is.null(private$para))
-                        stop("no maps have been estimated. Use the 'rf_est' function to compute some maps.")
+                        warning("no maps have been estimated. Use the 'rf_est' function to compute some maps.")
                       else{
                         cat(private$summaryInfo$map[[1]])
-                        prmatrix(private$summaryInfo$map[[2]], rowlab = rep("",nrow(tab)), quote=F)
+                        prmatrix(private$summaryInfo$map[[2]], rowlab = rep("",nrow(private$summaryInfo$map[[2]])), quote=F)
                       }
                     }
                   }
@@ -212,7 +214,7 @@ FS <- R6Class("FS",
                     else{
                       nmat <- length(private$LG_mat)
                       npat <- length(private$LG_pat)
-                      if(isValue(LG,min=1,max=nmat+npat))
+                      if(isValue(LG, type="pos_integer", minv=1, maxv=nmat+npat))
                         stop(paste0("The LG indices must an integer vector between 1 and the number of linkage groups which is ",nmat+npat))
                       else{
                         private$LG_mat <- private$LG_mat[which(!(1:nmat %in% LG))]
@@ -222,7 +224,7 @@ FS <- R6Class("FS",
                   }
                   else{
                     nLG <- length(private$LG)
-                    if(isValue(LG,min=1,max=nLG))
+                    if(isValue(LG, type="pos_integer", minv=1,maxv=nLG))
                       stop(paste0("The LG indices must be an integer vector between 1 and the number of linkage groups which is ",nLG))
                     else{
                       private$LG <- private$LG[which(!(1:nLG %in% LG))]
@@ -243,7 +245,7 @@ FS <- R6Class("FS",
                       nmat <- length(private$LG_mat)
                       npat <- length(private$LG_pat)
                       ## check input
-                      if(isValue(LG,min=1,max=nmat+npat))
+                      if(isValue(LG, type="pos_integer", minv=1, maxv=nmat+npat))
                         stop(paste0("The LG indices must be an integer vector between 1 and the number of linkage groups which is ",nmat+npat))
                       LG <- unique(LG)
                       if(length(LG) == 1)
@@ -288,7 +290,7 @@ FS <- R6Class("FS",
                   } else{
                     nLG <- length(private$LG)
                     ## check input
-                    if(isValue(LG,min=1,max=nLG))
+                    if(isValue(LG, type="pos_integer", minv=1,maxv=nLG))
                       stop(paste0("The LG indices must be an integer vector between 1 and the number of linkage groups which is ",nLG))
                     LG <- unique(LG)
                     if(length(LG) == 1)
@@ -318,7 +320,7 @@ FS <- R6Class("FS",
                 },
                 #####################################################################
                 ## Function for computing the 2-point rf estimates
-                rf_2pt = function(nClust = 4, err = FALSE){
+                rf_2pt = function(nClust = 2, err = FALSE){
                   ## do some checks
                   if(!is.numeric(nClust) || !is.vector(nClust) || length(nClust)!=1 || nClust < 0 || is.infinite(nClust) )
                     stop("Number of clusters for parallelization needs to be a positive finite integer number")
@@ -364,14 +366,7 @@ Please select one of the following:
                   if(!is.null(private$LG))
                     private$LG <- NULL
                   ## display the results
-                  cat("Linkage Group Summary (excluding BI SNPs):\n")
-                  MI <- unlist(lapply(private$LG_mat, length))
-                  PI <- unlist(lapply(private$LG_pat, length))
-                  tab <- cbind(LG=1:(length(MI)+length(PI)),MI=c(MI,rep(0,length(PI))),PI=c(rep(0,length(MI)),PI))
-                  tab <- addmargins(tab, margin = 1)
-                  rownames(tab) <- NULL
-                  tab[nrow(tab), 1] <- "TOTAL"
-                  prmatrix(tab, rowlab = rep("",nrow(tab)), quote=F)
+                  self$print(what = "LG")
                   return(invisible(NULL))
                 },
                 ## function for adding the unmapped (or inferred SNPs) to the linkage groups
@@ -556,16 +551,7 @@ Please select one of the following:
                   else if(exists("newLGlist_pat")){
                     private$LG <- newLGlist_pat
                   }
-                  cat("Linkage Group Summary (including BI SNPs):\n")
-                  MI <- unlist(lapply(private$LG, function(x) sum(x %in% private$group$MI)))
-                  PI <- unlist(lapply(private$LG, function(x) sum(x %in% private$group$PI)))
-                  BI <- unlist(lapply(private$LG, function(x) sum(x %in% private$group$BI)))
-                  TOTAL <- unlist(lapply(private$LG, length))
-                  tab <- cbind(LG=1:(length(private$LG)),MI,PI,BI,TOTAL)
-                  tab <- addmargins(tab, margin = 1)
-                  rownames(tab) <- NULL
-                  tab[nrow(tab), 1] <- "TOTAL"
-                  prmatrix(tab, rowlab = rep("",nrow(tab)), quote=F)
+                  self$print(what = "LG_BI")
                   return(invisible(NULL))
                 },
                 ## Function for ordering linkage groups
@@ -638,7 +624,7 @@ Please select one of the following:
                 #   return(invisible())
                 # },
                 ## Function for plotting linkage groups
-                plotLG = function(parent, LG=NULL, mat="rf", interactive=TRUE, filename=NULL){
+                plotLG = function(parent = "maternal", LG=NULL, mat="rf", filename=NULL, interactive=TRUE){
                   ## do some checks
                   if(!is.vector(mat) || !is.character(mat) || length(mat) != 1 || !(mat %in% c('rf','LOD')))
                     stop("Argument specifying which matrix to plot (argument 1) must be either 'rf' or 'LOD'")
@@ -666,7 +652,7 @@ Please select one of the following:
 
                     ## Work out if we want a subset of the LGs
                     if(!is.null(LG)){
-                      if(isValue(LG, min=1,max=length(LGlist)))
+                      if(isValue(LG, type="pos_integer", minv=1, maxv=length(LGlist)))
                         stop(paste0("At least one linkage group number does not exist. Indices must be between 1 and",length(LGlist),"\n"))
                       LGlist <- LGlist[LG]
                       names(LGlist) <- LG
@@ -744,7 +730,7 @@ Please select one of the following:
                         else
                           png(paste0(filename,".png"), width=nn+1,height=nn+1)
                       }
-                      par(mar=rep(0,4),oma=c(0,0,0,0),xaxt='n',yaxt='n',bty='n',ann=F)
+                      par(mar=rep(0,4),oma=c(0,0,0,0), mfrow=c(1,1), xaxt='n',yaxt='n',bty='n',ann=F)
                       image(temprf, x=1:nn, y=1:nn, zlim=c(0,0.5), col=heat.colors(100))
                       abline(v=which(b_indx))
                       abline(h=which(b_indx))
@@ -758,7 +744,7 @@ Please select one of the following:
                   return(invisible())
                 },
                 ## Function for plotting chromosome in their original ordering
-                plotChr = function(mat=c("rf"), parent = "maternal", filename=NULL, chrS=2, lmai=2){
+                plotChr = function(parent = "maternal", mat=c("rf"), filename=NULL, chrS=2, lmai=2){
                   ## do some checks
                   if(!is.vector(mat) || !is.character(mat) || length(mat) != 1 || !(mat %in% c('rf','LOD')))
                     stop("Argument specifying which matrix to plot (argument 1) must be either 'rf' or 'LOD'")
@@ -974,8 +960,7 @@ Please select one of the following:
                   if(ncol(tab) > 7)
                     tab[nrow(tab),8] <- ""
                   private$summaryInfo$map <- list("Linkage Map Summaries:\n", tab)
-                  cat(private$summaryInfo$map[[1]])
-                  prmatrix(tab, rowlab = rep("",nrow(tab)), quote=F)
+                  self$print(what = "map")
                   return(invisible(NULL))
                 },
                 ## Ratio of alleles for heterozygous genotype calls (observed vs expected)
@@ -1004,7 +989,7 @@ Please select one of the following:
                     ## Find out which LGs to write to file
                     if(is.null(LG))
                       LGlist <- private$LG
-                    else if(isValue(LG, min=1, max = length(private$LG)))
+                    else if(isValue(LG, type="pos_integer", minv=1, maxv=length(private$LG)))
                       stop("LGs to write to file is invalid.")
                     else
                       LGlist <- private$LG[LG]
@@ -1068,7 +1053,7 @@ Please select one of the following:
                     ## run the algorithm to map the SNPs
                     else{
                       for(snp in unmapped){
-                        LODvalue = numeric(nLG)
+                        LODvalue = numeric(max(nLG,2))
                         for(lg in 1:nLG)
                           LODvalue[lg] <- mean(sort(private$LOD[snp,newLGlist[[lg]]],decreasing=T)[1:nComp],na.rm=T)
                         if(max(LODvalue) >= LODthres & sort(LODvalue, decreasing = T)[2] < LODthres){

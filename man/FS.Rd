@@ -12,17 +12,20 @@ FSobj <- makeFS(RAobj, pedfile, family=NULL,
 ## Functions (Methods) of an FS object
 FSobj$addBIsnps(LODthres = 10, nComp = 10)
 FSobj$createLG(parent = "both", LODthres = 10, nComp = 10)
+FSobj$computeMap(chrom=NULL, init_r=0.01, ep=0.001, method="optim", sexSpec=F, seqErr=T, mapped=T, nThreads=1)
 FSobj$maskSNP(snps)
-FSobj$mergeLG(LG)
-FSobj$orderLG(chrom = NULL, mapfun = "haldane",
-                weight="LOD2", ndim=30)
-FSobj$plotChr(  )
-FSobj$plotLG(  )
+FSobj$mergeLG(LG, merteTo = NULL)
+FSobj$orderLG(chrom = NULL, mapfun = "haldane", weight="LOD2", ndim=30, spar = NULL)
+FSobj$plotChr(parent = "maternal", mat=c("rf"), filename=NULL, chrS=2, lmai=2)
+FSobj$plotLG(parent  = "maternal", LG=NULL, mat="rf", filename=NULL, interactive=TRUE)
+FSobj$plotLM(LG = NULL, fun="haldane", col="black")
+FSobj$plotSyn()
+FSobj$print(what = NULL, ...)
 FSobj$removeLG(LG)
 FSobj$removeSNP(snps)
-FSobj$rf_2pt(nClust = 2)
+FSobj$rf_2pt(nClust = 2, err=FALSE)
 FSobj$unmaskSNP(snps)
-FSobj$write()
+FSobj$writeLG(file, direct = "./", LG = NULL)
 }
 \description{
 Class for storing RA data and associated functions for analysis with full-sib populations.
@@ -38,6 +41,7 @@ for analyzing the data. Information in an FS object are specific to full-sib fam
 \item{\code{\link{$addBIsnps}}}{Add Both-Informative (BI) snps to the maternal and/or
 paternal linkage groups and merge the parental linkage groups.}
 \item{\code{\link{$createLG}}}{Create linkage group(s).}
+\item{\code{\link{$computeMap}}}{Compute linkage maps for a given marker order.}
 \item{\code{\link{$maskSNP}}}{Mask SNP(s) in the dataset.}
 \item{\code{\link{$mergeLG}}}{Merge linkage groups.}
 \item{\code{\link{$orderLG}}}{Order the SNPs in the linkage group(s).}
@@ -45,10 +49,14 @@ paternal linkage groups and merge the parental linkage groups.}
 estimates (or LOD scores) when SNPs are ordered according to the genome assembly.}
 \item{\code{\link{$plotLG}}}{Plot the heatmap of the 2-point recombination fraction 
 estimates (or LOD scores) when SNPs are ordered according to their linkage groups.}
+\item{\code{\link{$plotLM}}}{Plot linkage maps.}
+\item{\code{\link{$plotSyn}}}{Produce a Synteny plot.}
+\item{\code{\link{$print}}}{Print summary information for FS object.}
 \item{\code{\link{$removeLG}}}{Remove linkage group(s).}
 \item{\code{\link{$removeSNP}}}{Remove SNP(s) from linkage group(s).}
 \item{\code{\link{$rf_2pt}}}{Compute the 2-point recombination fraction (and LOD score) between all SNP pairs.}
 \item{\code{\link{$unmaskSNP}}}{Unmask SNP(s) in the data set.}
+\item{\code{\link{$writeLG}}}{Write linkage mapping results to a file.}
 }
 }
 

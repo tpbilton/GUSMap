@@ -21,12 +21,13 @@ See below for details.}
 An R6 object of class \code{\link{FS}}
 }
 \description{
-Create an FS object from an RA object, perform standard filtering and computes statistics specific to full-sib family populations.
+Create an FS object from an RA object, perform standard filtering and compute statistics specific to full-sib family populations.
 }
 \details{
-This function
-
-
+This function converts an RA object into an FS (full-sib) object. An FS object is a R6 type object 
+that contains RA data, various other statistics computed and functions (methods) for analyzing
+the full-sib family for performing linkage mapping. The statistics computed and data filtering are 
+specific to full-sib family populations and sequencing data.
 
 The filtering criteria currently implemented are:
 \itemize{
@@ -40,7 +41,7 @@ This filter is to remove SNPs where the parental information is insufficient to 
 \item{Segregation test P-value (\code{PVALUE}): }{SNPs are discarded if the p-value from a segregation test is smaller than the threshold (default is 0.01).
  This filters out SNPs where the segregation type has been inferred wrong.}
 }
-The segregation type of each SNP is infer based on the genotypes of the parents. The parental genotypes are called homozygous for the 
+The segregation type of each SNP is inferred based on the genotypes of the parents. The parental genotypes are called homozygous for the 
 reference allele if there is only reference reads seen, heterozygous if at least one read for the reference and alternate allele are seen,
 and homozygous for the alternate allele if only reads for the alternate allele are seen. as a result, the parental genotype may be incorrectly inferred
 if the read depth is too low (e.g., homozeygous genotype is called heterozygous) and hence why the \code{DEPTH} filter is implemented.
@@ -63,6 +64,9 @@ when the associated read depth is greater than or equal the threshold \code{DEPT
 The \code{family} argument allows the user to specify the family to be used in the creation of
 the full-sib population. Note that this argument using the "Family" column in the pedigree file and
 so pedigree file needs to be set-up correctly.
+
+Note: Only a single full-sib family can be processed at present. There are future plans to extend this out to include
+multiple families.
 }
 \examples{
 ## extract filename for Manuka dataset in GUSMap package

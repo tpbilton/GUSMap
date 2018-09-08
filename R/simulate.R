@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
-#' Simulation sequencing data for a single full-sib family.
+#' Simulation sequencing data for full-sib families.
 #' 
 #' Simulate genotypes and sequencing depth for the progeny of a full-sib family
 #' 
@@ -35,104 +35,95 @@
 #' to occur with probability \code{epsilon}. The mean read depth for each loci
 #' is assumed to be equal.
 #' }
+#' The simulation can be performed with multiple families and/or multiple chromosomes.
 #' 
-#' The value for the \code{config} vector are 1=both-informative (ABxAB),
+#' Specifying the \code{config} argument in the correct is crucial and must be a nested list.
+#' The number of elements of the list at the top level gives the number of families (which must be the 
+#' same as the length of the \code{nInd} argument) and
+#' the number elements of the list at the second level gives the number of chromosomes.
+#' The elements at the bottom level of the list must be vectors of integers 1 to 9 where 1=both-informative (ABxAB),
 #' 2=paternal-informative A (ABxAA), 3=paternal-informative B (ABxBB),
 #' 4=maternal-informative (AAxAB), 5=maternal-informative (BBxAB), 6 =
 #' uninformative (AAxAA), 7 = uninformative (AAxBB), 8 = uninformative (BBxAA)
-#' and 9 = uninformative (BBxBB).
+#' and 9 = uninformative (BBxBB). The list must be set up such that the length of each 
+#' chromosome whitin each family must be the same (see the examples for an ideal of how to set this up).
 #' 
 #' @param rVec_f,rVec_m Numeric vector of true paternal and maternal
 #' recombination fractions (in the interval [0,0.5]). Currently, only a single value 
-#' is allowed making the rf across all the loci.
+#' is allowed making the rf across all the loci the same.
 #' @param epsilon Numeric value of the sequencing error rate.
-#' @param config List containing the config vector for each family.
-#' Each element of the list must be a vector with integer values between 1 and 9.
-#' @param nInd List containing the number of individuals in each family for the simulated.
-#' Each element of the list must be positive integer value.
+#' @param config Nested list containing the config vector for each family and chromosome. 
+#' See details on how to sepcify this correctly.
+#' @param nInd Positive integer vector for the number of individuals in each family for the simulated data.
+#' The length of the list gives the number of families in the simulated data set.
 #' @param meanDepth Positive numeric value for the mean depth of the read depth
 #' distribution.
 #' @param thres Numeric value for the threshold value for which genotype calls with
 #' a read depth less than the threshold are set to missing.
-#' @param noFam Positive integer value giving the number of families in the simulated data.
-#' @param noChr Positive integer value giving the number of chromosomes in the simulated data.
 #' @param rd_dist Character value for the distribution for which the read depths are
-#' simulated from. Currently, only negative binomial ("Neg_Binom") and Poisson
-#' ("Pois") are implemented.
+#' simulated from. Currently, only negative binomial (\code{"Neg_Binom"}) and Poisson
+#' (\code{"Pois"}) are implemented.
 #' @param seed1 Numeric value. Random seed used for the simulation of the
 #' parental phase (or OPGP).
 #' @param seed2 Numeric value. Random seed used for the simulation of the data
 #' sets.
 #' @return An FS object containing the simulated data.
-#' }
 #' @author Timothy P. Bilton
+#' @seealso \code{\link{FS}}
 #' @examples
 #' 
-#' ## simulate full sib family
-#' config <- list(c(2,1,1,4,2,4,1,1,4,1,2,1))
-#' F1data <- simFS(0.001, config=config, nInd=list(50), meanDepth=5)
+#' ## simulate a single full sib family with one chromosome 
+#' config <- list(list(c(2,1,1,4,2,4,1,1,4,1,2,1)))
+#' F1data <- simFS(0.001, config=config, nInd=50, meanDepth=5)
 #' ## to look at the simulated data
 #' FAdata
 #' 
 #' ## Simulate mulitple families and chromosomes
-#' config <- list(c(2,1,1,4,2,4,1,1,4,1,2,1),
-#'                  c(1,4,4,2,4,1,1,2,4,1))
-#' F1data <- simFS(0.001, config=config, nInd=list(50,45), meanDepth=5)
+#' config <- list(replicate(2, sample(c(1,2,4), size=10, replace=T, prob=c(1,2,2)), simplify = F),
+#' replicate(2, sample(c(1,2,4), size=10, replace=T, prob=c(1,2,2)), simplify = F))
+#' F1data <- simFS(0.001, config=config, nInd=c(50,45), meanDepth=5)
 #' 
 #' @export simFS
 
 ## Function for simulating sequencing data for a single full-sib family
-simFS <- function(rVec_f, rVec_m=rVec_f, epsilon=0, config, nInd=100, meanDepth=5, thres=NULL, noFam=1, noChr=1,
+simFS <- function(rVec_f, rVec_m=rVec_f, epsilon=0, config, nInd=100, meanDepth=5, thres=NULL,
                   rd_dist="Neg_Binom", seed1=1, seed2=1){
   
   ## perform some checks for data input
-  if(!is.numeric(noFam) || length(noFam) != 1 || noFam < 1 || !is.finite(noFam))
-    stop("Number of families parameter must be a single finite positive numeric number")
-  if(!is.numeric(noChr) || length(noChr) != 1 || noChr < 1 || !is.finite(noChr))
-    stop("Number of chromosomes parameter must be a single finite positive numeric number")
+  if(isValue(nInd, type="pos_integer", minv=1))
+    stop("Input for the number of individuals to simulate is invalid.")
+  noFam = length(nInd)
   if( !is.numeric(rVec_f) || !is.numeric(rVec_m) || length(rVec_f) != 1 || length(rVec_m) != 1 || 
       any(rVec_f < 0) || any(rVec_m < 0) || any(rVec_f > 0.5) || any(rVec_m > 0.5) )
     stop("Recombination factions are required to be a numeric number between 0 and 0.5")
-  if( !is.numeric(epsilon) || length(epsilon) != 1 || epsilon < 0 || epsilon > 1 )
+  if( isValue(epsilon, type="pos_numeric", min=0, max=1, equal=FALSE) || length(epsilon) != 1)
     stop("Sequencing error parameter is not single numeric number between 0 and 1")
-  if(length(nInd) != noFam || any(!is.numeric(nInd)) || any(nInd < 1) || 
-     any(nInd != round(nInd)) || any(!is.finite(nInd)) )
-    stop("Number of individuals or number of SNPs are not a positive integer")
-  if(length(config) != noFam || !is.list(config))
-    stop("Segregation information needs to be a list equal to the nunber of chromosome.")
+  if(!is.list(config) || length(config) != noFam)
+    stop("Segregation information needs to be a list equal to the nunber of chromosomes.")
   else{
+    noChr <- unique(unlist(lapply(config, length)))
+    if(length(noChr) != 1 && isValue(noChr, minv=1))  
+      stop("Number of chromosomes found in the 'config' list is not the same for each family")
+    if(!all(unlist(lapply(config, is.list))))
+      stop("'config' argument is not set-up correctly. Needs to be a nested list.")
+    nSnps <- unique(lapply(config, function(x) unlist(lapply(x, length))))
+    if(length(nSnps) != 1 || !is.list(nSnps))
+      stop("The number of SNPs in each chromosome is not the same in each family for the 'config' argument.")
+    else nSnps <- nSnps[[1]]  
     for(fam in 1:noFam){
-      if( length(config[[fam]]) != noChr || !is.list(config[[fam]]))
-        stop(paste0("Segregation information for family ",fam," is not equal to the number of chromosomes"))
       for(chr in 1:noChr){
         temp <- config[[fam]][[chr]]
-        if(!is.numeric(temp) || !is.vector(temp) || any(!(temp == round(temp))) || any(temp < 1) || any(temp > 9) )
-          stop(paste0("Segregation information for chromosome ",chr," in familiy ",fam," needs to be an integer vector equal to the number of SNPs with entires from 1 to 9"))
+        if(isValue(temp, type="pos_integer", minv=1, maxv=9))
+          stop(paste0("Segregation information for chromosome ",chr," in familiy ",fam," needs to be an integer vector with entires from 1 to 9"))
       }
     }
   }
-  if( !is.numeric(meanDepth) || meanDepth <= 0 || !is.finite(meanDepth) )
+  if( isValue(meanDepth, type="pos_numeric", minv = 0) || length(meanDepth) != 1)
     stop("The mean of the read depth distribution is not a finitie positive number.")
-#  if( !is.numeric(NoDS) || NoDS < 1 || NoDS != round(NoDS) || !is.finite(NoDS))
-#    stop("Imput for the number of data sets needs to be a finite positive number")
-  if( !is.null(thres) & !is.numeric(thres) )
+  if( !is.null(thres) && (isValue(thres, type="pos_numeric", minv=0, equal=FALSE) || length(thres) != 1))
     stop("The read depth threshold value is not a finite numeric number")
-  if( !is.numeric(seed1) || !is.numeric(seed2) )
-    stop("Seed values for the randomziation need to be numeric values")
-  
-  ## Compute the number of SNPs
-  nSnps <- lapply(config[[1]], function(x) as.integer(length(x)))
-  
-  ## booleen variable to indicate whether to write out files
-  #writeFiles <- any(c(isTRUE(formats$gusmap),isTRUE(formats$onemap),isTRUE(formats$lepmap),isTRUE(formats$crimap),isTRUE(formats$joinmap)))
-  
-  ## If to write files: check that file directory is in correct format
-  # if(writeFiles){
-  #   if(!is.character(filename) || length(filename)!=1)
-  #     stop("Name to write data sets to need to be a string of length 1")
-  #   if(!is.character(direct) || length(direct)!=1)
-  #     stop("Name to write data sets to need to be a string of length 1")
-  # }
+  if( isValue(seed1, type="pos_integer") || isValue(seed2, type = "pos_integer"))
+    stop("Seed values for the randomziation need to be positive numeric values")
   
   OPGP <- replicate(n = noChr, vector(mode = "list", length = noFam), simplify = F)
   genon <- ref <- alt <- vector(mode = "list", length=noFam)
@@ -193,266 +184,86 @@ simFS <- function(rVec_f, rVec_m=rVec_f, epsilon=0, config, nInd=100, meanDepth=
        SEQgeno <- aCountsFinal/depth
        SEQgeno[which(SEQgeno^2-SEQgeno<0)] <- 0.5
        SEQgeno <- 2* SEQgeno  ## GBS genotype call
-       
-       ## Write data to file
-       #if(writeFiles)
-       #  genoToOtherFormats(SEQgeno,aCountsFinal,depth-aCountsFinal,config[[fam]][[chr]],formats=formats,filename=paste0(filename,sim,"_fam",fam,"_chr",chr),direct=direct,thres=thres,sim=sim)
-       
+       genon[[fam]] <- cbind(genon[[fam]], SEQgeno)
+       ref[[fam]]   <- cbind(ref[[fam]], aCountsFinal)
+       alt[[fam]]   <- cbind(alt[[fam]], matrix(as.integer(depth-aCountsFinal), nrow=nInd, ncol=nSnps[[chr]]))
     }
-      ## Write simulation parameters to a file
-      # if(writeFiles)
-      #   dput(list(nInd=nInd,nSnps=nSnps,NoDS=NoDS,rVec_f=unlist(lapply(rVec_f,function(x) x[1])),
-      #             rVec_m=unlist(lapply(rVec_m,function(x) x[1])),
-      #             config=config,OPGP=OPGP,meanDepth=meanDepth,rd_dist=rd_dist),
-      #        paste0(trim_fn(paste0(direct,"/",filename)),"_fam",fam,"_chr",chr,"info.txt"))
-      ## return simulated data and parameter values ued to generate the data
-      #else{
-    genon[[fam]] <- cbind(genon[[fam]], SEQgeno)
-    ref[[fam]]   <- cbind(ref[[fam]], aCountsFinal)
-    alt[[fam]]   <- cbind(alt[[fam]], matrix(as.integer(depth-aCountsFinal), nrow=nInd, ncol=nSnps[[chr]]))
-    #}
-    }
-  #if(!writeFiles){
-  chrom <- sapply(1:noChr, function(x) rep(x,nSnps[[x]]), simplify = F)
-  pos  <-  sapply(1:noChr, function(x) 1:(nSnps[[x]]), simplify = F)
-  
-  temp <- matrix(unlist(lapply(config, unlist)), nrow=noFam, byrow=T)
-  
-  group <- list()
-  group$BI <- which(apply(temp,2,function(x) all(x==1)))
-  group$PI <- which(apply(temp,2,function(x) all(x %in% c(2,3))))
-  group$MI <- which(apply(temp,2,function(x) all(x %in% c(4,5))))
-  
-  temp <- sort(unlist(group))
-  
-  for(fam in 1:noFam){
-    genon[[fam]] <- genon[[fam]][,temp]
-    ref[[fam]] <- ref[[fam]][,temp]
-    alt[[fam]] <- alt[[fam]][,temp]
   }
-  nSnps <- as.integer(length(temp))
+  chrom <- unlist(sapply(1:noChr, function(x) rep(x,nSnps[[x]]), simplify = F))
+  pos  <-  unlist(sapply(1:noChr, function(x) 1:(nSnps[[x]]), simplify = F))
+  
+  temp <- lapply(1:noFam, function(x) matrix(unlist(lapply(config[[x]], unlist)), nrow=noFam, byrow=T))
+  
+  group <- summaryInfo <- list()
+  if(noFam == 1){
+    group$BI <- which(apply(temp[[1]],2,function(x) all(x==1)))
+    group$PI <- which(apply(temp[[1]],2,function(x) all(x %in% c(2,3))))
+    group$MI <- which(apply(temp[[1]],2,function(x) all(x %in% c(4,5))))
+    
+    nSnps <- as.integer(sum(nSnps))
+    config <- list(as.vector(temp[[1]]))
+    
+    ## Create summary info
+    temp <- ref[[1]] + alt [[1]]
+    summaryInfo$data <- paste0(c(
+      "Single Family Linkage analysis:\n\n",
+      "Data Summary:\n",
+      "Data file:\t", "Simulated dataset","\n",
+      "Mean Depth:\t", round(mean(temp),4),"\n",
+      "Mean Call Rate:\t",round(sum(temp!=0)/length(temp),4),"\n",
+      "Number of ...\n",
+      "  Progeny:\t",nInd,"\n",
+      "  MI SNPs:\t",length(group$MI),"\n",
+      "  PI SNPs:\t",length(group$PI),"\n",
+      "  BI SNPs:\t",length(group$BI),"\n",
+      "  Total SNPs:\t",length(unlist(group)),"\n\n"))
+  }
+  else{
+    noInfoFam <- ceiling(0.51*noFam)
+    group.temp <- list()
+    config <- lapply(config, unlist)
+    # BI 
+    tabInf_BI <- table(unlist(sapply(1:noFam,function(y) which(config[[y]] %in% c(1)))))
+    group.temp$BI <- as.numeric(names(tabInf_BI)[which(tabInf_BI >= noInfoFam)])
+    # MI 
+    tabInf_MI <- table(unlist(sapply(1:noFam,function(y) which(config[[y]] %in% c(4,5)))))
+    group.temp$MI <- setdiff(as.numeric(names(tabInf_MI)[which(tabInf_MI >= noInfoFam)]), group.temp$BI)
+    # PI 
+    tabInf_PI <- table(unlist(sapply(1:noFam,function(y) which(config[[y]] %in% c(2,3)))))
+    group.temp$PI <- setdiff(as.numeric(names(tabInf_PI)[which(tabInf_PI >= noInfoFam)]), group.temp$BI)
+    ## add paternal and maternal SNPs to BI group
+    add.bi <- group.temp$PI[which(group.temp$PI %in% group.temp$MI)]
+    group.temp$BI <- sort(c(group.temp$BI,add.bi))
+    group.temp$MI <- setdiff(group.temp$MI,group.temp$BI)
+    group.temp$PI <- setdiff(group.temp$PI,group.temp$BI)
+    ## create the groups
+    group$BI <- which(sort(unique(unlist(group.temp))) %in% group.temp$BI)
+    group$MI <- which(sort(unique(unlist(group.temp))) %in% group.temp$MI)
+    group$PI <- which(sort(unique(unlist(group.temp))) %in% group.temp$PI)
+    ## work out which SNPs to keep
+    indx <- logical(sum(nSnps))
+    indx[unlist(group.temp, use.names = F)] <- TRUE
+    ## Subset the data
+    for(fam in 1:noFam){
+      genon[[fam]]     <- genon[[fam]][,indx]
+      ref[[fam]] <- ref[[fam]][,indx]
+      alt[[fam]] <- alt[[fam]][,indx]
+      config[[fam]] <- config[[fam]][indx]
+    }
+    chrom <- chrom[indx]
+    pos <- pos[indx]
+    nSnps <- length(indx)
+  }
   
   obj <- RA$new(
-    list(genon = genon, ref = ref, alt = alt, chrom = unlist(chrom)[temp], pos = unlist(pos)[temp],
-         SNP_Names = NULL, indID = 1:nInd, nSnps = nSnps, nInd = lapply(as.list(nInd), as.integer), 
+    list(genon = genon, ref = ref, alt = alt, chrom = chrom, pos = pos,
+         SNP_Names = NULL, indID = 1:sum(nInd), nSnps = nSnps, nInd = lapply(as.list(nInd), as.integer), 
          gform = "simFS", AFrq = NULL, infilename="Simulated dataset")
   )
   newObj <- FS$new(obj)
   
   newObj$.__enclos_env__$private$updatePrivate(
-    list(group = group, config = lapply(config, function(x) unlist(x)[temp]), noFam = noFam)
+    list(group = group, config = config, noFam = noFam, summaryInfo=summaryInfo)
   )
   return(newObj)
-  #}
 }
-
-### Function for writing simulated sequencing data to various software formats
-genoToOtherFormats <- function(genon,ref,alt,config,formats,filename,direct,thres=NULL,ratioThres=TRUE,sim=sim){
-  
-  ## specify which formats to use
-  gusmap <- isTRUE(formats$gusmap)
-  onemap <- isTRUE(formats$onemap)
-  lepmap <- isTRUE(formats$lepmap)
-  joinmap <- isTRUE(formats$joinmap)
-  crimap <- isTRUE(formats$crimap)
-  
-  depth <- ref + alt
-  
-  ## Write data to gusmap format
-  newfile <- paste0(trim_fn(direct),"/",trim_fn(filename))
-  if(gusmap){
-    write.table(genon,paste0(newfile,"_genon_SEQ.txt"),row.names=F,col.names=F)
-    write.table(ref,paste0(newfile,"_ref_SEQ.txt"),row.names=F,col.names=F)
-    write.table(alt,paste0(newfile,"_alt_SEQ.txt"),row.names=F,col.names=F)
-  }
-  
-  ## write data to other formats is required
-  if(any(onemap,lepmap,joinmap,crimap)){
-    
-    nSnps <- ncol(genon); nInd <- nrow(genon)
-    
-    # Set genotypes below certain depths to zero
-    if(!is.null(thres) & is.numeric(thres) & length(thres) == 1)
-      genon[which(depth < max(1,thres))] <- NA
-    # Set genotypes with distortion of allele ratios
-    if(ratioThres){
-      genon[which( (ref > 9 & alt == 1) | (alt > 9 & ref == 1))] <- NA
-    }
-      
-    # specify the genotypes
-    AAgeno <- which(genon==2,arr.ind=T)
-    BBgeno <- which(genon==0,arr.ind=T)
-    badBB <- matrix(BBgeno[which(BBgeno[,2] %in% (which(config %in% c(2,4)))),],ncol=2,byrow=F)
-    badAA <- matrix(AAgeno[which(AAgeno[,2] %in% (which(config %in% c(3,5)))),],ncol=2,byrow=F)
-    # Check where there are any partially informative markers with BB or AA
-    genon[badBB] <- 1
-    genon[badAA] <- 1
-    AAgeno <- which(genon==2)
-    BBgeno <- which(genon==0)
-    ABgeno <- which(genon==1)
-    NAgeno <- which(is.na(genon))
-    
-    #### OneMap
-    if(onemap){
-      onemapData <- genon
-      
-      ## change the format of the genotypes for onemap
-      onemapData[NAgeno] <- "-"
-      onemapData[AAgeno] <- 'a'
-      onemapData[ABgeno] <- 'ab'
-      onemapData[BBgeno] <- 'b'
-      
-      ## can't have any BB's in onemap's data set
-      for(snp in 1:ncol(onemapData)){
-        if(config[snp] %in% c(3,5))
-          onemapData[which(onemapData[,snp]=="b"),snp] <- "a"
-      }
-            
-      # Vector giving the three different marker types
-      mType <- c('B3.7','D1.10','D1.10','D2.15','D2.15')
-      
-      ## Write out the onemap file
-      cat(nInd,' ',nSnps,'\n',
-          sapply(1:nSnps,function(x) paste('*M',x,' ',mType[config[x]],'\t',paste(onemapData[,x],collapse=","),'\n',sep="")),
-          sep="",file=paste0(newfile,'_OneMap.txt'))
-      
-    }
-    
-    #### LepMap and Crimap
-    if(lepmap|crimap){
-      
-      # copy dataset to a new data set
-      newGenon <- genon
-      
-      ## Compute the offsprings genons
-      newGenon[NAgeno] <- "0 0"
-      newGenon[AAgeno] <- "1 1"
-      newGenon[ABgeno] <- "1 2"
-      newGenon[BBgeno] <- "2 2"
-      
-      parGenon <- sapply(1:length(config),function(x) {
-        if(config[x] == 1){
-          p1 <- "1 2"
-          p2 <- "1 2"
-        }
-        else if(config[x] == 2){
-          p1 <- "1 2"
-          p2 <- "1 1"
-        }
-        else if(config[x] == 3){
-          p1 <- "1 2"
-          p2 <- "2 2"
-        }
-        else if(config[x] == 4){
-          p1 <- "1 1"
-          p2 <- "1 2"
-        }
-        else if(config[x] == 5){
-          p1 <- "2 2"
-          p2 <- "1 2"
-        }
-        else if(config[x] == 6){
-          p1 <- "1 1"
-          p2 <- "1 1"
-        }
-        else if(config[x] == 7){
-          p1 <- "1 1"
-          p2 <- "2 2"
-        }
-        else if(config[x] == 8){
-          p1 <- "2 2"
-          p2 <- "1 1"
-        }
-        else if(config[x] == 9){
-          p1 <- "2 2"
-          p2 <- "2 2"
-        }
-        return(c(p1,p2))
-      })
-      
-      if(lepmap) {#### Output file for lepmap
-        # write to output
-        LPout <- cbind(rep("FS",(nInd+2)),1:(nInd+2),c(0,0,rep(1,nInd)),c(0,0,rep(2,nInd)),c(1,2,rep(0,nInd)),rep(0,nInd+2),
-                       rbind(parGenon,newGenon))
-        write.table(x=LPout,file=paste0(newfile,"_LepMap.txt"),
-                    sep="\t",col.names=F,row.names=F,quote=F)
-      }
-      
-      if(crimap){ #### Output file for crimap
-        newfile2 <- paste0(trim_fn(paste0(direct,"/chr1_",filename)),".gen")
-        cat("1\n",nSnps,"\n",paste0("M",1:nSnps,collapse=" "),"\n1\n",nInd+2,"\n",sep="",file=newfile2)
-        # Add Father
-        cat(paste(nInd+1,0,0,0),"\n",
-            paste(parGenon[2,],collapse=" "),"\n",sep="",file=newfile2,append=T)
-        # Add Mother
-        cat(paste(nInd+2,0,0,1),"\n",
-            paste(parGenon[1,],collapse=" "),"\n",sep="",file=newfile2,append=T)
-        # add offspring
-        cat(paste0(paste(1:nInd,nInd+1,nInd+2,3,"\n"),sapply(1:nInd,function(x) paste(paste(newGenon[x,],collapse=" "),"\n")),sep=""),
-            sep="", append=T,file=newfile2)
-      }
-    }
-    
-    #### JoinMap
-    if(joinmap){
-      
-      # copy dataset to a new data set
-      joinmapData <- genon
-      usnps <- which(apply(joinmapData,2,function(x) all(is.na(x))))
-      
-      ## convert the genotype calls to joinmap format
-      for(snp in 1:nSnps){
-        newCol <- character(nInd)
-        if(config[snp] == 1){
-          newCol[which(genon[,snp]==2)] <- 'hh'
-          newCol[which(genon[,snp]==1)] <- 'hk'
-          newCol[which(genon[,snp]==0)] <- 'kk'
-          newCol[which(is.na(genon[,snp]))] <- '--'
-          joinmapData[,snp] <- newCol
-        }
-        else if(config[snp] == 2){
-          newCol[which(genon[,snp]==2)] <- 'nn'
-          newCol[which(genon[,snp]==1)] <- 'np'
-          newCol[which(genon[,snp]==0)] <- 'np' 
-          newCol[which(is.na(genon[,snp]))] <- '--'
-          joinmapData[,snp] <- newCol
-        }
-        else if(config[snp] == 3){
-          newCol[which(genon[,snp]==2)] <- 'np'
-          newCol[which(genon[,snp]==1)] <- 'np'
-          newCol[which(genon[,snp]==0)] <- 'nn' 
-          newCol[which(is.na(genon[,snp]))] <- '--'
-          joinmapData[,snp] <- newCol
-        }
-        else if(config[snp] == 4){
-          newCol[which(genon[,snp]==2)] <- 'll'
-          newCol[which(genon[,snp]==1)] <- 'lm'
-          newCol[which(genon[,snp]==0)] <- 'lm'
-          newCol[which(is.na(genon[,snp]))] <- '--'
-          joinmapData[,snp] <- newCol
-        }
-        else if(config[snp] == 5){
-          newCol[which(genon[,snp]==2)] <- 'lm'
-          newCol[which(genon[,snp]==1)] <- 'lm'
-          newCol[which(genon[,snp]==0)] <- 'll'
-          newCol[which(is.na(genon[,snp]))] <- '--'
-          joinmapData[,snp] <- newCol
-        }
-      }
-
-      ##form the first 4 lines of the file
-      cat('name = in.loc\n','popt = CP\n','nloc = ',nSnps-length(usnps),'\n','nind = ',nInd,'\n\n',
-          file=paste0(newfile,'_JoinMap.loc'),sep="")
-      
-      cat(sapply((1:nSnps)[which(!(1:nSnps %in% usnps))], function(x) {
-        paste0('M',x,'  ',switch(config[x],'<hkxhk>','<nnxnp>','<nnxnp>','<lmxll>','<lmxll>'),'\n',paste(joinmapData[,x],collapse=" "),'\n')
-      }), file=paste0(newfile,'_JoinMap.loc'),sep="",append=T)
-    }
-  }
-  return(invisible())
-}
-
-## Function for trimming away white spaces and forward slashes for input path and file names
-trim_fn <- function(x) return( gsub("^\\/|\\/$", "", trimws(x)) )
-
-

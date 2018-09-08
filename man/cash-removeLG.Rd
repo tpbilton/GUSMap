@@ -2,7 +2,7 @@
 % Please edit documentation in R/removeLG.R
 \name{$removeLG}
 \alias{$removeLG}
-\title{Remove Linkage Groups}
+\title{FS method: Remove Linkage Groups}
 \usage{
 FSobj$removeLG(LG)
 }
@@ -10,13 +10,29 @@ FSobj$removeLG(LG)
 \item{LG}{An integer vector specifying the number of the linkage groups to be removed}
 }
 \description{
-Method for removing linkage group from the list of linkage groups formed
+Method for removing linkage group(s) from the list of linkage groups contained
 in an FS object.
 }
 \details{
 In a linkage analysis in GUSMap, there may be need to remove linkage groups from the 
 list of created linkage groups. The indices of the linkage groups corresponds to the number
 given in the output for the FS object.
+}
+\examples{
+## simulate sequencing data
+config <- list(replicate(2,sample(c(1,2,4), size=30, replace=T), simplify = FALSE))
+F1data <- simFS(0.01, config=config, meanDepth=10, nInd=50)
+
+## Compute 2-point recombination fractions
+F1data$rf_2pt(nClust=1)
+## create paternal and maternal linkage groups
+F1data$createLG()
+
+## remove linkage groups 2 and 4
+F1data$removeLG(LG = c(2,4))
+}
+\seealso{
+\code{\link{FS}}
 }
 \author{
 Timothy P. Bilton

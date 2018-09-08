@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
-#' Create linakge groups
+#' FS method: Create linkage groups
 #' 
 #' Method for creating maternal and paternal linakge groups using the computed LOD scores
 #' 
@@ -50,7 +50,18 @@
 #' 
 #' @name $createLG
 #' @author Timothy P. Bilton
-
+#' @seealso \code{\link{FS}}
+#' @examples 
+#' ## Simulate some sequencing data
+#' set.seed(6745)
+#' config <- list(list(sample(c(1,2,4), size=30, replace=T)))
+#' F1data <- simFS(0.01, config=config, meanDepth=10, nInd=50)
+#' ## Compute 2-point recombination fractions
+#' F1data$rf_2pt(nClust=1)
+#' 
+#' ## create paternal and maternal linkage groups
+#' F1data$createLG()
+NULL
 
 
 

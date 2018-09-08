@@ -1,4 +1,45 @@
-#### Function for plotting linkage groups (or a single linkage group)
+##########################################################################
+# Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap)
+# Copyright 2017-2018 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#########################################################################
+#' FS method: Plot linkage groups
+#' 
+#' Plot linkage groups
+#' 
+#' 
+#' @name $plotLG
+#' @author Timothy P. Bilton
+#' @seealso \code{\link{FS}}
+#' @examples 
+#' ## Simulate some sequencing data
+#' set.seed(6745)
+#' config <- list(list(sample(c(1,2,4), size=10, replace=T)), list(sample(c(1,2,4), size=10, replace=T)))
+#' F1data <- simFS(0.01, config=config, meanDepth=10, 
+#' ## Compute 2-point recombination fractions
+#' F1data$rf_2pt()
+#' ## create paternal and maternal linkage groups
+#' F1data$createLG()
+#' 
+#' ## Plot the linkage groups
+#' F1data$plotLG()
+#' 
+#' ## Plot the linkage groups: suppress interactive plot 
+#' F1data$plotLG(interactive = FALSE)
+#' @aliases NULL
+
 plotLG <- function(mat, LG, filename=NULL, names=NULL, chrS=2, lmai=2, chrom=T, type="rf"){
   
   if(length(LG) == 1){

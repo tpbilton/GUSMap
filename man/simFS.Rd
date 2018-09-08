@@ -2,43 +2,34 @@
 % Please edit documentation in R/simulate.R
 \name{simFS}
 \alias{simFS}
-\title{Simulation of sequencing data for a single full-sib family.}
+\title{Simulation sequencing data for full-sib families.}
 \usage{
-simFS(rVec_f, rVec_m = rVec_f, epsilon = 0, config, nInd, meanDepth,
-  thres = NULL, noFam = 1, noChr = 1, NoDS = 1, formats = list(gusmap
-  = F, onemap = F, lepmap = F, joinmap = F, crimap = F),
-  rd_dist = "Neg_Binom", filename = "sim", direct = "./", seed1 = 1,
+simFS(rVec_f, rVec_m = rVec_f, epsilon = 0, config, nInd = 100,
+  meanDepth = 5, thres = NULL, rd_dist = "Neg_Binom", seed1 = 1,
   seed2 = 1)
 }
 \arguments{
 \item{rVec_f, rVec_m}{Numeric vector of true paternal and maternal
-recombination fractions (in the interval [0,0.5]). If only a single number
-is given, then recombination between adjacent loci are equal.}
+recombination fractions (in the interval [0,0.5]). Currently, only a single value 
+is allowed making the rf across all the loci the same.}
 
 \item{epsilon}{Numeric value of the sequencing error rate.}
 
-\item{config}{Numeric vector of the segregation types for all the loci.}
+\item{config}{Nested list containing the config vector for each family and chromosome. 
+See details on how to sepcify this correctly.}
 
-\item{nInd}{Positive integer value. The number of individuals.}
+\item{nInd}{Positive integer vector for the number of individuals in each family for the simulated data.
+The length of the list gives the number of families in the simulated data set.}
 
-\item{meanDepth}{Positive numeric value. The mean depth of the read depth
+\item{meanDepth}{Positive numeric value for the mean depth of the read depth
 distribution.}
 
-\item{thres}{Numerical Value. Threshold value for which genotype calls with
-a depth less than the threshold are set to missing.}
+\item{thres}{Numeric value for the threshold value for which genotype calls with
+a read depth less than the threshold are set to missing.}
 
-\item{NoDS}{Number of data sets to be simulated.}
-
-\item{formats}{A list object where the element corresponding to the software
-name is TRUE will produce data in that format. Currently handles software
-for GUSMap, CRI-MAP, JoinMap, OneMap and Lep-MAP2.}
-
-\item{rd_dist}{String. The distribution for which the read depths are
-simulated from. Currently, only negative binomial ("Neg_Binom") and Poisson
-("Pois") are implemented.}
-
-\item{filename}{String. Common filename for the data sets generated from the
-simulation.}
+\item{rd_dist}{Character value for the distribution for which the read depths are
+simulated from. Currently, only negative binomial (\code{"Neg_Binom"}) and Poisson
+(\code{"Pois"}) are implemented.}
 
 \item{seed1}{Numeric value. Random seed used for the simulation of the
 parental phase (or OPGP).}
@@ -47,50 +38,15 @@ parental phase (or OPGP).}
 sets.}
 }
 \value{
-If at least one method in \code{formats} argument is specified to be
-TRUE, a file containing the simulation parameters is written and files
-containing the simulated data for each of the methods is written. The naming
-of the files (if \code{filename="sim"}) is as follows;
-\itemize{
-\item Simulation parameters: sim[No]_info.txt
-\item GUSMap Genotypes: sim[No]_genon_SEQ.txt
-\item GUSMap Read depths: sim[No]_ref_SEQ.txt
-\item GUSMap Read depths: sim[No]_alt_SEQ.txt
-\item OneMap format: sim[No]_OneMap.txt
-\item LepMap2 format: sim[No]_LepMap.txt
-\item CriMap format: chr1_sim[No].gen
-\item JoinMap format: sim[No]_JoinMap.loc
-}
-where
-"No" is the number of the data set simulated (from 1 up to \code{NoDS}).
-
-If none of the methods in \code{formats} argument is specified to be TRUE,
-then a list containing the following elements will be returned;
-\itemize{
-\item genon: Matrix of genotypes for the simulated sequencing data.
-\item ref: Matrix of the allele counts for the reference allele.
-\item alt: Matrix of the allele counts for the alternate allele.
-\item trueGeno: Matrix of the true genotypes calls simulated.
-\item rVec_f: Vector of adjacent paternal recombination fractions.
-\item rVec_m: Vector of adjacent maternal recombination fractions.
-\item nInd: Number of individuals.
-\item nSnps: Number of SNPs.
-\item config: Vector of segregation types used in the simulation.
-\item OPGP: Vector of OPGPs used in the simulation.
-\item meanDepth: Mean of the distribution used to simulate the read depths.
-\item rd_dist: Distribution from the which the read depths where simulated.
-\item epsilon: Numeric value of the sequencing error rate used in the
-simulation.
-}
+An FS object containing the simulated data.
 }
 \description{
 Simulate genotypes and sequencing depth for the progeny of a full-sib family
-and write the data to various linkage mapping software formats.
 }
 \details{
 The \code{simFS} function simulates sequencing data for the progeny of a
 full-sib family according to the simulation parameters assuming no
-interference. The processed for the simulation is as follows;
+interference. The process for the simulation is as follows;
 \itemize{
 \item Inheritance vectors are simulated according to the true recombination
 fractions, assuming no interference.
@@ -104,35 +60,35 @@ corresponding to the read depth is obtained, where a sequencing error
 to occur with probability \code{epsilon}. The mean read depth for each loci
 is assumed to be equal.
 }
+The simulation can be performed with multiple families and/or multiple chromosomes.
 
-If none of the methods in \code{formats} argument is specified to be TRUE,
-then no files are created and the simulated data is returned to an object
-(see examples below). Otherwise, datasets are created and written to files
-in the correct format for the various programs specified.
-
-The value for the \code{config} vector are 1=both-informative (ABxAB),
+Specifying the \code{config} argument in the correct is crucial and must be a nested list.
+The number of elements of the list at the top level gives the number of families (which must be the 
+same as the length of the \code{nInd} argument) and
+the number elements of the list at the second level gives the number of chromosomes.
+The elements at the bottom level of the list must be vectors of integers 1 to 9 where 1=both-informative (ABxAB),
 2=paternal-informative A (ABxAA), 3=paternal-informative B (ABxBB),
 4=maternal-informative (AAxAB), 5=maternal-informative (BBxAB), 6 =
 uninformative (AAxAA), 7 = uninformative (AAxBB), 8 = uninformative (BBxAA)
-and 9 = uninformative (BBxBB).
+and 9 = uninformative (BBxBB). The list must be set up such that the length of each 
+chromosome whitin each family must be the same (see the examples for an ideal of how to set this up).
 }
 \examples{
 
-## simulate full sib family
-config <- c(2,1,1,4,2,4,1,1,4,1,2,1)
-set.seed(3)
-F1data <- simFS(runif(11,0.01,0.05), config=config, nInd=50, meanDepth=5)
-## to look at the simulated data and simulation parameters
-str(F1data)
+## simulate a single full sib family with one chromosome 
+config <- list(list(c(2,1,1,4,2,4,1,1,4,1,2,1)))
+F1data <- simFS(0.001, config=config, nInd=50, meanDepth=5)
+## to look at the simulated data
+FAdata
 
-## simulate full sib family assuming recombination is equal between loci
-config <- c(2,1,1,4,2,4,1,1,4,1,2,1)
-F1data <- simFS(0.01, config=config, nInd=50, meanDepth=5)
+## Simulate mulitple families and chromosomes
+config <- list(replicate(2, sample(c(1,2,4), size=10, replace=T, prob=c(1,2,2)), simplify = F),
+replicate(2, sample(c(1,2,4), size=10, replace=T, prob=c(1,2,2)), simplify = F))
+F1data <- simFS(0.001, config=config, nInd=c(50,45), meanDepth=5)
 
-## To write the simulated data to files (in GUSMap format only). 
-config <- c(2,1,1,4,2,4,1,1,4,1,2,1)
-simFS(0.01, config=config, nInd=50, meanDepth=5, formats=list(gusmap=TRUE), filename="simTest")
-
+}
+\seealso{
+\code{\link{FS}}
 }
 \author{
 Timothy P. Bilton
