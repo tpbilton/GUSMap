@@ -27,14 +27,10 @@
 #' Nevertheless, one can still plot each linkage group (using the \code{LG} argument) provided there are 
 #' not too many SNPs in the linkage group.
 #' 
-#' When \code{what = "LG"}, the linkage groups in the maternal and paternal linkage 
-#' group list created via the \code{\link{$createLG}} function will be plotted. On the other hand, if 
-#' \code{what = "LG_BI"}, then linkage groups from the combined linkage group list 
-#' created from the \code{\link{$addBIsnps}} function (e.g., the linkage group list which include the BI SNPs) will be plotted.
-#' When \code{what = NULL}, linkage groups will from the combined linkage groups will be plotted if available,
-#' otherwise the linkage groups in the maternal and paternal linkage group list will be plotted.
-#' 
-#' Note: 
+#' When \code{what = "LG"}, the pseudo-testcross linkage groups created via the \code{\link{$createLG}} function 
+#' will be plotted. On the other hand, if \code{what = "LG_BI"}, then the combined linkage groups created from 
+#' the \code{\link{$addBIsnps}} function will be plotted. When \code{what = NULL}, the combined linkage groups will
+#' be plotted if available, otherwise the pseudo-testcross linkage groups will be plotted.
 #' 
 #' @usage
 #' FSobj$plotLG(parent  = "maternal", LG=NULL, mat="rf", filename=NULL, interactive=TRUE, what = NULL)
@@ -42,15 +38,15 @@
 #' @param parent Character value specifying whether the SNPs segreagting in the maternal parent should be 
 #' plotted (\code{"maternal"}), or whether whether the SNPs segreagting in the paternal parent should be 
 #' plotted (\code{"paternal"}), or whether all the SNPs should be plotted (\code{"both"}).
-#' @param LG Integer vector with the indices of the linkage groups to be plotte.
+#' @param LG Integer vector giving the indices of the linkage groups to be plotted.
 #' @param mat Charater value for the matrix to be plotted. \code{"rf"} plots the matrix of 2-point 
 #' recombination fractions while \code{"LOD"} plots the matrix of 2-point LOD scores.
-#' @param filename Character giving the name of the file to save the plot to. If \code{NULL}, the plot is given 
+#' @param filename Character value giving the name of the file to save the plot to. If \code{NULL}, the plot is displayed 
 #' in the graphics window and not saved to a file. 
 #' @param interative Logical value. If \code{TRUE} then an interactive plot is produced, otherwise a standard
 #' base R plot is used.
-#' @param what Character vector specifying which list of linkage groups to plot. \code{"LG"} is for 
-#' the maternal and paternal linkage groups and \code{"LG_BI"} is for the combined linkage group list.
+#' @param what Character vector specifying which list of linkage groups to plot. \code{"LG-pts"} is for 
+#' the pseudo-testcross linkage groups and \code{"LG-comb"} is for the combined linkage groups.
 #' 
 #' @name $plotLG
 #' @author Timothy P. Bilton
@@ -58,8 +54,8 @@
 #' @examples 
 #' ## Simulate some sequencing data
 #' set.seed(6745)
-#' config <- list(list(sample(c(1,2,4), size=10, replace=T)), list(sample(c(1,2,4), size=10, replace=T)))
-#' F1data <- simFS(0.01, config=config, meanDepth=10, 
+#' config <- list(replicate(2, sample(c(1,2,4), size=30, replace=T), simplify=FALSE))
+#' F1data <- simFS(0.01, config=config, meanDepth=10, nInd=50)
 #' ## Compute 2-point recombination fractions
 #' F1data$rf_2pt()
 #' ## create paternal and maternal linkage groups
@@ -70,7 +66,7 @@
 #' 
 #' ## Plot the linkage groups: suppress interactive plot 
 #' F1data$plotLG(interactive = FALSE)
-#' @aliases NULL
+#' @aliases $plotLG
 
 plotLG <- function(mat, LG, filename=NULL, names=NULL, chrS=2, lmai=2, chrom=T, type="rf"){
   
@@ -96,7 +92,7 @@ plotLG <- function(mat, LG, filename=NULL, names=NULL, chrS=2, lmai=2, chrom=T, 
   if(chrom){
     if(!is.null(filename))
       png(filename,width=npixels+72*lmai,height=npixels,res=72)
-    par(xaxt='n',yaxt='n',mai=c(0,lmai,0,0),bty='n',ann=F)
+    par(mfrow=c(1,1), xaxt='n',yaxt='n',mai=c(0,lmai,0,0),bty='n',ann=F)
     ## what matrix to plot
     if(type == "rf")
       image(1:npixels,1:npixels,mat,zlim=c(0,0.5),col=heat.colors(100))

@@ -17,33 +17,40 @@
 #########################################################################
 #' FS method: Create linkage groups
 #' 
-#' Method for creating maternal and paternal linakge groups using the computed LOD scores
+#' Method for creating maternal and paternal linkage groups using the computed LOD scores.
 #' 
 #' Linkage groups are formed using the following algorithm
 #' \enumerate{
-#' \item The two unmapped SNPs (e.g. not in a linkage group) with the highest LOD score are grouped together to
-#'  form first linkage group.
+#' \item The two unmapped SNPs (e.g. not already in a linkage group) with the highest LOD score are grouped together to
+#'  form a linkage group.
 #' \item The average LOD score between each unmapped SNP and a specified number (\code{nComp}) of SNPs in the 
 #' linkage group that have the highest LOD score with the unmapped SNP is computed. The unmapped SNP with the 
 #' largest average LOD score is mapped to the linkage group if the average LOD score is above the LOD threshold
 #' (given by \code{LODthres}).
-#' \item Steps 1-3 are repeated until no more linkage groups can be formed or all the SNPs have been mapped 
+#' \item When no more SNPs are added to the linkage group, repeat steps 1-2 to form a new linkage group.
+#' \item Stop no more linkage groups can be formed or all the SNPs have been mapped 
 #' to a linkage group.
 #' }
 #' 
-#' The performance of the linakge group algorithm depends on the value of \code{LODthres} and \code{nComp}. The user is
-#' advised to experiment with different values and examine the matrix of recombination fractions (using the \code{\link{$plotLG}}
+#' The performance of the linkage group algorithm depends on the value of \code{LODthres} and \code{nComp}. The user is
+#' advised to experiment with different values and examine the matrix of recombination fraction estimates (using the \code{\link{$plotLG}}
 #' function). 
 #' 
-#' Note: The LOD scores used in this function are computed using the {\code{\link{$rf_2pt}}} which needs to be
+#' 
+#' Notes: 
+#' \itemize{
+#' \item The LOD scores used in this function are computed using the {\code{\link{$rf_2pt}}} which needs to be
 #' run beforehand.
+#' \item A MI linkage group is one which only contains MI SNPs and a PI linkage group is one with only PI SNPs. These 
+#' linkage groups are referred to as the "puesdo-testcross linkage groups".
+#' }
 #' 
 #' @usage
 #' FSobj$createLG(parent = "both", LODthres = 10, nComp = 10)
 #' 
 #' @param parent A character vector specifying whether to create linakge groups using the maternal-informative (MI)
-#' SNPs \code{parent = "maternal"}, the paternal-informative (PI) SNPs \code{parent = "paternal"}, or MI and PI SNPs
-#' \code{parent = "both"}.
+#' SNPs (\code{"maternal"}), the paternal-informative (PI) SNPs (\code{"paternal"}), or MI and PI SNPs
+#' (\code{"both"}).
 #' @param LODthres A positive numeric value specifying the LOD threshold used to add SNPs to the linkage groups.
 #' @param nComp A positive integer value specifying how many SNPs in the linakge group to compute the average LOD score 
 #' with the unmapped SNP.

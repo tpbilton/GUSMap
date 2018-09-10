@@ -27,12 +27,12 @@
 #' Note: When the linkage group(s) are deleted, the indices of the remaining linkage groups 
 #' changes. Print the FS object to investiage what these after running this function.
 #' 
-#' When \code{where = "LG"}, SNPs will be removed from the paternal and maternal linkage 
-#' groups created via the \code{\link{$createLG}} function. On the other hand, if 
-#' \code{where = "LG_BI"}, then SNPs will be removed from the combined linkage groups 
-#' created from the \code{\link{$addBIsnps}} function (e.g., the linkage groups which include the BI SNPs).
-#' When \code{where = NULL}, SNPs will be removed from the combined linkage groups if availabve,
-#' otherwise they will be removed from the maternal and paternal linkage groups.
+#' When \code{where = "LG-pts"}, SNPs will be removed from the set of pseudo-testcross 
+#' linkage groups created via the \code{\link{$createLG}} function. On the other hand, if 
+#' \code{where = "LG-comb"}, then SNPs from the set of combined linkage groups 
+#' created from the \code{\link{$addBIsnps}} function will be removed.
+#' When \code{where = NULL}, SNPs will be removed from the set of combined linkage groups if available,
+#' otherwise they will be removed from the set of pseudo-testcross linkage groups.
 #' 
 #' @usage
 #' FSobj$removeSNP(snps, where = NULL)

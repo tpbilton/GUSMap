@@ -23,7 +23,7 @@
 #' sequencing methods \insertCite{@see @bilton2018genetics1}{GUSMap}.
 #'
 #' \tabular{ll}{ Package: \tab GUSMap\cr Type: \tab Package\cr Version: \tab
-#' 1.0.0\cr Date: \tab 2018-09-08\cr License: \tab GPL 3\cr }
+#' 1.0.0\cr Date: \tab 2018-09-10\cr License: \tab GPL 3\cr }
 #'
 #' @name GUSMap-package
 #' @aliases GUSMap

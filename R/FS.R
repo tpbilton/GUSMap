@@ -17,7 +17,7 @@
 #########################################################################
 #' FS object
 #' 
-#' Class for storing RA data and associated functions for analysis with full-sib populations.
+#' Class for storing RA data and associated functions for analysis if full-sib populations.
 #' 
 #' @usage
 #' ## Create FS object
@@ -26,8 +26,8 @@
 #'
 #' ## Functions (Methods) of an FS object
 #' FSobj$addBIsnps(LODthres = 10, nComp = 10)
+#' FSobj$computeMap(chrom=NULL, init_r=0.01, ep=0.001, method="optim", sexSpec=F, err=T, mapped=T, nThreads=1)
 #' FSobj$createLG(parent = "both", LODthres = 10, nComp = 10)
-#' FSobj$computeMap(chrom=NULL, init_r=0.01, ep=0.001, method="optim", sexSpec=F, seqErr=T, mapped=T, nThreads=1)
 #' FSobj$maskSNP(snps)
 #' FSobj$mergeLG(LG, where = NULL, mergeTo = NULL)
 #' FSobj$orderLG(chrom = NULL, mapfun = "haldane", weight="LOD2", ndim=30, spar = NULL)
@@ -101,23 +101,23 @@ FS <- R6Class("FS",
                   if(is.null(what)){
                     what <- c(what, "data")
                     if(!is.null(private$LG_mat) & !is.null(private$LG_pat))
-                      what <- c(what, "LG")
+                      what <- c(what, "LG-pts")
                     if(!is.null(private$LG))
-                      what <- c(what, "LG_BI")
+                      what <- c(what, "LG-comb")
                     if(!is.null(private$para))
                       what <- c(what, "map")
                   } else if(!is.vector(what) || !is.character(what) || length(what) != 1 ||
-                            any(!(what %in% c("data","LG","LG_BI","map"))))
+                            any(!(what %in% c("data","LG-pts","LG-comb","map"))))
                     stop("Argument for what output to print is invalid")
                   ## printe the required output
                   if(private$noFam == 1){
                     if(any(what == "data"))
                       cat(private$summaryInfo$data, sep="")
-                    if(any(what == "LG")){
+                    if(any(what == "LG-pts")){
                       if(is.null(private$LG_mat) & is.null(private$LG_pat))
                         warning("Linkage groups have not been formed. Use the '$createLG' function to form linkage groups.")
                       else{
-                        cat("Linkage Group Summary (excluding BI SNPs):\n")
+                        cat("Pseudo-testcross Linkage Group Summary:\n")
                         MI <- unlist(lapply(private$LG_mat, length))
                         PI <- unlist(lapply(private$LG_pat, length))
                         tab <- cbind(LG=1:(length(MI)+length(PI)),MI=c(MI,rep(0,length(PI))),PI=c(rep(0,length(MI)),PI))
@@ -127,11 +127,11 @@ FS <- R6Class("FS",
                         prmatrix(tab, rowlab = rep("",nrow(tab)), quote=F)
                       }
                     }
-                    if(any(what == "LG_BI")){
+                    if(any(what == "LG-comb")){
                       if(is.null(private$LG))
                         warning("Linkage groups do not have any BI SNPs. Use the '$addBIsnps' to add BIsnps to the linkage groups.")
                       else{
-                        cat("Linkage Group Summary (including BI SNPs):\n")
+                        cat("Combined Linkage Group Summary:\n")
                         MI <- unlist(lapply(private$LG, function(x) sum(x %in% private$group$MI)))
                         PI <- unlist(lapply(private$LG, function(x) sum(x %in% private$group$PI)))
                         BI <- unlist(lapply(private$LG, function(x) sum(x %in% private$group$BI)))
@@ -164,10 +164,10 @@ FS <- R6Class("FS",
                     stop(paste0("Input must be a vector of indices between 1 and ", private$nSnps))
                   snps <- unique(snps) ## make sure no double ups in SNPs
                   if(is.null(where)){
-                    if(is.null(private$LG)) where = "LG"
-                    else where = "LG_BI"
+                    if(is.null(private$LG)) where = "LG-pts"
+                    else where = "LG-comb"
                   }
-                  if(where == "LG"){
+                  if(where == "LG-pts"){
                     if (is.null(private$LG_mat) & is.null(private$LG_pat))
                       stop("Linakge groups have not been formed. Use the '$createLG' function to create linkage groups.")
                     else{
@@ -196,7 +196,7 @@ FS <- R6Class("FS",
                         private$LG_pat <- private$LG_pat[which(empty_pat)]
                     }
                   }
-                  else if(where == "LG_BI"){
+                  else if(where == "LG-comb"){
                     if(is.null(private$LG))
                       stop("There are no combined linkage groups with BI SNPs. Use the '$addBIsnps' to create combined linkage groups.")
                     ## remove SNPs from the combined groups
@@ -218,10 +218,10 @@ FS <- R6Class("FS",
                 removeLG = function(LG, where = NULL){
                   ## Check the where input
                   if(is.null(where)){
-                    if(is.null(private$LG)) where = "LG"
-                    else where = "LG_BI"
+                    if(is.null(private$LG)) where = "LG-pts"
+                    else where = "LG-comb"
                   }
-                  if(where == "LG_BI"){
+                  if(where == "LG-comb"){
                     if(is.null(private$LG))
                       stop("There are no combined linkage groups with BI SNPs. Use the '$addBIsnps' to create combined linkage groups.")
                     nLG <- length(private$LG)
@@ -230,7 +230,7 @@ FS <- R6Class("FS",
                     else{
                       private$LG <- private$LG[which(!(1:nLG %in% LG))]
                     }
-                  }  else if(where == "LG"){
+                  }  else if(where == "LG-pts"){
                     if(is.null(private$LG_mat) || is.null(private$LG_pat))
                       stop("No linkage groups exist. Please use the $createLG function to create some linkage groups")
                     nmat <- length(private$LG_mat)
@@ -253,10 +253,10 @@ FS <- R6Class("FS",
                     stop("Argument for which parent group is to be merged to is invalid")
                   ## Check the where input
                   if(is.null(where)){
-                    if(is.null(private$LG)) where = "LG"
-                    else where = "LG_BI"
+                    if(is.null(private$LG)) where = "LG-pts"
+                    else where = "LG-comb"
                   }
-                  if(where == "LG"){
+                  if(where == "LG-pts"){
                     ## Check that we have linkage groups
                     if(is.null(private$LG_mat) || is.null(private$LG_pat))
                       stop("No linkage groups exist. Please use the $createLG function to create some linkage groups")
@@ -304,7 +304,7 @@ FS <- R6Class("FS",
                       if(length(patgroups) > 1)
                         private$LG_pat[patgroups[-1]] <- NULL
                     }
-                  } else if(where == "LG_BI"){
+                  } else if(where == "LG_comb"){
                     if(is.null(private$LG))
                       stop("There are no combined linkage groups with BI SNPs. Use the '$addBIsnps' to create combined linkage groups.")
                     nLG <- length(private$LG)
@@ -387,7 +387,7 @@ Please select one of the following:
                   if(!is.null(private$LG))
                     private$LG <- NULL
                   ## display the results
-                  self$print(what = "LG")
+                  self$print(what = "LG-pts")
                   return(invisible(NULL))
                 },
                 ## function for adding the unmapped (or inferred SNPs) to the linkage groups
@@ -572,7 +572,7 @@ Please select one of the following:
                   else if(exists("newLGlist_pat")){
                     private$LG <- newLGlist_pat
                   }
-                  self$print(what = "LG_BI")
+                  self$print(what = "LG-comb")
                   return(invisible(NULL))
                 },
                 ## Function for ordering linkage groups
@@ -661,18 +661,18 @@ Please select one of the following:
                     stop("Specified filename is invalid")
                   ## Check the what input
                   if(is.null(what)){
-                    if(is.null(private$LG)) what = "LG"
-                    else what = "LG_BI"
+                    if(is.null(private$LG)) what = "LG-pts"
+                    else what = "LG-comb"
                   }
                   
                   if(private$noFam == 1){
                     ## Work out which LGs list to use
-                    if(what == "LG"){
+                    if(what == "LG-pts"){
                       if(is.null(private$LG_pat) || is.null(private$LG_mat))
                         stop("No linkage groups are available to be plotted. Please use the $createLG function to create some linkage groups")
                       else
                         LGlist <- c(private$LG_mat,private$LG_pat)
-                    } else if(what == "LG_BI"){
+                    } else if(what == "LG-comb"){
                       if(is.null(private$LG))
                         stop("There are no combined linkage groups with BI SNPs. Use the '$addBIsnps' to create combined linkage groups.")
                       else
@@ -815,6 +815,8 @@ Please select one of the following:
                   if(is.null(private$para))
                     stop("There are no linkage maps availabe to plot. Use the '$computeMap' function to compute linkage maps.")
                   nLGs = length(private$para[[1]])
+                  if(is.null(LG))
+                    LG <- 1:length(private$para$rf_p)
                   if(isValue(LG, type="pos_integer", minv=1, maxv=nLGs))
                     stop(paste0("The LG indices must be an integer vector between 1 and the number of linkage groups which is ",nLGs))
                   if(!is.vector(fun) || length(fun) != 1 || any(!(fun %in% c("morgan", "haldane", "kosambi"))))
@@ -839,7 +841,7 @@ Please select one of the following:
                   ellipseEq_neg <- function(x) c2 - sqrt(b^2*(1-round((x-c1)^2/a^2,7)))
                   mapDist = lapply(private$para$rf_p,mfun, fun=fun, centi=TRUE)
                   yCoor = max(unlist(lapply(mapDist,sum)))
-                  par(mar=rep(2,4))
+                  par(mar=rep(2,4), mfrow=c(1,1))
                   plot(NULL,NULL, ylim=c(yCoor+0.01*yCoor,-0.01*yCoor),xlim=c(0,0.25*(nLGs+1)), xaxt='n',bty='n',xlab="",ylab="")
                   err = 0.05
                   col=rep("black", nLGs)
@@ -877,13 +879,13 @@ Please select one of the following:
                   abline(v=c(min(LGorder)-1,LGbreaks,max(LGorder)+1))
                   abline(h=c(min(orgOrder)-1,chrBreaks,max(orgOrder)+1))
                   abline(v=LGbreaks)
-                  mtext(text = unique(private$chrom[orgOrder]), side = 2, line = -1,
+                  mtext(text = unique(private$chrom[orgOrder]), side = 2, 
                         at = apply(cbind(c(min(orgOrder),chrBreaks),c(chrBreaks,max(orgOrder))),1,mean))
-                  mtext(text = 1:length(private$LG), side = 1, line=-1,
+                  mtext(text = 1:length(private$LG), side = 1, 
                         at = apply(cbind(c(min(LGorder),LGbreaks),c(LGbreaks,max(LGorder))),1,mean))
                 }, 
                 ## Function for computing the rf's for each chromosome 
-                computeMap = function(chrom=NULL, init_r=0.01, ep=0.001, method="optim", sexSpec=F, seqErr=T, mapped=T, nThreads=1){
+                computeMap = function(chrom=NULL, init_r=0.01, ep=0.001, method="optim", sexSpec=F, err=T, mapped=T, nThreads=1){
                   ## do some checks
                   if( !is.null(init_r) & !is.numeric(init_r) )
                     stop("Starting values for the recombination fraction needs to be a numeric vector or integer or a NULL object")
@@ -923,7 +925,7 @@ Please select one of the following:
                       private$para$OPGP <- tempOPGP
                       ## estimate the rf's
                       MLE <- rf_est_FS(init_r=init_r, ep=ep, ref=ref_temp, alt=alt_temp, OPGP=private$para$OPGP,
-                                         sexSpec=sexSpec, seqErr=seqErr, method=method, nThreads=nThreads)
+                                         sexSpec=sexSpec, seqErr=err, method=method, nThreads=nThreads)
                       if(sexSpec){
                         private$para$rf_p[i]   <- list(MLE$rf_p)
                         private$para$rf_m[i]   <- list(MLE$rf_m)
@@ -966,7 +968,7 @@ Please select one of the following:
                       private$para$OPGP[i] <- tempOPGP
                       ## estimate the rf's
                       MLE <- rf_est_FS(init_r=init_r, ep=ep, ref=ref_temp, alt=alt_temp, OPGP=private$para$OPGP[i],
-                                       sexSpec=sexSpec, seqErr=seqErr, method=method, nThreads=nThreads)
+                                       sexSpec=sexSpec, seqErr=err, method=method, nThreads=nThreads)
                       if(sexSpec){
                         private$para$rf_p[i]   <- list(MLE$rf_p)
                         private$para$rf_m[i]   <- list(MLE$rf_m)
@@ -1046,7 +1048,7 @@ Please select one of the following:
                         rf_p <- unlist(lapply(private$para$rf_p[LG], function(y) format(round(cumsum(c(0,y)),6),digits=6,scientific=F)))
                         rf_m <- unlist(lapply(private$para$rf_m[LG], function(y) format(round(cumsum(c(0,y)),6),digits=6,scientific=F)))
                         ep <- format(rep(round(unlist(private$para$ep[LG]),8), unlist(lapply(LGlist, length))),digits=8,scientific=F)
-                        out <- list(LG=LGno, LGPOS=LGindx, CHROM=chrom, POS=pos, TYPE=segType, RF_PAT=rf_p, RF_MAT=rf_m,
+                        out <- list(LG=LGno, LG_POS=LGindx, CHROM=chrom, POS=pos, TYPE=segType, RF_PAT=rf_p, RF_MAT=rf_m,
                                     ERR=ep, MEAN_DEPTH=depth, CALLRATE=callrate)
                       } else
                         out <- list(LG=LGno, LGPOS=LGindx, CHROM=chrom, POS=pos, TYPE=segType, MEAN_DEPTH=depth, CALLRATE=callrate)

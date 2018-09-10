@@ -21,24 +21,24 @@
 #' estimating recombination fractions in full-sib families.
 #' 
 #' This function infers the parental phase (or ordered parental genotype pair (OPGP)) and
-#' estimate adjacent recombination fractions using the hidden Markov model (HMM) approach as
+#' estimates adjacent recombination fractions using the hidden Markov model (HMM) approach as
 #' described in \insertCite{bilton2018genetics1;textual}{GUSMap}. 
 #' 
-#' The optimization of the likelihood for the HMM are perform using either the Expectation-Maximumization (EM) algorithm
-#' (\code{method="EM"}) or using direct optimization via the \code{\link{optim}} function (\code{method="optim"}).
+#' The optimization of the likelihood for the HMM is performed using either the Expectation-Maximumization (EM) algorithm
+#' (\code{method="EM"}) or using direct numeric optimization via the \code{\link{optim}} function (\code{method="optim"}).
 #' The likelihood computations (and computation of derivatives if required) are scaled using 
 #' forward and backward recursion to avoid overflow issues and are performed in C. These computations 
 #' are also parallelization via the OpenMP package, where the argument \code{nThreads} specifies
 #' how many threads to use. Be careful not to set \code{nThreads} to more than the number of threads available
 #' on your computer (or bad things will happen). In addition, if the package is complied without OpenMP, then this 
-#' parallelization has no effect and likelihood is computed in serial.
+#' parallelization has no effect and the likelihood is computed in serial.
 #' 
-#' If \code{mapped = TRUE}, then linkage groups must have been formed from the \code{\link{$addBIsnps}} function
-#' first (and preferably ordered from the \code{\link{$orderLG}} function). 
+#' If \code{mapped = TRUE}, then combined linkage groups must have been formed from the \code{\link{$addBIsnps}} function
+#' first (and preferably ordered from the \code{\link{$orderLG}} function).
 #' 
 #' @usage 
 #' FSobj$computeMap(chrom=NULL, init_r=0.01, ep=0.001, method="optim", sexSpec=FALSE, 
-#'                     seqErr=TRUE, mapped=TRUE, nThreads=1)
+#'                     err=TRUE, mapped=TRUE, nThreads=1)
 #' 
 #' @param chrom A integer vector giving the indices of the chromosomes (or linkage groups) to be computed.
 #' @param init_r A numeric value giving the initial values for the recombination fractions. Each 
@@ -48,11 +48,11 @@
 #' direct maximization (\code{optim}) or via the Expectation-Maximum (EM) algorithm (\code{EM}).
 #' @param sexSpec Logical value. If \code{TRUE}, sex-specific recombination fractions are
 #' are estimated.
-#' @param seqErr Locical value. If \code{TRUE}, the sequencing error parameter is estimated. Otherwise, the
+#' @param err Locical value. If \code{TRUE}, the sequencing error parameter is estimated. Otherwise, the
 #' sequenicng error parameter is fixed to the value of the \code{ep} argument.
-#' @param mapped Locial value. If \code{TRUE}, the maps are computed using the marker order giving 
-#' in the linkage groups. Otherwise, the maps are computed using the original marker order  
-#' given by the assembly.
+#' @param mapped Locial value. If \code{TRUE}, the maps are computed using the marker order given 
+#' in the combined linkage groups. Otherwise, the maps are computed using the original marker order  
+#' given by the genomic assembly.
 #' @param nThreads An integer value giving the number of threads to use in computing the likelihood in parallel.
 #' @name $computeMap
 #' @author Timothy P. Bilton and Chris Scott
@@ -77,7 +77,7 @@
 #' 
 #' #### Case 2: Compute map using original assembly order
 #' F1data$computeMap(mapped = FALSE)
-#' @aliases NULL
+#' @aliases $computeMap
 
 rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
                       sexSpec=F, seqErr=T, trace=F, noFam=as.integer(1), method = "optim", nThreads=0, ...){

@@ -11,8 +11,8 @@ FSobj <- makeFS(RAobj, pedfile, family=NULL,
 
 ## Functions (Methods) of an FS object
 FSobj$addBIsnps(LODthres = 10, nComp = 10)
+FSobj$computeMap(chrom=NULL, init_r=0.01, ep=0.001, method="optim", sexSpec=F, err=T, mapped=T, nThreads=1)
 FSobj$createLG(parent = "both", LODthres = 10, nComp = 10)
-FSobj$computeMap(chrom=NULL, init_r=0.01, ep=0.001, method="optim", sexSpec=F, seqErr=T, mapped=T, nThreads=1)
 FSobj$maskSNP(snps)
 FSobj$mergeLG(LG, where = NULL, mergeTo = NULL)
 FSobj$orderLG(chrom = NULL, mapfun = "haldane", weight="LOD2", ndim=30, spar = NULL)
@@ -28,7 +28,7 @@ FSobj$unmaskSNP(snps)
 FSobj$writeLM(file, direct = "./", LG = NULL)
 }
 \description{
-Class for storing RA data and associated functions for analysis with full-sib populations.
+Class for storing RA data and associated functions for analysis if full-sib populations.
 }
 \details{
 An FS object is created from the \code{\link{makeFS}} function and contains RA data,

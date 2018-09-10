@@ -32,8 +32,8 @@ otherwise they will be removed from the maternal and paternal linkage groups.
 \examples{
 ## Simulate some sequencing data
 set.seed(6745)
-config <- list(list(sample(c(1,2,4), size=10, replace=T)), list(sample(c(1,2,4), size=10, replace=T)))
-F1data <- simFS(0.01, config=config, meanDepth=10, 
+config <- list(list(sample(c(1,2,4), size=20, replace=T)))
+F1data <- simFS(0.01, config=config, meanDepth=10, nInd=50) 
 ## Compute 2-point recombination fractions
 F1data$rf_2pt()
 ## create paternal and maternal linkage groups

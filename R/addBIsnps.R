@@ -23,7 +23,7 @@
 #' Each both-informative (BI) SNP is mapped to the maternal and paternal linkage groups using the following
 #' algorithm:
 #' \enumerate{
-#' \item For each MI (or PI) linkage group Compute the average LOD score between the unmapped BI SNP and a 
+#' \item For each MI (or PI) linkage group, compute the average LOD score between the unmapped BI SNP and a 
 #' specified number (\code{nComp}) of SNPs in the MI (or PI) linkage group that have the highest LOD score 
 #' with the unmapped BI SNP.
 #' \item Map the unmapped BI SNP to linkage group with the highest average LOD score if:
@@ -45,15 +45,20 @@
 #' in common (provided there are any).
 #' \item Contiune step 4 until all linkage groups have been merged or until no more linkage groups can be merged.
 #' }
-#' The performance of the linakge group algorithm depends on the value of \code{LODthres} and \code{nComp}. The user is
+#' The performance of the linkage group algorithm depends on the value of \code{LODthres} and \code{nComp}. The user is
 #' advised to experiment with different values and examine the matrix of recombination fractions (using the \code{\link{$plotLG}}
 #' function). 
+#' 
+#' Note: The linkage groups produced from this function are referred to as the "combined linkage groups" and are stored separately
+#' to the "pseudo-testcross linkage groups" produced by \code{\link{$createLG}} function. This means that combined linkage groups
+#' can produced at any time from the pseudo-testcross linkage groups, even after major edits to the combined linkage groups
+#' have been made.
 #' 
 #' @usage
 #' FSobj$addBIsnps(LODthres = 10, nComp = 30)
 #' 
 #' @param LODthres A positive numeric value specifying the LOD threshold used to add SNPs to the linkage groups.
-#' @param nComp A positive integer value specifying how many SNPs in the linakge group to compute the average LOD score 
+#' @param nComp A positive integer value specifying how many SNPs in the linkage group to compute the average LOD score 
 #' with the unmapped SNP.
 #' 
 #' @author Timothy P. Bilton
@@ -62,8 +67,8 @@
 #' @examples 
 #' ## Simulate some sequencing data
 #' set.seed(6745)
-#' config <- list(list(sample(c(1,2,4), size=10, replace=T)), list(sample(c(1,2,4), size=10, replace=T)))
-#' F1data <- simFS(0.01, config=config, meanDepth=10, 
+#' config <- list(list(sample(c(1,2,4), size=30, replace=T)))
+#' F1data <- simFS(0.01, config=config, meanDepth=10, nInd = 50)
 #' ## Compute 2-point recombination fractions
 #' F1data$rf_2pt()
 #' ## create paternal and maternal linkage groups

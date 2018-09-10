@@ -19,8 +19,8 @@
 #' 
 #' Method for masking and unmasking SNPs in an FS object. 
 #' 
-#' In the linkage mapping process, some SNPs may some themselves to be probmatic and there 
-#' may be the need exclude these SNPs in forming linkage groups etc. This can be achieved using
+#' In the linkage mapping process, some SNPs are often probmatic and there 
+#' may be the need exclude these SNPs in forming linkage groups and computing linkage maps. This can be achieved using
 #' the \code{\link{$maskSNP}} function, which masks SNPs. 
 #' Once a SNP is masked, it will be ignored in the functions \code{\link{$createLG}},
 #' \code{\link{$addBIsnps}}, \code{\link{$computeMap}}. Note, however, that if a SNP is
@@ -35,7 +35,7 @@
 #' 
 #' FS$obj$unmaskSNP(snps)
 #' 
-#' @param snps An integer vector giving the index number of the SNP in the dataset.
+#' @param snps An integer vector giving the indices of the SNP(s) in the dataset.
 #' 
 #' @name $maskSNP
 #' @aliases $unmaskSNP

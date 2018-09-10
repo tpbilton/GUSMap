@@ -59,11 +59,10 @@
 #' 
 #' ## Compute 2-point recombination fractions
 #' F1data$rf_2pt(nClust=1)
-#' @aliases NULL
+#' @aliases $rf_2pt
 
 
 ## function needed for foreach loop
-#' @rdname cash-rf_2pt
 comb <- function(...){
   mapply('rbind',...,SIMPLIFY=FALSE)
 }

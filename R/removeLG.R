@@ -23,17 +23,17 @@
 #' 
 #' In a linkage analysis in GUSMap, there may be need to remove linkage groups from the 
 #' list of created linkage groups. The indices of the linkage groups corresponds to the number
-#' given in the output for the FS object. 
+#' given in the output for the FS object.
 #' 
-#' When \code{where = "LG"}, linkage groups will be removed from the maternal and paternal linkage 
-#' group list created via the \code{\link{$createLG}} function. On the other hand, if 
-#' \code{where = "LG_BI"}, then linkage groups will be removed from the combined linkage group list 
-#' created from the \code{\link{$addBIsnps}} function (e.g., the linkage group list which include the BI SNPs).
-#' When \code{where = NULL}, linkage groups will be removed from the combined linkage groups if available,
-#' otherwise they will be removed from the maternal and paternal linkage group list.
+#' When \code{where = "LG-pts"}, linkage groups will be removed from the set of pseudo-testcross 
+#' linkage groups created via the \code{\link{$createLG}} function. On the other hand, if 
+#' \code{where = "LG-comb"}, then linkage groups from the set of combined linkage groups 
+#' created from the \code{\link{$addBIsnps}} function will be removed.
+#' When \code{where = NULL}, linkage groups will be removed from the set of combined linkage groups if available,
+#' otherwise they will be removed from the set of pseudo-testcross linkage groups.
 #' 
 #' @usage
-#' FSobj$removeLG(LG, what = NULL)
+#' FSobj$removeLG(LG, where = NULL)
 #' 
 #' @param LG An integer vector specifying the number of the linkage groups to be removed.
 #' @param where Character vector specifying which list of linkage groups to remove linkage groups from. \code{"LG"} is for 

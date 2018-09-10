@@ -39,6 +39,7 @@ otherwise they will be merged in the maternal and paternal linkage group list.
 }
 \examples{
 ## simulate sequencing data
+set.seed(8932)
 config <- list(replicate(2,sample(c(1,2,4), size=30, replace=T), simplify = FALSE))
 F1data <- simFS(0.01, config=config, meanDepth=10, nInd=50)
 
