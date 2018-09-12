@@ -9,33 +9,34 @@ FSobj$mergeLG(LG, where = NULL, mergeTo = NULL)
 \arguments{
 \item{LG}{An integer vector specifying the indices of the linkage groups to be merged.}
 
-\item{where}{Character vector specifying which list of linkage groups to merge linkage groups from. \code{"LG"} is for 
-the maternal and paternal linkage groups and \code{"LG_BI"} is for the combined linkage group list.}
+\item{where}{Character vector specifying which list of linkage groups to merge linkage groups from. \code{"LG-pts"} is for 
+the maternal and paternal linkage groups and \code{"LG-comb"} is for the combined linkage group list.}
 
 \item{mergeTo}{Character value specifying whether the merged linkage groups are to be considered
-as MI linkage groups (\code{maternal}) or PI linkage groups (\code{paternal}).}
+as MI linkage groups (\code{maternal}) or PI linkage groups (\code{paternal}). Only applies in the case of 
+merging pseudo-testcross linkage groups.}
 }
 \description{
-Method for merging multiple linkage group from the list of linkage groups contained
+Method for merging multiple linkage groups contained
 in an FS object.
 }
 \details{
-For a linkage analysis in GUSMap, there may be need to merge linkage groups from the 
-list of created linkage groups. The indices of the linkage groups corresponds to the number
-given in the output for the FS object. There needs to be at leads two linakge groups 
+For a linkage analysis in GUSMap, there may be need to merge linkage groups. The indices of the 
+linkage groups corresponds to the number
+given in the output for the FS object. There needs to be at least two linkage groups 
 specified for merging and more than two linkage groups can be merged at once.
+
+When \code{where = "LG-pts"}, MI and PI linkage groups will be merged from the set of pseudo-testcross 
+linkage groups created via the \code{\link{$createLG}} function. On the other hand, if 
+\code{where = "LG-comb"}, then linkage groups from the set of combined linkage groups 
+created from the \code{\link{$addBIsnps}} function will be merged.
+When \code{where = NULL}, linkage groups will be merged in the set of combined linkage groups if available,
+otherwise they will be merged in the set of pseudo-testcross linkage groups.
 
 In the case when at least one MI linkage group is to be merged with at least one PI linkage group, 
 the second argument (\code{mergeTo}) specifies whether the merged linkage groups are to be considered
 as MI linkage groups (\code{maternal}) or PI linkage groups (\code{paternal}). Otherwise,
 the user will be prompted to input which parental line to merge the linkage groups to.
-
-When \code{where = "LG"}, linkage groups will be merged in the maternal and paternal linkage 
-group list created via the \code{\link{$createLG}} function. On the other hand, if 
-\code{where = "LG_BI"}, then linkage groups will be merged in the combined linkage group list 
-created from the \code{\link{$addBIsnps}} function (e.g., the linkage group list which include the BI SNPs).
-When \code{where = NULL}, linkage groups will be merged in the combined linkage groups if available,
-otherwise they will be merged in the maternal and paternal linkage group list.
 }
 \examples{
 ## simulate sequencing data

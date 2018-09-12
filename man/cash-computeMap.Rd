@@ -27,9 +27,9 @@ direct maximization (\code{optim}) or via the Expectation-Maximum (EM) algorithm
 \item{err}{Locical value. If \code{TRUE}, the sequencing error parameter is estimated. Otherwise, the
 sequenicng error parameter is fixed to the value of the \code{ep} argument.}
 
-\item{mapped}{Locial value. If \code{TRUE}, the maps are computed using the marker order giving 
-in the linkage groups. Otherwise, the maps are computed using the original marker order  
-given by the assembly.}
+\item{mapped}{Locial value. If \code{TRUE}, the maps are computed using the marker order given 
+in the combined linkage groups. Otherwise, the maps are computed using the original marker order  
+given by the genomic assembly.}
 }
 \description{
 Method for inferring parental phase (e.g., ordered parental genotype pair (OPGP)) and
@@ -37,19 +37,19 @@ estimating recombination fractions in full-sib families.
 }
 \details{
 This function infers the parental phase (or ordered parental genotype pair (OPGP)) and
-estimate adjacent recombination fractions using the hidden Markov model (HMM) approach as
+estimates adjacent recombination fractions using the hidden Markov model (HMM) approach as
 described in \insertCite{bilton2018genetics1;textual}{GUSMap}.
 
 The optimization of the likelihood for the HMM is performed using either the Expectation-Maximumization (EM) algorithm
-(\code{method="EM"}) or using direct optimization via the \code{\link{optim}} function (\code{method="optim"}).
+(\code{method="EM"}) or using direct numeric optimization via the \code{\link{optim}} function (\code{method="optim"}).
 The likelihood computations (and computation of derivatives if required) are scaled using 
 forward and backward recursion to avoid overflow issues and are performed in C. These computations 
 are also parallelization via the OpenMP package, where the argument \code{nThreads} specifies
 how many threads to use. Be careful not to set \code{nThreads} to more than the number of threads available
 on your computer (or bad things will happen). In addition, if the package is complied without OpenMP, then this 
-parallelization has no effect and likelihood is computed in serial.
+parallelization has no effect and the likelihood is computed in serial.
 
-If \code{mapped = TRUE}, then linkage groups must have been formed from the \code{\link{$addBIsnps}} function
+If \code{mapped = TRUE}, then combined linkage groups must have been formed from the \code{\link{$addBIsnps}} function
 first (and preferably ordered from the \code{\link{$orderLG}} function).
 }
 \examples{

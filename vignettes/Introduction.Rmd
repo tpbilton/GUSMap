@@ -305,12 +305,12 @@ From the synteny plot above, we see that linkage group 1 corresponds to chromoso
 
 Finally, one can extract the results of the linkage analysis in GUSMap by writing the results to a file using the `$writeLG` function.
 ```{r writeLG, eval=F}
-mySpecies$writeLG(file = "mySpecies")
+mySpecies$writeLM(file = "mySpecies")
 ```
 
 This is allows users to produce their own custom plots in whatever software they are familiar with. For details of the information given in the file, see the package documentation.
 ```{r help_writeLG, eval=F}
-?`$writeLG`
+?`$writeLM`
 ```
 
 

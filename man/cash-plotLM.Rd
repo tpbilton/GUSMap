@@ -7,21 +7,22 @@
 FSobj$plotLM(LG = NULL, fun="haldane", col="black")
 }
 \arguments{
-\item{LG}{An integer vector specifying the indices of the linkage groups to be merged.}
+\item{LG}{An integer vector specifying the indices of the linkage groups for which their linkage maps are to be plotted.}
 
-\item{fun}{Character value giving the mapping function to use.}
+\item{fun}{Character value giving the mapping function to use which is passed to \code{\link{mfun}}.}
 
-\item{col}{Vector of character values giving the colors for the linkage maps to produce.}
+\item{col}{Vector of character values giving the colors of the linkage maps.}
 }
 \description{
-Method for plotting linkage map in GUSMap
+Method for plotting linkage maps in GUSMap
 }
 \details{
-Function produces linkage maps of the combined linkage groups produced from the \code{\link{$addBIsnps}}
-add the \code{\link{$orderLG}} functions.
+Function produces linkage maps of the combined linkage groups produced from the \code{\link{$computeMap}}
+function.
+
+For a list of mapping functions available, see \code{\link{mfun}}.
 }
-\seealso{
-\code{\link{FS}}
+\examples{
 ## Simulate some sequencing data
 set.seed(6745)
 config <- list(replicate(2,sample(c(1,2,4), size=30, replace=T), simplify=FALSE))
@@ -39,6 +40,9 @@ F1data$computeMap()
 
 ## Produce linkage maps
 F1data$plotLM()
+}
+\seealso{
+\code{\link{FS}}, \code{\link{mfun}}
 }
 \author{
 Timothy P. Bilton

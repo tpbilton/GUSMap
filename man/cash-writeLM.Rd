@@ -15,21 +15,22 @@ FSobj$writeLM(file, direct = "./", LG = NULL)
 linkage groups are returned.}
 }
 \value{
-The function returns a csv file with the rows representing the SNPs and the columns containing the information.
-The columns are:
+The function returns a csv file with the rows representing the SNPs and the columns containing the linkage group and linkage map 
+information.
+The columns of the file are:
 \describe{
 \item{LG}{The linkage number as given in the output from the FS object.}
 \item{LG_POS}{The position of the SNPs across the linkage group. Starts at 1 and
-increases by one for each SNP.}
+increases by one for each SNP in the same linkage group.}
 \item{CHROM}{The chromosome name the SNP was located on in the original genomic assembly.}
-\item{POS}{The position (in base pairs) of the SNP in reference to the original genomic assembly.}
+\item{POS}{The position (in base pairs) of the SNP on the original genomic assembly.}
 \item{TYPE}{The segregation type of the SNP. Either BI (both-informative), 
 MI (maternal-informative) or PI (paternal-informative).}
 \item{RF_PAT}{The sum of the recombination fraction estimates for the paternal meioses. Starts at zero
 for the first SNP in the linkage groups and increases across the linkage group.}
 \item{RF_MAT}{The sum of the recombination fraction estimates for the maternal meioses. Starts at zero
 for the first SNP in the linkage groups and increases across the linkage group.}
-\item{ERR}{THe sequencing error estimate for the SNP.}
+\item{ERR}{The sequencing error estimate for the SNP.}
 \item{MEAN_DEPTH}{The mean read depth of the SNP.}
 \item{CALLRATE}{The proportion of individuals in which there is at least one read across the SNP.}
 }
@@ -42,7 +43,7 @@ Method for writing results from a linkage analysis in GUSMap to a file.
 \details{
 The linkage groups written to file are the combined linkage groups produced by \code{\link{$addBIsnps}} and
 ordered using \code{\link{$orderLG}}. If linkage maps are also computed using \code{\link{$computeMap}}, then 
-information regarding the parameters estimates for map are also returned.
+information regarding the parameters estimates for the maps are also returned.
 }
 \examples{
 ## Simulate some sequencing data

@@ -8,13 +8,13 @@ FSobj$plotChr(parent = "maternal", mat="rf", filename=NULL, chrS=2, lmai=2)
 }
 \arguments{
 \item{parent}{Character value specifying whether the SNPs segreagting in the maternal parent should be 
-plotted (\code{"maternal"}), or whether whether the SNPs segreagting in the paternal parent should be 
+plotted (\code{"maternal"}), or whether  the SNPs segreagting in the paternal parent should be 
 plotted (\code{"paternal"}), or whether all the SNPs should be plotted (\code{"both"}).}
 
-\item{mat}{Charater value for the matrix to be plotted. \code{"rf"} plots the matrix of 2-point 
+\item{mat}{Character value for the matrix to be plotted. \code{"rf"} plots the matrix of 2-point 
 recombination fractions while \code{"LOD"} plots the matrix of 2-point LOD scores.}
 
-\item{filename}{Character giving the name of the file to save the plot to. If \code{NULL}, the plot is given 
+\item{filename}{Character value giving the name of the file to save the plot to. If \code{NULL}, the plot is displayed 
 in the graphics window and not saved to a file.}
 
 \item{chrS}{Numeric value. Controls the size of the chromosome names on the left side of the plot.}
@@ -27,15 +27,15 @@ Method for plotting 2-point recombination fraction and LOD score estimates when 
 }
 \details{
 This function plots the heatmap of the matrix of 2-point recombination fraction estimates (or 2-point LOD scores)
-as computed from the \code{\link{$rf_2pt}} function when the SNPs are ordered to the genomic assembly (as given in the VCF file).
+as computed from the \code{\link{$rf_2pt}} function when the SNPs are ordered according to the genomic assembly (as given in the VCF file).
 
 Note:
 }
 \examples{
 ## Simulate some sequencing data
 set.seed(6745)
-config <- list(list(sample(c(1,2,4), size=10, replace=T)), list(sample(c(1,2,4), size=10, replace=T)))
-F1data <- simFS(0.01, config=config, meanDepth=10, 
+config <- list(replicate(2,sample(c(1,2,4), size=30, replace=T), simplify = FALSE))
+F1data <- simFS(0.01, config=config, meanDepth=5, nInd=50) 
 ## Compute 2-point recombination fractions
 F1data$rf_2pt()
 

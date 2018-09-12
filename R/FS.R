@@ -17,7 +17,7 @@
 #########################################################################
 #' FS object
 #' 
-#' Class for storing RA data and associated functions for analysis if full-sib populations.
+#' Class for storing RA data and associated functions for analysis of full-sib family populations.
 #' 
 #' @usage
 #' ## Create FS object
@@ -613,11 +613,13 @@ Please select one of the following:
                     ## principal curve
                     pcurve <- princurve::principal_curve(MDS$conf, maxit = 150, spar = spar)
                     ## plot the results
+                    temp_par <- par(no.readonly=T)
                     par(mfrow = c(1,2))
                     graphics::plot(MDS$conf[,1],MDS$conf[,2], ylab="Dimension 2", xlab="Dimension 1", type="n")
                     text(MDS$conf, labels=ind)
                     lines(pcurve)
                     graphics::image(private$rf[ind,ind][pcurve$ord,pcurve$ord], axes=F)
+                    par(temp_par)
                     ## Set the new order
                     private$LG[[chr]] <- ind[pcurve$ord]
                   }
@@ -717,8 +719,8 @@ Please select one of the following:
                       ## Plot the matrix
                       chrom.ind[which(!b_indx)] <- paste0(chrom.ind[which(!b_indx)]," (", rep(names(LGlist), lapply(LGlist,length)),")") 
                       chrom.ind[which(b_indx)] <- rep("Break",length(LGlist)-1)
-                      hovertext <- matrix(paste(matrix(paste0("x: ",chrom.ind), nrow=nn, ncol=nn), 
-                            matrix(paste0("x: ",chrom.ind), nrow=nn, ncol=nn, byrow=T), paste0("rf: ",round(temprf,4)), sep="<br>"),
+                      hovertext <- matrix(paste(matrix(paste0("row: ",chrom.ind), nrow=nn, ncol=nn), 
+                            matrix(paste0("col: ",chrom.ind), nrow=nn, ncol=nn, byrow=T), paste0("rf: ",round(temprf,4)), sep="<br>"),
                             nrow=nn, ncol=nn)
                       ax <- list(visible=FALSE)
                       # suppress warnings  
@@ -750,7 +752,7 @@ Please select one of the following:
                       options(warn = storeWarn) 
                     }
                     else{
-                      temp_par <- par()
+                      temp_par <- par(no.readonly = TRUE)
                       b_indx <- chrom.ind == b
                       if(!is.null(filename)){
                         temp <- file.create(paste0(filename,".png"))
@@ -765,7 +767,7 @@ Please select one of the following:
                       abline(h=which(b_indx))
                       if(!is.null(filename))
                         dev.off()
-                      suppressWarnings(par(temp_par))
+                      par(temp_par)
                     }
                   }
                   else
@@ -784,7 +786,7 @@ Please select one of the following:
   paternal: Add BI SNPs to PI LGs
   both:     Add BI SNPs to both MI and PI LGs")
                   
-                  temp_par <- par() # save the current plot margins
+                  temp_par <- par(no.readonly = TRUE) # save the current plot margins
                   
                   ## workout which SNPs to plot to plot
                   if(private$noFam == 1){
@@ -803,7 +805,7 @@ Please select one of the following:
                       plotLG(mat=private$LOD, LG=LG, filename=filename, names=names, chrS=chrS, lmai=lmai, chrom=T, type="LOD")
                     else
                       stop("Matrix to be plotted not found.") ## shouldn't get here
-                    suppressWarnings(par(temp_par)) # reset the plot margins
+                    par(temp_par) # reset the plot margins
                     return(invisible())
                   }
                   else{
@@ -835,7 +837,7 @@ Please select one of the following:
                     else if(length(col) != nLGs)
                       stop("Number of colors specified does not equal the number of linkage groups")
                   }
-                  temp_par <- par() # save the current plot margins
+                  temp_par <- par(no.readonly = TRUE) # save the current plot margins
                   
                   ellipseEq_pos <- function(x) c2 + sqrt(b^2*(1-round((x-c1)^2/a^2,7)))
                   ellipseEq_neg <- function(x) c2 - sqrt(b^2*(1-round((x-c1)^2/a^2,7)))
@@ -857,7 +859,7 @@ Please select one of the following:
                     c2=sum(mapDist[[lg]])+0.01*yCoor;
                     curve(ellipseEq_pos, from=cent-err,to=cent+err,add=T,col=col[lg])
                   }
-                  suppressWarnings(par(temp_par)) # reset the plot margins
+                  par(temp_par) # reset the plot margins
                   #if(!is.null(names))
                   #  mtext(names, side=1, at=seq(0.25,0.25*nLGs,0.25))
                 },
@@ -871,8 +873,9 @@ Please select one of the following:
                   ## determine the breask on the plot
                   temp <- cumsum(unlist(lapply(private$LG, length)))
                   LGbreaks <- orgOrder[temp[-length(temp)]] + 0.5
-                  chrBreaks <- which(diff(as.numeric(private$chrom))==1) + 0.5
+                  chrBreaks <- which(diff(as.numeric(as.factor(private$chrom)))==1) + 0.5
                   ## plot the synteny plot
+                  temp_par <- par(no.readonly = TRUE) # save the current plot margins
                   par(mfrow=c(1,1))
                   plot(orgOrder,LGorder, pch=20,cex=0.8, xaxt="n", yaxt="n",ylab="Assembly Order", xlab="Linkage Group Order", 
                        ylim=c(min(orgOrder),max(orgOrder)), xlim=c(min(LGorder), max(LGorder)), bty='n')
@@ -883,6 +886,7 @@ Please select one of the following:
                         at = apply(cbind(c(min(orgOrder),chrBreaks),c(chrBreaks,max(orgOrder))),1,mean))
                   mtext(text = 1:length(private$LG), side = 1, 
                         at = apply(cbind(c(min(LGorder),LGbreaks),c(LGbreaks,max(LGorder))),1,mean))
+                  par(temp_par) # reset the plot margins
                 }, 
                 ## Function for computing the rf's for each chromosome 
                 computeMap = function(chrom=NULL, init_r=0.01, ep=0.001, method="optim", sexSpec=F, err=T, mapped=T, nThreads=1){
@@ -951,7 +955,7 @@ Please select one of the following:
                       private$para <- list(OPGP=vector(mode = "list",length = nchrom),rf_p=vector(mode = "list",length = nchrom),
                                            rf_m=vector(mode = "list",length = nchrom),ep=vector(mode = "list",length = nchrom),
                                            loglik=vector(mode = "list",length = nchrom))
-                    else if(length(private$para$rf) != length(private$LG))
+                    else if(length(private$para$rf_p) != length(private$LG))
                       private$para <- list(OPGP=vector(mode = "list",length = nchrom),rf_p=vector(mode = "list",length = nchrom),
                                            rf_m=vector(mode = "list",length = nchrom),ep=vector(mode = "list",length = nchrom),
                                            loglik=vector(mode = "list",length = nchrom))

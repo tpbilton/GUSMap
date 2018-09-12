@@ -80,7 +80,7 @@
 #' @aliases $computeMap
 
 rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
-                      sexSpec=F, seqErr=T, trace=F, noFam=as.integer(1), method = "optim", nThreads=0, ...){
+                      sexSpec=F, seqErr=T, trace=F, noFam=as.integer(1), method = "optim", nThreads=1, ...){
   
   ## Do some checks
   nInd <- lapply(ref,nrow)  # number of individuals

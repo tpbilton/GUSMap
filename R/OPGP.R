@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
 
-infer_OPGP_FS <- function(ref, alt, config, ep=0.001, method="optim", nThreads=0, ...){
+infer_OPGP_FS <- function(ref, alt, config, ep=0.001, method="optim", nThreads=1, ...){
   
   if(!is.matrix(ref) || !is.matrix(alt))
     stop("The read counts inputs are not matrix objects")

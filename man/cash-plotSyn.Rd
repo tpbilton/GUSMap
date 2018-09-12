@@ -7,7 +7,7 @@
 FSobj$plotSyn()
 }
 \description{
-Method for plotting SNP order of the linkage groups against the original SNP order
+Method for plotting the combined linkage group SNP ordering against the original SNP order
 from the genomic assembly.
 }
 \details{
@@ -15,8 +15,7 @@ This function produces a scatter plot of the SNP order as obtained from the link
 against the SNP order given by the genomic assembly. Note that the SNP order from the linkage analysis
 is from the combined linkage groups obtained using \code{\link{$plotSyn}} and ordered via \code{\link{$orderLG}}.
 }
-\seealso{
-\code{\link{FS}}
+\examples{
 ## Simulate some sequencing data
 set.seed(6745)
 config <- list(replicate(2,sample(c(1,2,4), size=30, replace=T), simplify=FALSE))
@@ -29,8 +28,12 @@ F1data$createLG()
 F1data$addBIsnps()
 ## order Markers
 F1data$orderLG(ndim=5)
+
 ## Plot synteny plot
 F1data$plotSyn()
+}
+\seealso{
+\code{\link{FS}}
 }
 \author{
 Timothy P. Bilton

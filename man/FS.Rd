@@ -28,7 +28,7 @@ FSobj$unmaskSNP(snps)
 FSobj$writeLM(file, direct = "./", LG = NULL)
 }
 \description{
-Class for storing RA data and associated functions for analysis if full-sib populations.
+Class for storing RA data and associated functions for analysis of full-sib family populations.
 }
 \details{
 An FS object is created from the \code{\link{makeFS}} function and contains RA data,

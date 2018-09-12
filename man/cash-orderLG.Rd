@@ -9,24 +9,36 @@ FSobj$orderLG(chrom = NULL, mapfun = "haldane", weight="LOD2", ndim=30)
 \arguments{
 \item{chrom}{An integer vector of the indices for the linkage group(s) that are to be ordered.}
 
-\item{mapfun}{A character value for the mapping function to be used}
+\item{mapfun}{A character value for the mapping function to be used. For a list of available mapping functions,
+see \code{\link{mfun}}.}
 
-\item{weight}{A character value for the weight function}
+\item{weight}{A character value for the weight function to be used. Can be either
+\code{"none"}, \code{"LOD"} or \code{"LOD2"}.}
 
-\item{ndim}{A integer value for the number of dimensions to use in the MDS}
+\item{ndim}{A integer value for the number of dimensions to use in the unconstrained MDS step.}
 }
 \description{
-Method for ordering marker in a linakge group
+Method for ordering markers in a linkage group
 }
 \details{
-Linkage groups created using the \code{\link{$addBIsnps}} are ordered using the multidimensional scaling (MDS)
-approach described by \insertCite{preedy2016tag;textual}{GUSMap}.
+The combined linkage groups created using the \code{\link{$addBIsnps}} are ordered using the multidimensional scaling (MDS)
+approach described by \insertCite{preedy2016tag;textual}{GUSMap}. In brief, the MDS approach starts by performing weighted unconstrained 
+MDS on the matrix of genetic map distances, where the dimension of the weighted unconstrained MDS is controlled by the \code{ndim} argument.
+In the second step, a principal curve is fitted and the projection of the markers into the first principal curve gives the marker order.
+
+There are three different types weigthing matrix that can be used:
+\itemize{
+\item{No weights \code{"none"}: }{The weight of each SNP pair is set to 1 with the expection that the weigths between 
+a MI and PI pair are set to 0 since there is not information of recombination in these SNP pairs.}
+\item{LOD score \code{"LOD"}: }{The weighting matrix corresponds to the matrix of pariwise LOD scores.}
+\item{Squared LOD scores \code{"LOD"}:}{The weighting matrix corresponds to the matrix of squared pariwise LOD scores.}
+}
 }
 \examples{
 ## Simulate some sequencing data
 set.seed(6745)
-config <- list(list(sample(c(1,2,4), size=10, replace=T)), list(sample(c(1,2,4), size=10, replace=T)))
-F1data <- simFS(0.01, config=config, meanDepth=10, 
+config <- list(list(sample(c(1,2,4), size=30, replace=T)))
+F1data <- simFS(0.01, config=config, meanDepth=10, nInd=50) 
 ## Compute 2-point recombination fractions
 F1data$rf_2pt()
 ## create paternal and maternal linkage groups
@@ -41,5 +53,9 @@ F1data$orderLG(ndim=5)
 \insertRef{preedy2016tag}{GUSMap}
 }
 \seealso{
-\code{\link{FS}}
+\code{\link{FS}}, \code{\link{mfun}}
+}
+\author{
+Timothy P. Bilton. Code adapted from some R functions associated with the 
+\insertCite{preedy2016tag;textual}{GUSMap}.
 }
