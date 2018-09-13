@@ -15,7 +15,7 @@ The easiest way to install GUSMap in R is using the devtools package.
 install.packages("devtools")
 library(devtools)
 install_github("tpbilton/GUSbase")
-install_github("tpbilton/GUSMap")
+install_github("tpbilton/GUSMap", ref="Development")
 ```
 
 Note: Some of the functions are coded in C and therefore an appropriate C compiler is needed for the package to work. For windows OS, Rtools (https://cran.r-project.org/bin/windows/Rtools/) provides a compiler. 

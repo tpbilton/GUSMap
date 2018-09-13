@@ -303,13 +303,13 @@ mySpecies$plotSyn()
 
 From the synteny plot above, we see that linkage group 1 corresponds to chromosome 3, linkage group 2 to chromosome 2 and linkage group 3 to chromosome 1. Furthermore, the plot shows that the linkage mapping analysis has moved the middle section of the chromosome 2 to chromosome 1 and that it has inverted the SNP order at the end of chromosome 1.
 
-Finally, one can extract the results of the linkage analysis in GUSMap by writing the results to a file using the `$writeLG` function.
+Finally, one can extract the results of the linkage analysis in GUSMap by writing the results to a file using the `$writeLM` function.
 ```{r writeLG, eval=F}
 mySpecies$writeLM(file = "mySpecies")
 ```
 
 This is allows users to produce their own custom plots in whatever software they are familiar with. For details of the information given in the file, see the package documentation.
-```{r help_writeLG, eval=F}
+```{r help_writeLM, eval=F}
 ?`$writeLM`
 ```
 

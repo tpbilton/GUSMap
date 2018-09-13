@@ -22,7 +22,7 @@
 #' @usage
 #' ## Create FS object
 #' FSobj <- makeFS(RAobj, pedfile, family=NULL, 
-#'                 filter=list(MAF=0.05, MISS=0.2, BIN=0, DEPTH=5, PVALUE=0.01))
+#'                 filter=list(MAF=0.05, MISS=0.2, BIN=100, DEPTH=5, PVALUE=0.01))
 #'
 #' ## Functions (Methods) of an FS object
 #' FSobj$addBIsnps(LODthres = 10, nComp = 10)
@@ -576,7 +576,7 @@ Please select one of the following:
                   return(invisible(NULL))
                 },
                 ## Function for ordering linkage groups
-                orderLG = function(chrom = NULL, mapfun = "morgan", weight="LOD2", ndim=30, spar=NULL){
+                orderLG = function(chrom = NULL, mapfun = "haldane", weight="LOD2", ndim=30, spar=NULL){
                   ## do some checks
                   if(is.null(private$LG))
                     stop("There are no combined linkage groups. Please use the $addBISNPs to create combined LGs")
