@@ -190,10 +190,15 @@ FS <- R6Class("FS",
                       ## check that there are no LGs that are now empty
                       empty_mat <- lapply(private$LG_mat, length) == 0
                       if(any(empty_mat))
-                        private$LG_mat <- private$LG_mat[which(empty_mat)]
+                        private$LG_mat[which(empty_mat)] <- NULL
                       empty_pat <- lapply(private$LG_pat, length) == 0
                       if(any(empty_pat))
-                        private$LG_pat <- private$LG_pat[which(empty_pat)]
+                        private$LG_pat[which(empty_pat)] <- NULL
+                      ## check whether there are no more PI or MI linkage groups left
+                      if(length(private$LG_mat) == 0)
+                        private$LG_mat <- NULL
+                      if(length(private$LG_pat) == 0)
+                        private$LG_pat <- NULL
                     }
                   }
                   else if(where == "LG-comb"){
@@ -208,7 +213,12 @@ FS <- R6Class("FS",
                     ## check for empty LGs
                     empty <- lapply(private$LG, length) == 0
                     if(any(empty))
-                      private$LG <- private$LG[which(empty)]
+                      private$LG[which(empty)] <- NULL
+                    ## check whether all the linkage groups have been removed
+                    if(length(private$LG) == 0){
+                      message("All combined linkage groups removed. Use the `$addBIsnps` function to recreate the combined linkage groups.")
+                      private$LG <- NULL
+                    }
                   }
                   else
                     stop("invalid second argument ('where').")
@@ -230,6 +240,11 @@ FS <- R6Class("FS",
                     else{
                       private$LG <- private$LG[which(!(1:nLG %in% LG))]
                     }
+                    ## check whether all the linkage groups have been removed
+                    if(length(private$LG) == 0){
+                      message("All combined linkage groups removed. Use the `$addBIsnps` function to recreate the combined linkage groups.")
+                      private$LG <- NULL
+                    }
                   }  else if(where == "LG-pts"){
                     if(is.null(private$LG_mat) || is.null(private$LG_pat))
                       stop("No linkage groups exist. Please use the $createLG function to create some linkage groups")
@@ -241,6 +256,10 @@ FS <- R6Class("FS",
                       private$LG_mat <- private$LG_mat[which(!(1:nmat %in% LG))]
                       private$LG_pat <- private$LG_pat[which(!((nmat+1:npat) %in% LG))]
                     }
+                    if(length(private$LG_mat) == 0)
+                      private$LG_mat <- NULL
+                    if(length(private$LG_pat) == 0)
+                      private$LG_pat <- NULL
                   }
                   else
                     stop("invalid second argument ('where').")
@@ -572,6 +591,7 @@ Please select one of the following:
                   else if(exists("newLGlist_pat")){
                     private$LG <- newLGlist_pat
                   }
+                  private$para <- NULL    ## reset the computed maps 
                   self$print(what = "LG-comb")
                   return(invisible(NULL))
                 },
@@ -952,13 +972,13 @@ Please select one of the following:
                     ## Compute rf's
                     cat("Computing recombination fractions:\n")
                     if(is.null(private$para))
-                      private$para <- list(OPGP=vector(mode = "list",length = nchrom),rf_p=vector(mode = "list",length = nchrom),
-                                           rf_m=vector(mode = "list",length = nchrom),ep=vector(mode = "list",length = nchrom),
-                                           loglik=vector(mode = "list",length = nchrom))
+                      private$para <- list(OPGP=replicate(nchrom, NA, simplify=FALSE),rf_p=replicate(nchrom, NA, simplify=FALSE),
+                                           rf_m=replicate(nchrom, NA, simplify=FALSE),ep=replicate(nchrom, NA, simplify=FALSE),
+                                           loglik=replicate(nchrom, NA, simplify=FALSE))
                     else if(length(private$para$rf_p) != length(private$LG))
-                      private$para <- list(OPGP=vector(mode = "list",length = nchrom),rf_p=vector(mode = "list",length = nchrom),
-                                           rf_m=vector(mode = "list",length = nchrom),ep=vector(mode = "list",length = nchrom),
-                                           loglik=vector(mode = "list",length = nchrom))
+                      private$para <- list(OPGP=replicate(nchrom, NA, simplify=FALSE),rf_p=replicate(nchrom, NA, simplify=FALSE),
+                                           rf_m=replicate(nchrom, NA, simplify=FALSE),ep=replicate(nchrom, NA, simplify=FALSE),
+                                           loglik=replicate(nchrom, NA, simplify=FALSE))
                     for(i in chrom){
                       cat("Linkage Group: ",i,"\n")
                       indx_chrom <- private$LG[[i]]
@@ -994,7 +1014,7 @@ Please select one of the following:
                   DIST_PAT <- extendVec(unlist(lapply(private$para$rf_p, function(x) round(sum(mfun(x, fun="haldane", centiM = T)),2))), nrow(tab))
                   ERR <- extendVec(round(unlist(private$para$ep),5), nrow(tab))
                   tab <- cbind(tab,DIST_MAT,DIST_PAT,ERR)
-                  tab <- addmargins(tab, margin = 1)
+                  tab <- addmargins(tab, margin = 1, FUN=function(x) sum(x, na.rm=T))
                   rownames(tab) <- NULL
                   tab[nrow(tab), 1] <- "TOTAL"
                   if(ncol(tab) > 7)
@@ -1079,6 +1099,7 @@ Please select one of the following:
                 famInfo      = NULL,
                 para         = NULL,
                 LG           = NULL,
+                LG_map       = NULL,
                 LG_mat       = NULL,
                 LG_mat_temp  = NULL,
                 LG_pat       = NULL,
@@ -1118,7 +1139,7 @@ Please select one of the following:
                   }
                   return(newLGlist)
                 }
-              )
+              ), lock_objects = FALSE
 )
 
 ### Function for extending a vector to length n
