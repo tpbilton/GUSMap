@@ -23,14 +23,19 @@
 #' ordered using \code{\link{$orderLG}}. If linkage maps are also computed using \code{\link{$computeMap}}, then 
 #' information regarding the parameters estimates for the maps are also returned.
 #' 
+#' When \code{what = NULL}, the linkage mapping results computed using the \code{\link{$computeMap}} function are returned
+#' if they are available, otherwise the combined linkage groups information is returned.
+#' 
 #' @usage
-#' FSobj$writeLM(file, direct = "./", LG = NULL)
+#' FSobj$writeLM(file, direct = "./", LG = NULL, what = NULL)
 #' 
 #' @name $writeLM
 #' @param file Character value giving the name of the file to write to.
 #' @param direct Character value for the directory to write the file to (relative to the current working working directory)
 #' @param LG Integer vector giving the indices of the linkage groups to write. If \code{NULL}, the results for all the 
 #' linkage groups are returned.
+#' @param what Character vector specifying whether the combined linkage groups \code{"LG-comb"} are to be 
+#' returned or the linkage mapping results \code{"map"}.
 #' @return 
 #' The function returns a csv file with the rows representing the SNPs and the columns containing the linkage group and linkage map 
 #' information.

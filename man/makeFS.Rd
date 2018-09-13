@@ -5,7 +5,7 @@
 \title{Make a full-sib family (FS) population}
 \usage{
 makeFS(RAobj, pedfile, family = NULL, filter = list(MAF = 0.05, MISS =
-  0.2, BIN = 0, DEPTH = 5, PVALUE = 0.01))
+  0.2, BIN = 100, DEPTH = 5, PVALUE = 0.01))
 }
 \arguments{
 \item{RAobj}{Object of class RA created via the \code{\link[GUSbase]{readRA}} function.}
@@ -34,7 +34,7 @@ The filtering criteria currently implemented are:
 \item{Minor allele frequency (\code{MAF}): }{SNPs are discarded if their MAF is less than the threshold (default is 0.05)}
 \item{Proportion of missing data (\code{MISS}): }{SNPs are discarded if the proportion of individuals with no reads (e.g. missing genotype)
  is greater than the threshold value (default is 0.5).}
-\item{Bin size for SNP selection (\code{BIN}): }{SNPs are binned together if the distance (in base pairs) between them is less than the threshold value (default is 0).
+\item{Bin size for SNP selection (\code{BIN}): }{SNPs are binned together if the distance (in base pairs) between them is less than the threshold value (default is 100).
 One SNP is then randomly selected from each bin and retained for final analysis. This filtering is to ensure that there is only one SNP on each sequence read.}
 \item{Parental read depth (\code{DEPTH}): }{SNPs are discarded if the read depth of either parent is less than the threshold value (default is 5). 
 This filter is to remove SNPs where the parental information is insufficient to infer segregation type accurately.}

@@ -7,7 +7,7 @@
 \usage{
 ## Create FS object
 FSobj <- makeFS(RAobj, pedfile, family=NULL, 
-                filter=list(MAF=0.05, MISS=0.2, BIN=0, DEPTH=5, PVALUE=0.01))
+                filter=list(MAF=0.05, MISS=0.2, BIN=100, DEPTH=5, PVALUE=0.01))
 
 ## Functions (Methods) of an FS object
 FSobj$addBIsnps(LODthres = 10, nComp = 10)
@@ -25,7 +25,7 @@ FSobj$removeLG(LG, where = NULL)
 FSobj$removeSNP(snps, where = NULL)
 FSobj$rf_2pt(nClust = 2, err=FALSE)
 FSobj$unmaskSNP(snps)
-FSobj$writeLM(file, direct = "./", LG = NULL)
+FSobj$writeLM(file, direct = "./", LG = NULL, what = NULL)
 }
 \description{
 Class for storing RA data and associated functions for analysis of full-sib family populations.

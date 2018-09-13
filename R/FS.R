@@ -40,7 +40,7 @@
 #' FSobj$removeSNP(snps, where = NULL)
 #' FSobj$rf_2pt(nClust = 2, err=FALSE)
 #' FSobj$unmaskSNP(snps)
-#' FSobj$writeLM(file, direct = "./", LG = NULL)
+#' FSobj$writeLM(file, direct = "./", LG = NULL, what = NULL)
 #' 
 #' @details
 #' An FS object is created from the \code{\link{makeFS}} function and contains RA data,
@@ -591,7 +591,8 @@ Please select one of the following:
                   else if(exists("newLGlist_pat")){
                     private$LG <- newLGlist_pat
                   }
-                  private$para <- NULL    ## reset the computed maps 
+                  private$para <- NULL            ## reset the computed maps
+                  private$summaryInfo$map <- NULL ## reset the computed maps summary
                   self$print(what = "LG-comb")
                   return(invisible(NULL))
                 },
@@ -841,6 +842,10 @@ Please select one of the following:
                     LG <- 1:length(private$para$rf_p)
                   if(isValue(LG, type="pos_integer", minv=1, maxv=nLGs))
                     stop(paste0("The LG indices must be an integer vector between 1 and the number of linkage groups which is ",nLGs))
+                  LG = LG[which(!unlist(lapply(private$para$rf_p[LG], function(x) any(is.na(x)))))]
+                  nLGs = length(LG)
+                  if(nLGs == 0)
+                    stop("There are no linkage maps for the specified linkage groups.")
                   if(!is.vector(fun) || length(fun) != 1 || any(!(fun %in% c("morgan", "haldane", "kosambi"))))
                     stop("Input argument for mapping distance is invalid")
                   ## check the color input
@@ -861,12 +866,11 @@ Please select one of the following:
                   
                   ellipseEq_pos <- function(x) c2 + sqrt(b^2*(1-round((x-c1)^2/a^2,7)))
                   ellipseEq_neg <- function(x) c2 - sqrt(b^2*(1-round((x-c1)^2/a^2,7)))
-                  mapDist = lapply(private$para$rf_p,mfun, fun=fun, centi=TRUE)
+                  mapDist = lapply(private$para$rf_p[LG],mfun, fun=fun, centi=TRUE)
                   yCoor = max(unlist(lapply(mapDist,sum)))
                   par(mar=rep(2,4), mfrow=c(1,1))
                   plot(NULL,NULL, ylim=c(yCoor+0.01*yCoor,-0.01*yCoor),xlim=c(0,0.25*(nLGs+1)), xaxt='n',bty='n',xlab="",ylab="")
                   err = 0.05
-                  col=rep("black", nLGs)
                   ## plot each map for each linkage group
                   for(lg in 1:nLGs){
                     cent = 0.25*lg
@@ -916,7 +920,6 @@ Please select one of the following:
                   if( (length(ep) != 1 || !is.numeric(ep) || (ep <= 0 | ep >= 1)) )
                     stop("Value for the error parameters needs to be a single numeric value in the interval (0,1) or a NULL object")
                   ## for existing chromosome orders
-                  nchrom <- length(private$LG)
                   if(!mapped){
                     if(!is.null(chrom) && !is.vector(chrom))
                       stop("chromosomes names must be a character vector.")
@@ -965,6 +968,7 @@ Please select one of the following:
                     ## Check the input
                     if((length(private$LG) == 0) && length(is.null(private$LG) == 0))
                       stop("No linkage groups have been formed.")
+                    nchrom <- length(private$LG)
                     if(is.null(chrom)) # compute distances for all chromosomes
                       chrom <- 1:nchrom
                     else if(!is.vector(chrom) || chrom < 0 || chrom > length(private$LG) || round(chrom) != chrom)
@@ -979,6 +983,8 @@ Please select one of the following:
                       private$para <- list(OPGP=replicate(nchrom, NA, simplify=FALSE),rf_p=replicate(nchrom, NA, simplify=FALSE),
                                            rf_m=replicate(nchrom, NA, simplify=FALSE),ep=replicate(nchrom, NA, simplify=FALSE),
                                            loglik=replicate(nchrom, NA, simplify=FALSE))
+                    if(is.null(private$LG_map))
+                      private$LG_map <- vector(mode="list", length = nchrom)
                     for(i in chrom){
                       cat("Linkage Group: ",i,"\n")
                       indx_chrom <- private$LG[[i]]
@@ -1002,26 +1008,27 @@ Please select one of the following:
                       }
                       private$para$ep[i]       <- list(MLE$ep)
                       private$para$loglik[i]   <- list(MLE$loglik)
+                      private$LG_map[[i]]      <- private$LG[[i]]
                     }
+                    ## Create summary of results:
+                    MI <- unlist(lapply(private$LG_map, function(x) sum(x %in% private$group$MI)))
+                    PI <- unlist(lapply(private$LG_map, function(x) sum(x %in% private$group$PI)))
+                    BI <- unlist(lapply(private$LG_map, function(x) sum(x %in% private$group$BI)))
+                    TOTAL <- unlist(lapply(private$LG_map, length))
+                    tab <- cbind(LG=1:nchrom,MI,PI,BI,TOTAL)
+                    DIST_MAT <- extendVec(unlist(lapply(private$para$rf_m, function(x) round(sum(mfun(x, fun="haldane", centiM = T)),2))), nrow(tab))
+                    DIST_PAT <- extendVec(unlist(lapply(private$para$rf_p, function(x) round(sum(mfun(x, fun="haldane", centiM = T)),2))), nrow(tab))
+                    ERR <- extendVec(round(unlist(private$para$ep),5), nrow(tab))
+                    tab <- cbind(tab,DIST_MAT,DIST_PAT,ERR)
+                    tab <- addmargins(tab, margin = 1, FUN=function(x) sum(x, na.rm=T))
+                    rownames(tab) <- NULL
+                    tab[nrow(tab), 1] <- "TOTAL"
+                    if(ncol(tab) > 7)
+                      tab[nrow(tab),8] <- ""
+                    private$summaryInfo$map <- list("Linkage Map Summaries:\n", tab)
+                    self$print(what = "map")
+                    return(invisible(NULL))
                   }
-                  ## Create summary of results:
-                  MI <- unlist(lapply(private$LG, function(x) sum(x %in% private$group$MI)))
-                  PI <- unlist(lapply(private$LG, function(x) sum(x %in% private$group$PI)))
-                  BI <- unlist(lapply(private$LG, function(x) sum(x %in% private$group$BI)))
-                  TOTAL <- unlist(lapply(private$LG, length))
-                  tab <- cbind(LG=1:(length(private$LG)),MI,PI,BI,TOTAL)
-                  DIST_MAT <- extendVec(unlist(lapply(private$para$rf_m, function(x) round(sum(mfun(x, fun="haldane", centiM = T)),2))), nrow(tab))
-                  DIST_PAT <- extendVec(unlist(lapply(private$para$rf_p, function(x) round(sum(mfun(x, fun="haldane", centiM = T)),2))), nrow(tab))
-                  ERR <- extendVec(round(unlist(private$para$ep),5), nrow(tab))
-                  tab <- cbind(tab,DIST_MAT,DIST_PAT,ERR)
-                  tab <- addmargins(tab, margin = 1, FUN=function(x) sum(x, na.rm=T))
-                  rownames(tab) <- NULL
-                  tab[nrow(tab), 1] <- "TOTAL"
-                  if(ncol(tab) > 7)
-                    tab[nrow(tab),8] <- ""
-                  private$summaryInfo$map <- list("Linkage Map Summaries:\n", tab)
-                  self$print(what = "map")
-                  return(invisible(NULL))
                 },
                 ## Ratio of alleles for heterozygous genotype calls (observed vs expected)
                 # Slightly different than the one in RA class
@@ -1034,7 +1041,7 @@ Please select one of the following:
                 #  cometPlot(ref, alt, model=model, alpha=alpha, filename=filename, cex=cex, maxdepth=maxdepth)
                 #},
                 #### Write output
-                writeLM = function(file, direct = "./", LG = NULL){
+                writeLM = function(file, direct = "./", LG = NULL, what = NULL){
                   ## do some checks
                   if(private$noFam == 1){
                     if(!is.vector(file) || !is.character(file) || length(file) != 1)
@@ -1046,18 +1053,53 @@ Please select one of the following:
                     outfile = file.path(outpath,filename)
                     if(!file.create(outfile,showWarnings = F))
                       stop("Unable to create output file.")
+                    ## check for NULL what input
+                    if(is.null(what)){
+                      if(!is.null(private$LG_map)) what = "map"
+                      else if(!is.null(private$LG)) what = "LG-comb"
+                    }
                     ## Find out which LGs to write to file
-                    if(is.null(private$LG) && is.null(private$para))
-                      stop("No combined and linkage maps available to write to file.")
-                    if(!is.null(private$LG)){
+                    if(what == "map"){
+                      if(is.null(private$LG_map) && is.null(private$para))
+                        stop("No linkage maps available to write to file.")
+                      if(is.null(LG)){
+                        LGlist <- private$LG_map
+                        LG <- 1:length(private$LG_map)
+                      } else if(isValue(LG, type="pos_integer", minv=1, maxv=length(private$LG_map)))
+                          stop("LGs to write to file is invalid.")
+                      else
+                        LGlist <- private$LG_map[LG]
+                      if(length(unlist(LGlist)) == 0)
+                        stop("No maps have been computed for the specified linkage groups.")
+                      ## compute the information to go in file
+                      nLG = length(LGlist)
+                      LGno <- rep(LG, unlist(lapply(LGlist, length)))
+                      LGindx <- sequence(lapply(LGlist, unlist(length)))
+                      chrom <- private$chrom[unlist(LGlist)]
+                      pos <- private$pos[unlist(LGlist)]
+                      depth <- colMeans(private$ref[[1]][,unlist(LGlist)] + private$alt[[1]][,unlist(LGlist)])
+                      segType <- (c("BI","PI","PI","MI","MI","U"))[private$config[[1]][unlist(private$LG_map[LG])]]
+                      temp <- private$ref[[1]][,unlist(LGlist)] > 0 | private$alt[[1]][,unlist(LGlist)] > 0
+                      callrate <- colMeans(temp)
+                      rf_p <- unlist(lapply(private$para$rf_p[LG], function(y) {if(!is.na(y[1])) return(format(round(cumsum(c(0,y)),6),digits=6,scientific=F))} ))
+                      rf_m <- unlist(lapply(private$para$rf_m[LG], function(y) {if(!is.na(y[1])) return(format(round(cumsum(c(0,y)),6),digits=6,scientific=F))} ))
+                      ep <- format(rep(round(unlist(private$para$ep[LG]),8), unlist(lapply(LGlist, length))),digits=8,scientific=F)
+                      out <- list(LG=LGno, LG_POS=LGindx, CHROM=chrom, POS=pos, TYPE=segType, RF_PAT=rf_p, RF_MAT=rf_m,
+                                  ERR=ep, MEAN_DEPTH=depth, CALLRATE=callrate)
+                      ## write out file
+                      fwrite(out, file = outfile, sep="\t", nThread = 1)  
+                      cat(paste0("Linkage analysis results written to file:\nFilename:\t",filename)) 
+                      return(invisible(NULL))
+                    } else if(what == "LG-comb"){
+                      if(is.null(private$LG))
+                        stop("No combined linkage groups available to write to file.")
                       if(is.null(LG)){
                         LGlist <- private$LG
                         LG <- 1:length(private$LG)
-                      }
-                      else if(isValue(LG, type="pos_integer", minv=1, maxv=length(LG)))
+                      } else if(isValue(LG, type="pos_integer", minv=1, maxv=length(private$LG)))
                         stop("LGs to write to file is invalid.")
                       else
-                        LGlist <- private$LG[LG]
+                        LGlist <- private$LG_map[LG]
                       ## compute the information to go in file
                       nLG = length(LGlist)
                       LGno <- rep(LG, unlist(lapply(LGlist, length)))
@@ -1068,21 +1110,13 @@ Please select one of the following:
                       segType <- (c("BI","PI","PI","MI","MI","U"))[private$config[[1]][unlist(private$LG[LG])]]
                       temp <- private$ref[[1]][,unlist(LGlist)] > 0 | private$alt[[1]][,unlist(LGlist)] > 0
                       callrate <- colMeans(temp)
-                      if(!is.null(private$para)){
-                        rf_p <- unlist(lapply(private$para$rf_p[LG], function(y) format(round(cumsum(c(0,y)),6),digits=6,scientific=F)))
-                        rf_m <- unlist(lapply(private$para$rf_m[LG], function(y) format(round(cumsum(c(0,y)),6),digits=6,scientific=F)))
-                        ep <- format(rep(round(unlist(private$para$ep[LG]),8), unlist(lapply(LGlist, length))),digits=8,scientific=F)
-                        out <- list(LG=LGno, LG_POS=LGindx, CHROM=chrom, POS=pos, TYPE=segType, RF_PAT=rf_p, RF_MAT=rf_m,
-                                    ERR=ep, MEAN_DEPTH=depth, CALLRATE=callrate)
-                      } else
-                        out <- list(LG=LGno, LGPOS=LGindx, CHROM=chrom, POS=pos, TYPE=segType, MEAN_DEPTH=depth, CALLRATE=callrate)
+                      out <- list(LG=LGno, LGPOS=LGindx, CHROM=chrom, POS=pos, TYPE=segType, MEAN_DEPTH=depth, CALLRATE=callrate)
                       ## write out file
                       fwrite(out, file = outfile, sep="\t", nThread = 1)  
                       cat(paste0("Linkage analysis results written to file:\nFilename:\t",filename)) 
                       return(invisible(NULL))
-                    } else if(!is.null(private$para)){
-                      stop("Yet to be implemented")
-                    }
+                    } else
+                      stop("Invalid what input.")
                   }
                 }
                 ##############################################################

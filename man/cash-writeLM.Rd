@@ -4,7 +4,7 @@
 \alias{$writeLM}
 \title{FS method: Write linkage groups/maps to file}
 \usage{
-FSobj$writeLM(file, direct = "./", LG = NULL)
+FSobj$writeLM(file, direct = "./", LG = NULL, what = NULL)
 }
 \arguments{
 \item{file}{Character value giving the name of the file to write to.}
@@ -13,6 +13,9 @@ FSobj$writeLM(file, direct = "./", LG = NULL)
 
 \item{LG}{Integer vector giving the indices of the linkage groups to write. If \code{NULL}, the results for all the 
 linkage groups are returned.}
+
+\item{what}{Character vector specifying whether the combined linkage groups \code{"LG-comb"} are to be 
+returned or the linkage mapping results \code{"map"}.}
 }
 \value{
 The function returns a csv file with the rows representing the SNPs and the columns containing the linkage group and linkage map 
@@ -44,6 +47,9 @@ Method for writing results from a linkage analysis in GUSMap to a file.
 The linkage groups written to file are the combined linkage groups produced by \code{\link{$addBIsnps}} and
 ordered using \code{\link{$orderLG}}. If linkage maps are also computed using \code{\link{$computeMap}}, then 
 information regarding the parameters estimates for the maps are also returned.
+
+When \code{what = NULL}, the linkage mapping results computed using the \code{\link{$computeMap}} function are returned
+if they are available, otherwise the combined linkage groups information is returned.
 }
 \examples{
 ## Simulate some sequencing data
