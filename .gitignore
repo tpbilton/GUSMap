@@ -8,4 +8,4 @@ src/*.dll
 inst/doc
 config.status
 config.log
-Makevars
+src/Makevars
