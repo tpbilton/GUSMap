@@ -668,7 +668,7 @@ Please select one of the following:
                 #   return(invisible())
                 # },
                 ## Function for plotting linkage groups
-                plotLG = function(parent = "maternal", LG=NULL, mat="rf", filename=NULL, interactive=TRUE, what = NULL){
+                plotLG = function(parent = "maternal", LG=NULL, mat="rf", filename=NULL, interactive=TRUE, what = NULL, ...){
                   ## do some checks
                   if(!is.vector(mat) || !is.character(mat) || length(mat) != 1 || !(mat %in% c('rf','LOD')))
                     stop("Argument specifying which matrix to plot (argument 1) must be either 'rf' or 'LOD'")
@@ -687,6 +687,9 @@ Please select one of the following:
                     if(is.null(private$LG)) what = "LG-pts"
                     else what = "LG-comb"
                   }
+                  plot.arg <- list(...)
+                  if(is.null(plotly.arg$selfcontained))
+                    plotly.arg$selfcontained = FALSE
                   
                   if(private$noFam == 1){
                     ## Work out which LGs list to use
@@ -765,7 +768,7 @@ Please select one of the following:
                         if(!temp)
                           stop("Error in filename. Cannot create png")
                         else{
-                          htmlwidgets::saveWidget(p, paste0(filename,".html"))
+                          htmlwidgets::saveWidget(p, paste0(filename,".html"), selfcontained = plotly.arg$selfcontained)
                         }  
                       }
                       else 
@@ -773,8 +776,7 @@ Please select one of the following:
                       options(warn = storeWarn) 
                     }
                     else{
-                      temp_par <- par(no.readonly = TRUE)
-                      b_indx <- chrom.ind == b
+                      
                       if(!is.null(filename)){
                         temp <- file.create(paste0(filename,".png"))
                         if(!temp)
@@ -782,13 +784,16 @@ Please select one of the following:
                         else
                           png(paste0(filename,".png"), width=nn+1,height=nn+1)
                       }
+                      else
+                        temp_par <- par(no.readonly = TRUE)
                       par(mar=rep(0,4),oma=c(0,0,0,0), mfrow=c(1,1), xaxt='n',yaxt='n',bty='n',ann=F)
                       image(temprf, x=1:nn, y=1:nn, zlim=c(0,0.5), col=heat.colors(100))
                       abline(v=which(b_indx))
                       abline(h=which(b_indx))
                       if(!is.null(filename))
                         dev.off()
-                      par(temp_par)
+                      else
+                        par(temp_par)
                     }
                   }
                   else
