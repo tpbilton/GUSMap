@@ -22,7 +22,7 @@ Note: Some of the functions are coded in C and therefore an appropriate C compil
 
 ### Tutorials:
 
-The best way to understand how to sue GUSMap to construct linkage maps is to read through the [Introduction](http://htmlpreview.github.io/?https://github.com/tpbilton/GUSMap/blob/Development/vignettes/Introduction.html) Tutorial contained in the package.
+The best way to understand how to sue GUSMap to construct linkage maps is to read through the [Introduction](http://htmlpreview.github.io/?https://github.com/tpbilton/GUSMap/blob/Development/inst/doc//Introduction.html) Tutorial contained in the package.
 
 ### Development
 
