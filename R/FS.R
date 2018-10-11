@@ -928,7 +928,7 @@ Please select one of the following:
                   graphics::par(temp_par) # reset the plot margins
                 }, 
                 ## Function for computing the rf's for each chromosome 
-                computeMap = function(chrom=NULL, init_r=0.01, ep=0.001, method="optim", sexSpec=F, err=T, mapped=T, nThreads=1){
+                computeMap = function(chrom=NULL, init_r=0.01, ep=0.001, method="optim", sexSpec=FALSE, err=TRUE, multiErr=FALSE, mapped=TRUE, nThreads=1){
                   ## do some checks
                   if( !is.null(init_r) & !is.numeric(init_r) )
                     stop("Starting values for the recombination fraction needs to be a numeric vector or integer or a NULL object")
@@ -967,7 +967,7 @@ Please select one of the following:
                       private$para$OPGP <- tempOPGP
                       ## estimate the rf's
                       MLE <- rf_est_FS(init_r=init_r, ep=ep, ref=ref_temp, alt=alt_temp, OPGP=private$para$OPGP,
-                                         sexSpec=sexSpec, seqErr=err, method=method, nThreads=nThreads)
+                                         sexSpec=sexSpec, seqErr=err, method=method, nThreads=nThreads, multiErr=multiErr)
                       if(sexSpec){
                         private$para$rf_p[i]   <- list(MLE$rf_p)
                         private$para$rf_m[i]   <- list(MLE$rf_m)
@@ -1013,7 +1013,7 @@ Please select one of the following:
                       private$para$OPGP[i] <- tempOPGP
                       ## estimate the rf's
                       MLE <- rf_est_FS(init_r=init_r, ep=ep, ref=ref_temp, alt=alt_temp, OPGP=private$para$OPGP[i],
-                                       sexSpec=sexSpec, seqErr=err, method=method, nThreads=nThreads)
+                                       sexSpec=sexSpec, seqErr=err, method=method, nThreads=nThreads, multiErr=multiErr)
                       if(sexSpec){
                         private$para$rf_p[i]   <- list(MLE$rf_p)
                         private$para$rf_m[i]   <- list(MLE$rf_m)
