@@ -54,7 +54,7 @@
 #' @examples
 #' ## simulate some sequencing data
 #' set.seed(6745)
-#' config <- list(list(sample(c(1,2,4), size=30, replace=T)))
+#' config <- list(list(sample(c(1,2,4), size=30, replace=TRUE)))
 #' F1data <- simFS(0.01, config=config, meanDepth=10, nInd=50)
 #' 
 #' ## Compute 2-point recombination fractions
@@ -96,13 +96,13 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
     stop("There are some missing segregation types in the data.")
   
   ## Set up the Clusters
-  cl <- makeCluster(nClust)
-  registerDoSNOW(cl)
+  cl <- snow::makeCluster(nClust)
+  doSNOW::registerDoSNOW(cl)
 
   cat("\nComputing 2-point recombination fraction estimates ...\n")
   cat("Paternal informative SNPs\n")
   ## Paternal informative SNPs
-  rf.PI <- foreach(snp1 = iter(seq(length.out=nSnps_PI)), .combine=comb) %dopar% {
+  rf.PI <- foreach::foreach(snp1 = iterators::iter(seq(length.out=nSnps_PI)), .combine=comb) %dopar% {
     rf <- replicate(2,numeric(nSnps_PI),simplify=F)
     for(snp2 in seq_len(snp1-1)){
       ind = indx_PI[c(snp1,snp2)]
@@ -161,7 +161,7 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
   
   cat("Maternal informative SNPs\n")
   ## Maternal informative SNPs
-  rf.MI <- foreach(snp1 = iter(seq(length.out=nSnps_MI)), .combine=comb) %dopar% {
+  rf.MI <- foreach::foreach(snp1 = iterators::iter(seq(length.out=nSnps_MI)), .combine=comb) %dopar% {
     rf <- replicate(2,numeric(nSnps_MI),simplify=F)
     for(snp2 in seq_len(snp1-1)){
       ind = indx_MI[c(snp1,snp2)]
@@ -220,7 +220,7 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
   
   cat("Both informative SNPs\n")
   ### Both Informative
-  rf.BI <- foreach(snp1 = iter(seq(length.out=nSnps_BI)), .combine=comb) %dopar% {
+  rf.BI <- foreach::foreach(snp1 = iterators::iter(seq(length.out=nSnps_BI)), .combine=comb) %dopar% {
     rf <- replicate(2,numeric(nSnps_BI),simplify=F)
     for(snp2 in seq_len(snp1-1)){
       ind = indx_BI[c(snp1,snp2)]
@@ -317,7 +317,7 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
   
   cat("Paternal informative vs Both informative\n")
   ## Paternal and Informative SNPs
-  rf.PI.BI <- foreach(snp.ps = iter(seq(length.out=nSnps_PI)), .combine=comb) %dopar% {
+  rf.PI.BI <- foreach::foreach(snp.ps = iterators::iter(seq(length.out=nSnps_PI)), .combine=comb) %dopar% {
     rf <- replicate(2,numeric(nSnps_BI),simplify=F)
     for(snp.bi in 1:nSnps_BI){
       ind <- c(indx_PI[snp.ps],indx_BI[snp.bi])
@@ -370,7 +370,7 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
   
   cat("Maternal informative vs Both informative\n")
   ## Maternal and Informative SNPs
-  rf.MI.BI <- foreach(snp.mi = iter(seq(length.out=nSnps_MI)), .combine=comb) %dopar% {
+  rf.MI.BI <- foreach::foreach(snp.mi = iterators::iter(seq(length.out=nSnps_MI)), .combine=comb) %dopar% {
     rf <- replicate(2,numeric(nSnps_BI),simplify=F)
     for(snp.bi in 1:nSnps_BI){
       ind <- c(indx_MI[snp.mi],indx_BI[snp.bi])
@@ -423,7 +423,7 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
   ## For the non-informative computations
   ## Really done so that we can check that there is no miss identification of the group
   cat("Maternal informative vs Paternal informative\n")
-  rf.MI.PI <- foreach(snp.mi = iter(seq(length.out=nSnps_MI)), .combine=comb) %dopar% {
+  rf.MI.PI <- foreach::foreach(snp.mi = iterators::iter(seq(length.out=nSnps_MI)), .combine=comb) %dopar% {
     rf <- replicate(2,numeric(nSnps_PI),simplify=F)
     for(snp.pi in 1:nSnps_PI){
       ind <- c(indx_MI[snp.mi],indx_PI[snp.pi])
@@ -471,7 +471,7 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
     }
     return(rf)
   }
-  stopCluster(cl) 
+  snow::stopCluster(cl) 
   
   ## Build the rf and LOD matrices
   origOrder <- order(c(indx_BI,indx_PI,indx_MI))
@@ -502,13 +502,13 @@ rf_2pt_multi <- function(ref, alt, config, group, nClust, noFam, init_r = 0.25){
   nSnps_PI = length(indx_PI)
   
   ## Set up the Clusters
-  cl <- makeCluster(nClust)
-  registerDoSNOW(cl)
+  cl <- snow::makeCluster(nClust)
+  doSNOW::registerDoSNOW(cl)
   
   cat("\nComputing 2-point recombination fraction estimates ...\n")
   cat("Paternal informative SNPs\n")
   ## Paternal informative SNPs
-  rf.PI <- foreach(snp1 = iter(seq(length.out=nSnps_PI)), .combine=comb) %dopar% {
+  rf.PI <- foreach::foreach(snp1 = iterators::iter(seq(length.out=nSnps_PI)), .combine=comb) %dopar% {
     rf <- replicate(2,numeric(nSnps_PI),simplify=F)
     for(snp2 in seq_len(snp1-1)){
       ind = indx_PI[c(snp1,snp2)]
@@ -519,36 +519,36 @@ rf_2pt_multi <- function(ref, alt, config, group, nClust, noFam, init_r = 0.25){
       for(fam in wFam){
         if(all(configFam[fam,] %in% c(2,3))){
           OPGP1 <- c(5,5) + 2*(configFam[fam,]==3)
-          rf.est1 <- GUSMap:::rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
+          rf.est1 <- rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
                                         OPGP=list(OPGP1), epsilon=NULL, nThreads=1)
           OPGP2 <- c(5,6) + 2*(configFam[fam,]==3)
-          rf.est2 <- GUSMap:::rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
+          rf.est2 <- rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
                                         OPGP=list(OPGP2), epsilon=NULL, nThreads=1)
           OPGP[[fam]] <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik)), OPGP1, OPGP2)
         }
         else if(all(configFam[fam,]==1)){
           OPGP1 <- c(1,1)
-          rf.est1 <- GUSMap:::rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
+          rf.est1 <- rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
                                       OPGP=list(OPGP1), epsilon=NULL, nThreads=1)
           OPGP2 <- c(1,2)
-          rf.est2 <- GUSMap:::rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
+          rf.est2 <- rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
                                       OPGP=list(OPGP2), epsilon=NULL, nThreads=1)
           OPGP3 <- c(1,4)
-          rf.est3 <- GUSMap:::rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
+          rf.est3 <- rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
                                         OPGP=list(OPGP3), epsilon=NULL, nThreads=1)
           OPGP[[fam]] <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik,rf.est3$loglik)), OPGP1, OPGP2, OPGP3)
         }
         else if(any(configFam[fam,] == 1) & any(configFam[fam,] %in% c(2,3))){
           OPGP1 <- c(1,1) + 4*(configFam[fam,]==2) + 6*(configFam[fam,]==3)
-          rf.est1 <- GUSMap:::rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
+          rf.est1 <- rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
                                         OPGP=list(OPGP1), epsilon=NULL, nThreads=1)
           OPGP2 <- c(1,2) + 4*(configFam[fam,]==2) + 6*(configFam[fam,]==3)
-          rf.est2 <- GUSMap:::rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
+          rf.est2 <- rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
                                         OPGP=list(OPGP2), epsilon=NULL, nThreads=1)
           OPGP[[fam]] <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik)), OPGP1, OPGP2)
         }
       }
-      rf.est <- GUSMap:::rf_est_FS(init_r=init_r,ref=lapply(ref[wFam], function(x) x[,ind]),
+      rf.est <- rf_est_FS(init_r=init_r,ref=lapply(ref[wFam], function(x) x[,ind]),
                                    alt=lapply(alt[wFam], function(x) x[,ind]),
                                    OPGP=OPGP[wFam], epsilon=NULL, noFam=length(wFam), nThreads=1)
       rf[[1]][snp2] <- rf.est$rf
@@ -562,7 +562,7 @@ rf_2pt_multi <- function(ref, alt, config, group, nClust, noFam, init_r = 0.25){
   
   cat("Maternal informative SNPs\n")
   ## Maternal informative SNPs
-  rf.MI <- foreach(snp1 = iter(seq(length.out=nSnps_MI)), .combine=comb) %dopar% {
+  rf.MI <- foreach::foreach(snp1 = iterators::iter(seq(length.out=nSnps_MI)), .combine=comb) %dopar% {
     rf <- replicate(2,numeric(nSnps_MI),simplify=F)
     for(snp2 in seq_len(snp1-1)){
       ind = indx_MI[c(snp1,snp2)]
@@ -573,36 +573,36 @@ rf_2pt_multi <- function(ref, alt, config, group, nClust, noFam, init_r = 0.25){
       for(fam in wFam){
         if(all(configFam[fam,] %in% c(4,5))){
           OPGP1 <- c(9,9) + 2*(configFam[fam,]==5)
-          rf.est1 <- GUSMap:::rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
+          rf.est1 <- rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
                                         OPGP=list(OPGP1), epsilon=NULL, nThreads=1)
           OPGP2 <- c(9,10) + 2*(configFam[fam,]==5)
-          rf.est2 <- GUSMap:::rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
+          rf.est2 <- rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
                                         OPGP=list(OPGP2), epsilon=NULL, nThreads=1)
           OPGP[[fam]] <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik)), OPGP1, OPGP2)
         }
         else if(all(configFam[fam,]==1)){
           OPGP1 <- c(1,1)
-          rf.est1 <- GUSMap:::rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
+          rf.est1 <- rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
                                         OPGP=list(OPGP1), epsilon=NULL, nThreads=1)
           OPGP2 <- c(1,2)
-          rf.est2 <- GUSMap:::rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
+          rf.est2 <- rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
                                         OPGP=list(OPGP2), epsilon=NULL, nThreads=1)
           OPGP3 <- c(1,4)
-          rf.est3 <- GUSMap:::rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
+          rf.est3 <- rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
                                         OPGP=list(OPGP3), epsilon=NULL, nThreads=1)
           OPGP[[fam]] <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik,rf.est3$loglik)), OPGP1, OPGP2, OPGP3)
         }
         else if(any(configFam[fam,] == 1) & any(configFam[fam,] %in% c(4,5))){
           OPGP1 <- c(1,1) + 8*(configFam[fam,]==4) + 10*(configFam[fam,]==5)
-          rf.est1 <- GUSMap:::rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
+          rf.est1 <- rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
                                         OPGP=list(OPGP1), epsilon=NULL, nThreads=1)
           OPGP2 <- c(1 + 8*(configFam[fam,1]==4) + 10*(configFam[fam,1]==5),3 + 7*(configFam[fam,2]==4) + 9*(configFam[fam,2]==5))
-          rf.est2 <- GUSMap:::rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
+          rf.est2 <- rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
                                         OPGP=list(OPGP2), epsilon=NULL, nThreads=1)
           OPGP[[fam]] <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik)), OPGP1, OPGP2)
         }
       }
-      rf.est <- GUSMap:::rf_est_FS(init_r=init_r,ref=lapply(ref[wFam], function(x) x[,ind]),
+      rf.est <- rf_est_FS(init_r=init_r,ref=lapply(ref[wFam], function(x) x[,ind]),
                                    alt=lapply(alt[wFam], function(x) x[,ind]),
                                    OPGP=OPGP[wFam], epsilon=NULL, noFam=length(wFam), nThreads=1)
       rf[[1]][snp2] <- rf.est$rf
@@ -616,7 +616,7 @@ rf_2pt_multi <- function(ref, alt, config, group, nClust, noFam, init_r = 0.25){
   
   cat("Both informative SNPs\n")
   ### Both Informative
-  rf.BI <- foreach(snp1 = iter(seq(length.out=nSnps_BI)), .combine=comb) %dopar% {
+  rf.BI <- foreach::foreach(snp1 = iterators::iter(seq(length.out=nSnps_BI)), .combine=comb) %dopar% {
     rf <- replicate(2,numeric(nSnps_BI),simplify=F)
     for(snp2 in seq_len(snp1-1)){
       ind = indx_BI[c(snp1,snp2)]
@@ -627,36 +627,36 @@ rf_2pt_multi <- function(ref, alt, config, group, nClust, noFam, init_r = 0.25){
       for(fam in wFam){
         if(all(configFam[fam,]==1)){
           OPGP1 <- c(1,1)
-          rf.est1 <- GUSMap:::rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
+          rf.est1 <- rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
                                         OPGP=list(OPGP1), epsilon=NULL, nThreads=1)
           OPGP2 <- c(1,2)
-          rf.est2 <- GUSMap:::rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
+          rf.est2 <- rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
                                         OPGP=list(OPGP2), epsilon=NULL, nThreads=1)
           OPGP3 <- c(1,4)
-          rf.est3 <- GUSMap:::rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
+          rf.est3 <- rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
                                         OPGP=list(OPGP3), epsilon=NULL, nThreads=1)
           OPGP[[fam]] <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik,rf.est3$loglik)), OPGP1, OPGP2, OPGP3)
         }
         else if( any(configFam[fam,]==1) & any(configFam[fam,]%in%c(2,3)) ){
           OPGP1 <- c(1,1) + 4*(configFam[fam,]==2) + 6*(configFam[fam,]==3)
-          rf.est1 <- GUSMap:::rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
+          rf.est1 <- rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
                                         OPGP=list(OPGP1), epsilon=NULL, nThreads=1)
           OPGP2 <- c(1,2) + 4*(configFam[fam,]==2) + 6*(configFam[fam,]==3)
-          rf.est2 <- GUSMap:::rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
+          rf.est2 <- rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
                                         OPGP=list(OPGP2), epsilon=NULL, nThreads=1)
           OPGP[[fam]] <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik)), OPGP1, OPGP2)
         }
         else if( any(configFam[fam,]==1) & any(configFam[fam,]%in%c(4,5)) ){
           OPGP1 <- c(1,1) + 8*(configFam[fam,]==4) + 10*(configFam[fam,]==5)
-          rf.est1 <- GUSMap:::rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
+          rf.est1 <- rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
                                         OPGP=list(OPGP1), epsilon=NULL, nThreads=1)
           OPGP2 <- c(1 + 8*(configFam[fam,1]==4) + 10*(configFam[fam,1]==5),3 + 7*(configFam[fam,2]==4) + 9*(configFam[fam,2]==5))
-          rf.est2 <- GUSMap:::rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
+          rf.est2 <- rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
                                         OPGP=list(OPGP2), epsilon=NULL, nThreads=1)
           OPGP[[fam]] <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik)), OPGP1, OPGP2)
         }
       }
-      rf.est <- GUSMap:::rf_est_FS(init_r=init_r,ref=lapply(ref[wFam], function(x) x[,ind]),
+      rf.est <- rf_est_FS(init_r=init_r,ref=lapply(ref[wFam], function(x) x[,ind]),
                                    alt=lapply(alt[wFam], function(x) x[,ind]),
                                    OPGP=OPGP[wFam], epsilon=NULL, noFam=length(wFam), nThreads=1)
       rf[[1]][snp2] <- rf.est$rf
@@ -670,7 +670,7 @@ rf_2pt_multi <- function(ref, alt, config, group, nClust, noFam, init_r = 0.25){
   
   cat("Paternal informative vs Both informative\n")
   ## Paternal and Informative SNPs
-  rf.PI.BI <- foreach(snp.pi = iter(seq(length.out=nSnps_PI)), .combine=comb) %dopar% {
+  rf.PI.BI <- foreach::foreach(snp.pi = iterators::iter(seq(length.out=nSnps_PI)), .combine=comb) %dopar% {
     rf <- replicate(2,numeric(nSnps_BI),simplify=F)
     for(snp.bi in 1:nSnps_BI){
       ind <- c(indx_PI[snp.pi],indx_BI[snp.bi])
@@ -681,27 +681,27 @@ rf_2pt_multi <- function(ref, alt, config, group, nClust, noFam, init_r = 0.25){
       for(fam in wFam){
         if(all(configFam[fam,]==1)){
           OPGP1 <- c(1,1)
-          rf.est1 <- GUSMap:::rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
+          rf.est1 <- rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
                                         OPGP=list(OPGP1), epsilon=NULL, nThreads=1)
           OPGP2 <- c(1,2)
-          rf.est2 <- GUSMap:::rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
+          rf.est2 <- rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
                                         OPGP=list(OPGP2), epsilon=NULL, nThreads=1)
           OPGP3 <- c(1,4)
-          rf.est3 <- GUSMap:::rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
+          rf.est3 <- rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
                                         OPGP=list(OPGP3), epsilon=NULL, nThreads=1)
           OPGP[[fam]] <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik,rf.est3$loglik)), OPGP1, OPGP2, OPGP3)
         }
         else if(any(configFam[fam,] == 1) & any(configFam[fam,] %in% c(2,3))){
           OPGP1 <- c(1,1) + 4*(configFam[fam,]==2) + 6*(configFam[fam,]==3)
-          rf.est1 <- GUSMap:::rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
+          rf.est1 <- rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
                                         OPGP=list(OPGP1), epsilon=NULL, nThreads=1)
           OPGP2 <- c(1,2) + 4*(configFam[fam,]==2) + 6*(configFam[fam,]==3)
-          rf.est2 <- GUSMap:::rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
+          rf.est2 <- rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
                                         OPGP=list(OPGP2), epsilon=NULL, nThreads=1)
           OPGP[[fam]] <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik)), OPGP1, OPGP2)
         }
       }
-      rf.est <- GUSMap:::rf_est_FS(init_r=init_r,ref=lapply(ref[wFam], function(x) x[,ind]),
+      rf.est <- rf_est_FS(init_r=init_r,ref=lapply(ref[wFam], function(x) x[,ind]),
                                    alt=lapply(alt[wFam], function(x) x[,ind]),
                                    OPGP=OPGP[wFam], epsilon=NULL, noFam=length(wFam), nThreads=1)
       rf[[1]][snp.bi] <- rf.est$rf
@@ -712,7 +712,7 @@ rf_2pt_multi <- function(ref, alt, config, group, nClust, noFam, init_r = 0.25){
   
   cat("Maternal informative vs Both informative\n")
   ## Maternal and Informative SNPs
-  rf.MI.BI <- foreach(snp.mi = iter(seq(length.out=nSnps_MI)), .combine=comb) %dopar% {
+  rf.MI.BI <- foreach::foreach(snp.mi = iterators::iter(seq(length.out=nSnps_MI)), .combine=comb) %dopar% {
     rf <- replicate(2,numeric(nSnps_BI),simplify=F)
     for(snp.bi in 1:nSnps_BI){
       ind <- c(indx_MI[snp.mi],indx_BI[snp.bi])
@@ -723,27 +723,27 @@ rf_2pt_multi <- function(ref, alt, config, group, nClust, noFam, init_r = 0.25){
       for(fam in wFam){
         if(all(configFam[fam,]==1)){
           OPGP1 <- c(1,1)
-          rf.est1 <- GUSMap:::rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
+          rf.est1 <- rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
                                         OPGP=list(OPGP1), epsilon=NULL, nThreads=1)
           OPGP2 <- c(1,2)
-          rf.est2 <- GUSMap:::rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
+          rf.est2 <- rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
                                         OPGP=list(OPGP2), epsilon=NULL, nThreads=1)
           OPGP3 <- c(1,4)
-          rf.est3 <- GUSMap:::rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
+          rf.est3 <- rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
                                         OPGP=list(OPGP3), epsilon=NULL, nThreads=1)
           OPGP[[fam]] <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik,rf.est3$loglik)), OPGP1, OPGP2, OPGP3)
         }
         else if(any(configFam[fam,] == 1) & any(configFam[fam,] %in% c(4,5))){
           OPGP1 <- c(1,1) + 8*(configFam[fam,]==4) + 10*(configFam[fam,]==5)
-          rf.est1 <- GUSMap:::rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
+          rf.est1 <- rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
                                         OPGP=list(OPGP1), epsilon=NULL, nThreads=1)
           OPGP2 <- c(1 + 8*(configFam[fam,1]==4) + 10*(configFam[fam,1]==5),3 + 7*(configFam[fam,2]==4) + 9*(configFam[fam,2]==5))
-          rf.est2 <- GUSMap:::rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
+          rf.est2 <- rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
                                         OPGP=list(OPGP2), epsilon=NULL, nThreads=1)
           OPGP[[fam]] <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik)), OPGP1, OPGP2)
         }
       }
-      rf.est <- GUSMap:::rf_est_FS(init_r=init_r,ref=lapply(ref[wFam], function(x) x[,ind]),
+      rf.est <- rf_est_FS(init_r=init_r,ref=lapply(ref[wFam], function(x) x[,ind]),
                                     alt=lapply(alt[wFam], function(x) x[,ind]),
                                     OPGP=OPGP[wFam], epsilon=NULL, noFam=length(wFam), nThreads=1)
       rf[[1]][snp.bi] <- rf.est$rf
@@ -755,7 +755,7 @@ rf_2pt_multi <- function(ref, alt, config, group, nClust, noFam, init_r = 0.25){
   ## For the non-informative computations
   ## Really done so that we can check that there is no miss identification of the group
   cat("Maternal informative vs Paternal informative\n")
-  rf.MI.PI <- foreach(snp.mi = iter(seq(length.out=nSnps_MI)), .combine=comb) %dopar% {
+  rf.MI.PI <- foreach::foreach(snp.mi = iterators::iter(seq(length.out=nSnps_MI)), .combine=comb) %dopar% {
     rf <- replicate(2,numeric(nSnps_PI),simplify=F)
     for(snp.pi in 1:nSnps_PI){
       ind = c(indx_MI[snp.mi],indx_PI[snp.pi])
@@ -765,14 +765,14 @@ rf_2pt_multi <- function(ref, alt, config, group, nClust, noFam, init_r = 0.25){
       ## Work out the phase
       for(fam in wFam){
         OPGP1 <- c(5,5) + 2*(configFam[fam,] %in% c(3,5))
-        rf.est1 <- GUSMap:::rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
+        rf.est1 <- rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
                                       OPGP=list(OPGP1), epsilon=NULL, nThreads=1)
         OPGP2 <- c(5,6) + 2*(configFam[fam,] %in% c(3,5))
-        rf.est2 <- GUSMap:::rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
+        rf.est2 <- rf_est_FS(init_r=init_r,ref=list(ref[[fam]][,ind]),alt=list(alt[[fam]][,ind]),
                                       OPGP=list(OPGP2), epsilon=NULL, nThreads=1)
         OPGP[[fam]] <- switch(which.min(c(rf.est1$loglik,rf.est2$loglik)), OPGP1, OPGP2)
       }
-      rf.est <- GUSMap:::rf_est_FS(init_r=init_r,ref=lapply(ref[wFam], function(x) x[,ind]),
+      rf.est <- rf_est_FS(init_r=init_r,ref=lapply(ref[wFam], function(x) x[,ind]),
                                    alt=lapply(alt[wFam], function(x) x[,ind]),
                                    OPGP=OPGP[wFam], epsilon=NULL, noFam=length(wFam), nThreads=1)
       rf[[1]][snp.pi] <- rf.est$rf
@@ -782,7 +782,7 @@ rf_2pt_multi <- function(ref, alt, config, group, nClust, noFam, init_r = 0.25){
   }
   
   #rf.MI.PI <- replicate(2, matrix(NA, nrow=nSnps_MI, ncol=nSnps_PI),simplify=FALSE)
-  stopCluster(cl) 
+  snow::topCluster(cl) 
   
   ## Build the rf and LOD matrices
   origOrder <- order(c(indx_BI,indx_PI,indx_MI))
@@ -819,7 +819,7 @@ rf_est_FS_2pt <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
       para <- GUSbase::logit2(init_r)
 
     ## Find MLE
-    optim.MLE <- optim(para, fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err,
+    optim.MLE <- stats::optim(para, fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err,
                        method="BFGS", 
                        ref=ref,alt=alt,bcoef_mat=bcoef_mat,Kab=Kab,
                        nInd=nInd,nSnps=nSnps,OPGP=OPGP,noFam=noFam,

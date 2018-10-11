@@ -41,7 +41,7 @@ the user will be prompted to input which parental line to merge the linkage grou
 \examples{
 ## simulate sequencing data
 set.seed(8932)
-config <- list(replicate(2,sample(c(1,2,4), size=30, replace=T), simplify = FALSE))
+config <- list(replicate(2,sample(c(1,2,4), size=30, replace=TRUE), simplify = FALSE))
 F1data <- simFS(0.01, config=config, meanDepth=10, nInd=50)
 
 ## Compute 2-point recombination fractions
@@ -55,7 +55,7 @@ F1data$mergeLG(LG = c(1,2))
 ## create paternal and maternal linkage groups
 F1data$createLG()
 ## merge linkage groups 1 and 3
-F1data$mergeLG(LG = c(1,3))
+F1data$mergeLG(LG = c(1,3), mergeTo="paternal")
 }
 \seealso{
 \code{\link{FS}}

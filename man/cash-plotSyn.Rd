@@ -18,7 +18,7 @@ is from the combined linkage groups obtained using \code{\link{$plotSyn}} and or
 \examples{
 ## Simulate some sequencing data
 set.seed(6745)
-config <- list(replicate(2,sample(c(1,2,4), size=30, replace=T), simplify=FALSE))
+config <- list(replicate(2,sample(c(1,2,4), size=30, replace=TRUE), simplify=FALSE))
 F1data <- simFS(0.01, config=config, meanDepth=10, nInd=50)
 ## Compute 2-point recombination fractions
 F1data$rf_2pt()

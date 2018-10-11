@@ -76,11 +76,11 @@
 #' config <- list(list(c(2,1,1,4,2,4,1,1,4,1,2,1)))
 #' F1data <- simFS(0.001, config=config, nInd=50, meanDepth=5)
 #' ## to look at the simulated data
-#' FAdata
+#' F1data
 #' 
 #' ## Simulate mulitple families and chromosomes
-#' config <- list(replicate(2, sample(c(1,2,4), size=10, replace=T, prob=c(1,2,2)), simplify = F),
-#' replicate(2, sample(c(1,2,4), size=10, replace=T, prob=c(1,2,2)), simplify = F))
+#' config <- list(replicate(2, sample(c(1,2,4), size=10, replace=TRUE, prob=c(1,2,2)), simplify = FALSE),
+#' replicate(2, sample(c(1,2,4), size=10, replace=TRUE, prob=c(1,2,2)), simplify = FALSE))
 #' F1data <- simFS(0.001, config=config, nInd=c(50,45), meanDepth=5)
 #' 
 #' @export simFS
@@ -96,7 +96,7 @@ simFS <- function(rVec_f, rVec_m=rVec_f, epsilon=0, config, nInd=100, meanDepth=
   if( !is.numeric(rVec_f) || !is.numeric(rVec_m) || length(rVec_f) != 1 || length(rVec_m) != 1 || 
       any(rVec_f < 0) || any(rVec_m < 0) || any(rVec_f > 0.5) || any(rVec_m > 0.5) )
     stop("Recombination factions are required to be a numeric number between 0 and 0.5")
-  if( isValue(epsilon, type="pos_numeric", min=0, max=1, equal=FALSE) || length(epsilon) != 1)
+  if( isValue(epsilon, type="pos_numeric", minv=0, maxv=1, equal=FALSE) || length(epsilon) != 1)
     stop("Sequencing error parameter is not single numeric number between 0 and 1")
   if(!is.list(config) || length(config) != noFam)
     stop("Segregation information needs to be a list equal to the nunber of chromosomes.")
@@ -174,13 +174,14 @@ simFS <- function(rVec_f, rVec_m=rVec_f, epsilon=0, config, nInd=100, meanDepth=
        # 1: Simulate Depths
        depth <- matrix(0,nrow=nInd[fam], ncol=nSnps[[chr]])
        if(rd_dist=="NegBinom")
-         depth[which(!is.na(geno))] <- rnbinom(sum(!is.na(geno)),mu=meanDepth,size=2) 
+         depth[which(!is.na(geno))] <- stats::rnbinom(sum(!is.na(geno)),mu=meanDepth,size=2) 
        else   
-         depth[which(!is.na(geno))] <- rpois(sum(!is.na(geno)),meanDepth)
+         depth[which(!is.na(geno))] <- stats::rpois(sum(!is.na(geno)),meanDepth)
        # 2: simulate sequencing genotypes (with sequencing error rate of epsilon)
-       aCounts <- matrix(rbinom(nInd[fam]*nSnps[[chr]],depth,geno/2),ncol=nSnps[[chr]])
+       aCounts <- matrix(stats::rbinom(nInd[fam]*nSnps[[chr]],depth,geno/2),ncol=nSnps[[chr]])
        bCounts <- depth - aCounts
-       aCountsFinal <- matrix(rbinom(nInd[fam]*nSnps[[chr]],aCounts,prob=1-epsilon),ncol=nSnps[[chr]]) + matrix(rbinom(nInd[fam]*nSnps[[chr]],bCounts,prob=epsilon),ncol=nSnps[[chr]])
+       aCountsFinal <- matrix(stats::rbinom(nInd[fam]*nSnps[[chr]],aCounts,prob=1-epsilon),ncol=nSnps[[chr]]) + 
+         matrix(stats::rbinom(nInd[fam]*nSnps[[chr]],bCounts,prob=epsilon),ncol=nSnps[[chr]])
        SEQgeno <- aCountsFinal/depth
        SEQgeno[which(SEQgeno^2-SEQgeno<0)] <- 0.5
        SEQgeno <- 2* SEQgeno  ## GBS genotype call
@@ -255,7 +256,7 @@ simFS <- function(rVec_f, rVec_m=rVec_f, epsilon=0, config, nInd=100, meanDepth=
     nSnps <- length(indx)
   }
   
-  obj <- RA$new(
+  obj <- GUSbase::RA$new(
     list(genon = genon, ref = ref, alt = alt, chrom = chrom, pos = pos,
          SNP_Names = NULL, indID = 1:sum(nInd), nSnps = nSnps, nInd = lapply(as.list(nInd), as.integer), 
          gform = "simFS", AFrq = NULL, infilename="Simulated dataset")

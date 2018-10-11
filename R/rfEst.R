@@ -63,7 +63,7 @@
 #' #### Case 1: Compute linkage map from linkage groups
 #' ## Simulate some sequencing data
 #' set.seed(6745)
-#' config <- list(list(sample(c(1,2,4), size=30, replace=T)))
+#' config <- list(list(sample(c(1,2,4), size=30, replace=TRUE)))
 #' F1data <- simFS(0.01, config=config, meanDepth=10, nInd=50)
 #' ## Compute 2-point recombination fractions
 #' F1data$rf_2pt(nClust=1)
@@ -126,7 +126,7 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
       seqErr=!is.null(ep)
       
       ## Find MLE
-      optim.MLE <- optim(para,ll_fs_ss_mp_scaled_err,method="BFGS",control=optim.arg,
+      optim.MLE <- stats::optim(para,ll_fs_ss_mp_scaled_err,method="BFGS",control=optim.arg,
                          ref=ref,alt=alt,bcoef_mat=bcoef_mat,Kab=Kab,
                          nInd=nInd,nSnps=nSnps,OPGP=OPGP,ps=ps,ms=ms,npar=npar,noFam=noFam,
                          seqErr=!is.null(ep))
@@ -144,7 +144,7 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
         para <- c(para,GUSbase::logit(ep))
       
       ## Find MLE
-      optim.MLE <- optim(para, fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err,
+      optim.MLE <- stats::optim(para, fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err,
                          method="BFGS", control=optim.arg,
                          ref=ref,alt=alt,bcoef_mat=bcoef_mat,Kab=Kab,
                          nInd=nInd,nSnps=nSnps,OPGP=OPGP,noFam=noFam,
@@ -201,7 +201,7 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
         para <- c(para,GUSbase::logit(ep))
       
       ## Find MLE
-      optim.MLE <- optim(para,ll_fs_ss_mp_scaled_err,method="BFGS",control=optim.arg,
+      optim.MLE <- stats::optim(para,ll_fs_ss_mp_scaled_err,method="BFGS",control=optim.arg,
                          ref=ref,alt=alt,bcoef_mat=bcoef_mat,Kab=Kab,
                          nInd=nInd,nSnps=nSnps,OPGP=OPGP,ps=ps,ms=ms,npar=npar,noFam=noFam,
                          seqErr=seqErr,extra=ep)
@@ -219,7 +219,7 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
         para <- c(para,GUSbase::logit(ep))
       
       ## Find MLE
-      optim.MLE <- optim(para,ll_fs_mp_scaled_err,method="BFGS",control=optim.arg,
+      optim.MLE <- stats::optim(para,ll_fs_mp_scaled_err,method="BFGS",control=optim.arg,
                          ref=ref,alt=alt,bcoef_mat=bcoef_mat,Kab=Kab,
                          nInd=nInd,nSnps=nSnps,OPGP=OPGP,noFam=noFam,
                          seqErr=seqErr,nThreads=nThreads)
@@ -346,7 +346,7 @@ rf_est_FS_UP <- function(ref, alt, config, ep, method="optim", trace=F, nThreads
     
     if(nSnps > 2){
       ## Find MLE
-      optim.MLE <- optim(para,ll_fs_up_ss_scaled_err,method="BFGS",control=optim.arg,
+      optim.MLE <- stats::optim(para,ll_fs_up_ss_scaled_err,method="BFGS",control=optim.arg,
                          ref=ref,alt=alt,bcoef_mat=bcoef_mat,Kab=Kab,
                          nInd=nInd,nSnps=nSnps,config=config,ps=ps,ms=ms,npar=npar,
                          seqErr=seqErr,nThreads=nThreads)
@@ -366,14 +366,14 @@ rf_est_FS_UP <- function(ref, alt, config, ep, method="optim", trace=F, nThreads
     else if(nSnps == 2){
       ## If both SNPs are informative, need to use the Nelder-Mead to distinguish between the two sexes.
       if(all(config == 1)){
-        optim.MLE <- optim(para,ll_fs_up_ss_scaled_err,method="Nelder-Mead",control=optim.arg,
+        optim.MLE <- stats::optim(para,ll_fs_up_ss_scaled_err,method="Nelder-Mead",control=optim.arg,
                            ref=ref,alt=alt,bcoef_mat=bcoef_mat,Kab=Kab,
                            nInd=nInd,nSnps=nSnps,config=config,ps=ps,ms=ms,npar=npar,
                            seqErr=seqErr)
       }
       ## Otherwise, proceed as normal
       else{
-        optim.MLE <- optim(para,ll_fs_up_ss_scaled_err,method="BFGS",control=optim.arg,
+        optim.MLE <- stats::optim(para,ll_fs_up_ss_scaled_err,method="BFGS",control=optim.arg,
                            ref=ref,alt=alt,bcoef_mat=bcoef_mat,Kab=Kab,
                            nInd=nInd,nSnps=nSnps,config=config,ps=ps,ms=ms,npar=npar,
                            seqErr=seqErr)

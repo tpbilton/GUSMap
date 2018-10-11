@@ -137,7 +137,7 @@ makeFS <- function(RAobj, pedfile, family=NULL,
   nSnps <- FSobj$.__enclos_env__$private$nSnps
   
   ## sort out the pedigree
-  ped <- read.csv(pedfile, stringsAsFactors=F)
+  ped <- utils::read.csv(pedfile, stringsAsFactors=F)
   famInfo = list()
   ## work out how many families there are
   parents <- unique(ped[c("Mother","Father")])
@@ -326,17 +326,17 @@ makeFS <- function(RAobj, pedfile, family=NULL,
           return(NA)
         else if(config[x] == 1){
           exp_prob <- c(0.25 + K,0.5 - 2*K, 0.25 + K)
-          ctest <- suppressWarnings(chisq.test(c(nBB,nAB,nAA), p = exp_prob))
+          ctest <- suppressWarnings(stats::chisq.test(c(nBB,nAB,nAA), p = exp_prob))
           return(ifelse(ctest$p.value < filter$PVALUE, TRUE, FALSE))
         }
         else if(config[x] %in% c(2,4)){
           exp_prob <- c(K, 0.5 - 2*K, 0.5 + K)
-          ctest <- suppressWarnings(chisq.test(c(nBB,nAB,nAA), p = exp_prob))
+          ctest <- suppressWarnings(stats::chisq.test(c(nBB,nAB,nAA), p = exp_prob))
           return(ifelse(ctest$p.value < filter$PVALUE, TRUE, FALSE))
         }
         else if(config[x] %in% c(3,5)){
           exp_prob <- c(0.5 + K, 0.5 - 2*K, K)
-          ctest <- suppressWarnings(chisq.test(c(nBB,nAB,nAA), p = exp_prob))
+          ctest <- suppressWarnings(stats::chisq.test(c(nBB,nAB,nAA), p = exp_prob))
           return(ifelse(ctest$p.value < filter$PVALUE, TRUE, FALSE))
         }
       }
@@ -369,9 +369,9 @@ makeFS <- function(RAobj, pedfile, family=NULL,
           ## compute chiseq test for both loci types
           exp_prob_BI <- c(0.25 + K,0.5 - 2*K, 0.25 + K)
           exp_prob_SI <- c(K, 0.5 - 2*K, 0.5 + K)
-          ctest_BI <- suppressWarnings(chisq.test(c(nBB,nAB,nAA), p = exp_prob_BI))
-          ctest_SI_1 <- suppressWarnings(chisq.test(c(nBB,nAB,nAA), p = exp_prob_SI))
-          ctest_SI_2 <- suppressWarnings(chisq.test(c(nBB,nAB,nAA), p = rev(exp_prob_SI)))
+          ctest_BI <- suppressWarnings(stats::chisq.test(c(nBB,nAB,nAA), p = exp_prob_BI))
+          ctest_SI_1 <- suppressWarnings(stats::chisq.test(c(nBB,nAB,nAA), p = exp_prob_SI))
+          ctest_SI_2 <- suppressWarnings(stats::chisq.test(c(nBB,nAB,nAA), p = rev(exp_prob_SI)))
           ## do tests to see if we can infer type
           if( ctest_BI$p.value > filter$PVALUE & ctest_SI_1$p.value < filter$PVALUE & ctest_SI_2$p.value < filter$PVALUE )
             return(1)

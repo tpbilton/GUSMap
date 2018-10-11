@@ -1,15 +1,15 @@
 Package: GUSMap
 Version: 1.0.0
-Date: 2018-08-03
-Title: Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap)
+Date: 2018-10-11
+Title: Genotyping Uncertainty with Sequencing Data and Linkage Mapping (GUSMap)
 Authors@R: person("Timothy P.", "Bilton", role = c("aut", "cre"), email = "tbilton@maths.otago.ac.nz")
 Author: Timothy P. Bilton [aut, cre]
 Maintainer: Timothy P. Bilton <tbilton@maths.otago.ac.nz>
-Depends: R (>= 3.3.0), GUSbase, plotly
-Imports: R6, smacof, princurve (>= 2.0), Rdpack
+Depends: R (>= 3.3.0), GUSbase, plotly, foreach, doSNOW
+Imports: R6, smacof, princurve (>= 2.0), Rdpack, data.table, stats, grDevices, graphics, utils, snow, iterators
 RdMacros: Rdpack
 Description: Package for constructing linkage maps using outcrossed full-sib family populations that have been sequenced using next generation multiplexing sequencing methods.
-License: GPL-3
+License: GPL-3 | file LICENSE
 LazyData: true
 NeedsCompilation: yes
 RoxygenNote: 6.1.0

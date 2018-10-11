@@ -79,11 +79,11 @@ chromosome whitin each family must be the same (see the examples for an ideal of
 config <- list(list(c(2,1,1,4,2,4,1,1,4,1,2,1)))
 F1data <- simFS(0.001, config=config, nInd=50, meanDepth=5)
 ## to look at the simulated data
-FAdata
+F1data
 
 ## Simulate mulitple families and chromosomes
-config <- list(replicate(2, sample(c(1,2,4), size=10, replace=T, prob=c(1,2,2)), simplify = F),
-replicate(2, sample(c(1,2,4), size=10, replace=T, prob=c(1,2,2)), simplify = F))
+config <- list(replicate(2, sample(c(1,2,4), size=10, replace=TRUE, prob=c(1,2,2)), simplify = FALSE),
+replicate(2, sample(c(1,2,4), size=10, replace=TRUE, prob=c(1,2,2)), simplify = FALSE))
 F1data <- simFS(0.001, config=config, nInd=c(50,45), meanDepth=5)
 
 }

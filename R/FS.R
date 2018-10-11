@@ -106,7 +106,7 @@ FS <- R6Class("FS",
                       what <- c(what, "LG-comb")
                     if(!is.null(private$para))
                       what <- c(what, "map")
-                  } else if(!is.vector(what) || !is.character(what) || length(what) != 1 ||
+                  } else if(!is.vector(what) || !is.character(what) ||
                             any(!(what %in% c("data","LG-pts","LG-comb","map"))))
                     stop("Argument for what output to print is invalid")
                   ## printe the required output
@@ -121,7 +121,7 @@ FS <- R6Class("FS",
                         MI <- unlist(lapply(private$LG_mat, length))
                         PI <- unlist(lapply(private$LG_pat, length))
                         tab <- cbind(LG=1:(length(MI)+length(PI)),MI=c(MI,rep(0,length(PI))),PI=c(rep(0,length(MI)),PI))
-                        tab <- addmargins(tab, margin = 1)
+                        tab <- stats::addmargins(tab, margin = 1)
                         rownames(tab) <- NULL
                         tab[nrow(tab), 1] <- "TOTAL"
                         prmatrix(tab, rowlab = rep("",nrow(tab)), quote=F)
@@ -137,7 +137,7 @@ FS <- R6Class("FS",
                         BI <- unlist(lapply(private$LG, function(x) sum(x %in% private$group$BI)))
                         TOTAL <- unlist(lapply(private$LG, length))
                         tab <- cbind(LG=1:(length(private$LG)),MI,PI,BI,TOTAL)
-                        tab <- addmargins(tab, margin = 1)
+                        tab <- stats::addmargins(tab, margin = 1)
                         rownames(tab) <- NULL
                         tab[nrow(tab), 1] <- "TOTAL"
                         prmatrix(tab, rowlab = rep("",nrow(tab)), quote=F)
@@ -597,23 +597,29 @@ Please select one of the following:
                   return(invisible(NULL))
                 },
                 ## Function for ordering linkage groups
-                orderLG = function(chrom = NULL, mapfun = "haldane", weight="LOD2", ndim=30, spar=NULL){
+                orderLG = function(LG = NULL, mapfun = "haldane", weight="LOD2", ndim=30, spar=NULL, filename=NULL){
                   ## do some checks
                   if(is.null(private$LG))
                     stop("There are no combined linkage groups. Please use the $addBISNPs to create combined LGs")
-                  if(is.null(chrom))
-                    chrom <- 1:length(private$LG)
-                  else if(!is.vector(chrom) && !is.numeric(chrom) && any(chrom < 0) && chrom > length(private$LG))
-                    stop("Invalid chromosome input")
+                  if(is.null(LG))
+                    LG <- 1:length(private$LG)
+                  else if(!is.vector(LG) && !is.numeric(LG) && any(LG < 0) && LG > length(private$LG))
+                    stop("Invalid Linkage Group input")
                   if(!(mapfun %in% c("morgan","haldane","kosambi")))
                     stop("Unknown mapping function")
                   if(!(weight %in% c("LOD","LOD2","none")))
                      stop("Unknown weighting function")
-                  nChr = length(chrom)
-                  LG <- vector(mode='list', length=nChr)
+                  if(!is.null(filename) && (!is.vector(filename) || !is.character(filename) || length(filename) != 1))
+                    stop("Specified filename is invalid")
+                  if(!is.null(filename)){
+                    temp <- file.create(paste0(filename,"_LG",LG[1],".pdf"))
+                    if(!temp)
+                      stop("Error in filename. Cannot create pdf")
+                  }
+                  nChr = length(LG)
                   ## order the linkage groups
-                  for(chr in chrom){
-                    ind <- private$LG[[chr]]
+                  for(lg in LG){
+                    ind <- private$LG[[lg]]
                     ind_mi <- which(ind %in% private$group$MI)
                     ind_pi <- which(ind %in% private$group$PI)
                     ## set up the weighting matrix
@@ -634,15 +640,17 @@ Please select one of the following:
                     ## principal curve
                     pcurve <- princurve::principal_curve(MDS$conf, maxit = 150, spar = spar)
                     ## plot the results
-                    temp_par <- par(no.readonly=T)
-                    par(mfrow = c(1,2))
+                    if(is.null(filename)) temp_par <- par(no.readonly=T)
+                    else grDevices::pdf(paste0(filename,"_LG",lg,".pdf"), width=8, height=8)
+                    graphics::par(mfrow = c(1,2))
                     graphics::plot(MDS$conf[,1],MDS$conf[,2], ylab="Dimension 2", xlab="Dimension 1", type="n")
-                    text(MDS$conf, labels=ind)
-                    lines(pcurve)
+                    graphics::text(MDS$conf, labels=ind)
+                    graphics::lines(pcurve)
                     graphics::image(private$rf[ind,ind][pcurve$ord,pcurve$ord], axes=F)
-                    par(temp_par)
+                    if(is.null(filename)) graphics::par(temp_par)
+                    else grDevices::dev.off()
                     ## Set the new order
-                    private$LG[[chr]] <- ind[pcurve$ord]
+                    private$LG[[lg]] <- ind[pcurve$ord]
                   }
                   return(invisible(NULL))
                 },
@@ -687,7 +695,7 @@ Please select one of the following:
                     if(is.null(private$LG)) what = "LG-pts"
                     else what = "LG-comb"
                   }
-                  plot.arg <- list(...)
+                  plotly.arg <- list(...)
                   if(is.null(plotly.arg$selfcontained))
                     plotly.arg$selfcontained = FALSE
                   
@@ -748,7 +756,7 @@ Please select one of the following:
                             nrow=nn, ncol=nn)
                       ax <- list(visible=FALSE)
                       # suppress warnings  
-                      storeWarn<- getOption("warn")
+                      storeWarn <- getOption("warn")
                       options(warn = -1) 
                       ## produce the plotly plot
                       if(length(which(b_indx)) == 0){
@@ -782,18 +790,18 @@ Please select one of the following:
                         if(!temp)
                           stop("Error in filename. Cannot create png")
                         else
-                          png(paste0(filename,".png"), width=nn+1,height=nn+1)
+                          grDevices::png(paste0(filename,".png"), width=nn+1,height=nn+1)
                       }
                       else
-                        temp_par <- par(no.readonly = TRUE)
-                      par(mar=rep(0,4),oma=c(0,0,0,0), mfrow=c(1,1), xaxt='n',yaxt='n',bty='n',ann=F)
-                      image(temprf, x=1:nn, y=1:nn, zlim=c(0,0.5), col=heat.colors(100))
-                      abline(v=which(b_indx))
-                      abline(h=which(b_indx))
+                        temp_par <- graphics::par(no.readonly = TRUE)
+                      graphics::par(mar=rep(0,4),oma=c(0,0,0,0), mfrow=c(1,1), xaxt='n',yaxt='n',bty='n',ann=F)
+                      graphics::image(temprf, x=1:nn, y=1:nn, zlim=c(0,0.5), col=heat.colors(100))
+                      graphics::abline(v=which(b_indx))
+                      graphics::abline(h=which(b_indx))
                       if(!is.null(filename))
                         dev.off()
                       else
-                        par(temp_par)
+                        graphics::par(temp_par)
                     }
                   }
                   else
@@ -812,7 +820,8 @@ Please select one of the following:
   paternal: Add BI SNPs to PI LGs
   both:     Add BI SNPs to both MI and PI LGs")
                   
-                  temp_par <- par(no.readonly = TRUE) # save the current plot margins
+                  if(is.null(filename))
+                    temp_par <- par(no.readonly = TRUE) # save the current plot margins
                   
                   ## workout which SNPs to plot to plot
                   if(private$noFam == 1){
@@ -831,7 +840,8 @@ Please select one of the following:
                       plotLG(mat=private$LOD, LG=LG, filename=filename, names=names, chrS=chrS, lmai=lmai, chrom=T, type="LOD")
                     else
                       stop("Matrix to be plotted not found.") ## shouldn't get here
-                    par(temp_par) # reset the plot margins
+                    if(is.null(filename))
+                      graphics::par(temp_par) # reset the plot margins
                     return(invisible())
                   }
                   else{
@@ -873,8 +883,8 @@ Please select one of the following:
                   ellipseEq_neg <- function(x) c2 - sqrt(b^2*(1-round((x-c1)^2/a^2,7)))
                   mapDist = lapply(private$para$rf_p[LG],mfun, fun=fun, centi=TRUE)
                   yCoor = max(unlist(lapply(mapDist,sum)))
-                  par(mar=rep(2,4), mfrow=c(1,1))
-                  plot(NULL,NULL, ylim=c(yCoor+0.01*yCoor,-0.01*yCoor),xlim=c(0,0.25*(nLGs+1)), xaxt='n',bty='n',xlab="",ylab="")
+                  graphics::par(mar=rep(2,4), mfrow=c(1,1))
+                  graphics::plot(NULL,NULL, ylim=c(yCoor+0.01*yCoor,-0.01*yCoor),xlim=c(0,0.25*(nLGs+1)), xaxt='n',bty='n',xlab="",ylab="")
                   err = 0.05
                   ## plot each map for each linkage group
                   for(lg in 1:nLGs){
@@ -888,7 +898,7 @@ Please select one of the following:
                     c2=sum(mapDist[[lg]])+0.01*yCoor;
                     curve(ellipseEq_pos, from=cent-err,to=cent+err,add=T,col=col[lg])
                   }
-                  par(temp_par) # reset the plot margins
+                  graphics::par(temp_par) # reset the plot margins
                   #if(!is.null(names))
                   #  mtext(names, side=1, at=seq(0.25,0.25*nLGs,0.25))
                 },
@@ -904,18 +914,18 @@ Please select one of the following:
                   LGbreaks <- orgOrder[temp[-length(temp)]] + 0.5
                   chrBreaks <- which(diff(as.numeric(as.factor(private$chrom)))==1) + 0.5
                   ## plot the synteny plot
-                  temp_par <- par(no.readonly = TRUE) # save the current plot margins
-                  par(mfrow=c(1,1))
-                  plot(orgOrder,LGorder, pch=20,cex=0.8, xaxt="n", yaxt="n",ylab="Assembly Order", xlab="Linkage Group Order", 
+                  temp_par <- graphics::par(no.readonly = TRUE) # save the current plot margins
+                  graphics::par(mfrow=c(1,1))
+                  graphics::plot(orgOrder,LGorder, pch=20,cex=0.8, xaxt="n", yaxt="n",ylab="Assembly Order", xlab="Linkage Group Order", 
                        ylim=c(min(orgOrder),max(orgOrder)), xlim=c(min(LGorder), max(LGorder)), bty='n')
-                  abline(v=c(min(LGorder)-1,LGbreaks,max(LGorder)+1))
-                  abline(h=c(min(orgOrder)-1,chrBreaks,max(orgOrder)+1))
-                  abline(v=LGbreaks)
-                  mtext(text = unique(private$chrom[orgOrder]), side = 2, 
+                  graphics::abline(v=c(min(LGorder)-1,LGbreaks,max(LGorder)+1))
+                  graphics::abline(h=c(min(orgOrder)-1,chrBreaks,max(orgOrder)+1))
+                  graphics::abline(v=LGbreaks)
+                  graphics::mtext(text = unique(private$chrom[orgOrder]), side = 2, 
                         at = apply(cbind(c(min(orgOrder),chrBreaks),c(chrBreaks,max(orgOrder))),1,mean))
-                  mtext(text = 1:length(private$LG), side = 1, 
+                  graphics::mtext(text = 1:length(private$LG), side = 1, 
                         at = apply(cbind(c(min(LGorder),LGbreaks),c(LGbreaks,max(LGorder))),1,mean))
-                  par(temp_par) # reset the plot margins
+                  graphics::par(temp_par) # reset the plot margins
                 }, 
                 ## Function for computing the rf's for each chromosome 
                 computeMap = function(chrom=NULL, init_r=0.01, ep=0.001, method="optim", sexSpec=F, err=T, mapped=T, nThreads=1){
@@ -1025,7 +1035,7 @@ Please select one of the following:
                     DIST_PAT <- extendVec(unlist(lapply(private$para$rf_p, function(x) round(sum(mfun(x, fun="haldane", centiM = T)),2))), nrow(tab))
                     ERR <- extendVec(round(unlist(private$para$ep),5), nrow(tab))
                     tab <- cbind(tab,DIST_MAT,DIST_PAT,ERR)
-                    tab <- addmargins(tab, margin = 1, FUN=function(x) sum(x, na.rm=T))
+                    tab <- stats::addmargins(tab, margin = 1, FUN=function(x) sum(x, na.rm=T))
                     rownames(tab) <- NULL
                     tab[nrow(tab), 1] <- "TOTAL"
                     if(ncol(tab) > 7)

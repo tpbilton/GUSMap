@@ -43,7 +43,7 @@
 #' @seealso \code{\link{FS}}
 #' @examples 
 #' ## simulate sequencing data
-#' config <- list(replicate(2,sample(c(1,2,4), size=30, replace=T), simplify = FALSE))
+#' config <- list(replicate(2,sample(c(1,2,4), size=30, replace=TRUE), simplify = FALSE))
 #' F1data <- simFS(0.01, config=config, meanDepth=10, nInd=50)
 #' 
 #' ## Compute 2-point recombination fractions

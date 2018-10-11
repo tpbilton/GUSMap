@@ -23,7 +23,7 @@
 #' sequencing methods \insertCite{@see @bilton2018genetics1}{GUSMap}.
 #'
 #' \tabular{ll}{ Package: \tab GUSMap\cr Type: \tab Package\cr Version: \tab
-#' 1.0.0\cr Date: \tab 2018-09-10\cr License: \tab GPL 3\cr }
+#' 1.0.0\cr Date: \tab 2018-10-11\cr License: \tab GPL 3\cr }
 #'
 #' @name GUSMap-package
 #' @aliases GUSMap
@@ -39,6 +39,7 @@
 #' @importFrom GUSbase inv.logit
 #' @importFrom GUSbase logit2
 #' @importFrom GUSbase inv.logit2
+#' @import plotly foreach doSNOW
 NULL
 
 

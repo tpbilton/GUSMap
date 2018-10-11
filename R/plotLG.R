@@ -54,7 +54,7 @@
 #' @examples 
 #' ## Simulate some sequencing data
 #' set.seed(6745)
-#' config <- list(replicate(2, sample(c(1,2,4), size=30, replace=T), simplify=FALSE))
+#' config <- list(replicate(2, sample(c(1,2,4), size=30, replace=TRUE), simplify=FALSE))
 #' F1data <- simFS(0.01, config=config, meanDepth=10, nInd=50)
 #' ## Compute 2-point recombination fractions
 #' F1data$rf_2pt()
@@ -91,37 +91,37 @@ plotLG <- function(mat, LG, filename=NULL, names=NULL, chrS=2, lmai=2, chrom=T, 
   npixels <- length(chrom.ind)
   if(chrom){
     if(!is.null(filename))
-      png(filename,width=npixels+72*lmai,height=npixels,res=72)
-    par(mfrow=c(1,1), xaxt='n',yaxt='n',mai=c(0,lmai,0,0),bty='n',ann=F)
+      grDevices::png(filename,width=npixels+72*lmai,height=npixels,res=72)
+    graphics::par(mfrow=c(1,1), xaxt='n',yaxt='n',mai=c(0,lmai,0,0),bty='n',ann=F)
     ## what matrix to plot
     if(type == "rf")
-      image(1:npixels,1:npixels,mat,zlim=c(0,0.5),col=heat.colors(100))
+      graphics::image(1:npixels,1:npixels,mat,zlim=c(0,0.5),col=grDevices::heat.colors(100))
     else if (type == "LOD")
-      image(1:npixels,1:npixels,mat,zlim = c(0,50), 
-            col=colorRampPalette(rev(c("red","orange","yellow","white")), bias=5)(100))
+      graphics::image(1:npixels,1:npixels,mat,zlim = c(0,50), 
+            col=grDevices::colorRampPalette(rev(c("red","orange","yellow","white")), bias=5)(100))
     if(is.null(names))
-      mtext(paste("LG",1:length(LG),"  "),
-                  at=floor(apply(cbind(c(0,breaks),c(breaks,npixels)),1,median)),side=2, line=0,cex=chrS,las=1)
+      graphics::mtext(paste("LG",1:length(LG),"  "),
+                  at=floor(apply(cbind(c(0,breaks),c(breaks,npixels)),1,stats::median)),side=2, line=0,cex=chrS,las=1)
     else
-      mtext(names, at=floor(apply(cbind(c(0,breaks),c(breaks,npixels)),1,median)),side=2, line=0,cex=chrS,las=1)
-    abline(h=breaks)
-    abline(v=breaks)
+      graphics::mtext(names, at=floor(apply(cbind(c(0,breaks),c(breaks,npixels)),1,stats::median)),side=2, line=0,cex=chrS,las=1)
+    graphics::abline(h=breaks)
+    graphics::abline(v=breaks)
     if(!is.null(filename))
-      dev.off()
+      grDevices::dev.off()
   }
   else{
     npixels <- length(chrom.ind)
     if(!is.null(filename))
-      png(filename,width=npixels,height=npixels)
+      grDevices::png(filename,width=npixels,height=npixels)
     ## what matrix to plot
     if(type == "rf")
-      image(1:npixels,1:npixels,mat,zlim=c(0,0.5),col=heat.colors(100))
+      graphics::image(1:npixels,1:npixels,mat,zlim=c(0,0.5),col=grDevices::heat.colors(100))
     else if (type == "LOD")
-      image(1:npixels,1:npixels,mat,zlim = c(0,50), 
-            col=colorRampPalette(rev(c("red","orange","yellow","white")), bias=5)(100))
-    abline(h=breaks)
-    abline(v=breaks)
+      graphics::image(1:npixels,1:npixels,mat,zlim = c(0,50), 
+            col=grDevices::colorRampPalette(rev(c("red","orange","yellow","white")), bias=5)(100))
+    graphics::abline(h=breaks)
+    graphics::abline(v=breaks)
     if(!is.null(filename))
-      dev.off()
+      grDevices::dev.off()
   }
 }
