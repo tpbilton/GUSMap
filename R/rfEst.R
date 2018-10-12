@@ -64,7 +64,7 @@
 #' ## Simulate some sequencing data
 #' set.seed(6745)
 #' config <- list(list(sample(c(1,2,4), size=30, replace=TRUE)))
-#' F1data <- simFS(0.01, config=config, meanDepth=10, nInd=50)
+#' F1data <- simFS(0.01, config=config, meanDepth=10, nInd=50, epsilon=0.005)
 #' ## Compute 2-point recombination fractions
 #' F1data$rf_2pt(nClust=1)
 #' ## create and order linkage groups
@@ -79,7 +79,7 @@
 #' F1data$computeMap(mapped = FALSE)
 #' @aliases $computeMap
 
-rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP, noFam=as.integer(1)
+rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP, noFam=as.integer(1),
                       sexSpec=FALSE, seqErr=TRUE, multiErr=FALSE, trace=FALSE,
                       method = "optim", nThreads=1, ...){
   
@@ -151,7 +151,7 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP, noFam=as.integer(1)
                          method="BFGS", control=optim.arg,
                          ref=ref,alt=alt,bcoef_mat=bcoef_mat,Kab=Kab,
                          nInd=nInd,nSnps=nSnps,OPGP=OPGP,noFam=noFam,
-                         seqErr=seqErr,extra=ep,nThreads=nThreads)
+                         seqErr=seqErr,extra=ep,nThreads=nThreads,multiErr=multiErr)
     }
     # Print out the output from the optim procedure (if specified)
     if(trace){
@@ -166,11 +166,11 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP, noFam=as.integer(1)
     # work out what to return for the sequencing errors
     if(seqErr){
       if(sexSpec){
-        if(multiErr) epReturn <- GUSbase::inv.logit(optim.MLE$par[sum(npar) + 1:(2*nSnps)])
-        else         epReturn <- GUSbase::inv.logit(optim.MLE$par[sum(npar) + 1])
+        if(multiErr) epReturn <- list(GUSbase::inv.logit(optim.MLE$par[sum(npar) + 1:(2*nSnps)]))
+        else         epReturn <- list(GUSbase::inv.logit(optim.MLE$par[sum(npar) + 1]))
       } else{
-        if(multiErr) epReturn <- GUSbase::inv.logit(optim.MLE$par[nSnps:(2*nSnps-1)])
-        else         epReturn <- GUSbase::inv.logit(optim.MLE$par[nSnps])
+        if(multiErr) epReturn <- list(GUSbase::inv.logit(optim.MLE$par[nSnps:(2*nSnps-1)]))
+        else         epReturn <- list(GUSbase::inv.logit(optim.MLE$par[nSnps]))
       }
     }
     else epReturn <- ep
@@ -178,7 +178,7 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP, noFam=as.integer(1)
     if(trace & optim.MLE$convergence != 0)
       warning(paste0('Optimization failed to converge properly with error ',optim.MLE$convergence,'\n smallest MLE estimate is: ', round(min(optim.MLE$par),6)))
     # Return the results
-    return(rfReturn, ep=epReturn, loglik=-optim.MLE$value)
+    return(c(rfReturn, ep=epReturn, loglik=-optim.MLE$value))
   } else{ # EM algorithm approach
     ## Set up the parameter values
     temp.arg <- list(...)

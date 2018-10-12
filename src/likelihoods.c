@@ -88,7 +88,7 @@ SEXP ll_fs_scaled_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef_mat, SEX
   int index;
   double pKaa[nSnps_c * nInd_c];
   double pKbb[nSnps_c * nInd_c];
-  #pragma omp parallel for num_threads(nThreads_c)
+//  #pragma omp parallel for num_threads(nThreads_c) private(index, snp)
   for(ind = 0; ind < nInd_c; ind++){
     for(snp = 0; snp < nSnps_c; snp++){
       index = ind + snp*nInd_c;

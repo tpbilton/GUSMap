@@ -184,7 +184,7 @@ SEXP score_fs_scaled_multi_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef
   int index;
   double pKaa[nSnps_c * nInd_c];
   double pKbb[nSnps_c * nInd_c];
-  #pragma omp parallel for num_threads(nThreads_c)
+//  #pragma omp parallel for num_threads(nThreads_c) private(index, snp)
   for(ind = 0; ind < nInd_c; ind++){
     for(snp = 0; snp < nSnps_c; snp++){
       index = ind + snp*nInd_c;
@@ -202,7 +202,7 @@ SEXP score_fs_scaled_multi_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef
   #pragma omp parallel for reduction(+:llval) num_threads(nThreads_c) private(snp, snp_der)
   for(ind = 0; ind < nInd_c; ind++){
     int s1, s2;
-    double phi[4][nSnps_c], phi_prev[4][nSnps_c];
+    double phi[4][2*nSnps_c-1], phi_prev[4][2*nSnps_c-1];
     double alphaTilde[4], alphaDot[4], sum, sum_der, w_new, w_prev;
     double delta;
     
@@ -213,7 +213,7 @@ SEXP score_fs_scaled_multi_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef
       sum = sum + alphaDot[s1];
       alphaTilde[s1] = alphaDot[s1];
       // Compute the derivative for ep
-      phi_prev[s1][nSnps_c-1] = 0.25 * der_ep(pOPGP[0], ep_c, pref[ind], palt[ind], s1+1);
+      phi_prev[s1][nSnps_c-1] = 0.25 * der_ep(pOPGP[0], pep[0], pref[ind], palt[ind], s1+1);
     }
     
     // add contribution to likelihood
@@ -249,15 +249,15 @@ SEXP score_fs_scaled_multi_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef
         //sequencing error parameter
         sum_der = 0;
         for(s1 = 0; s1 < 4; s1++){
-          sum_der = sum_der + alphaTilde[s1] * der_ep(pOPGP[snp], ep_c, pref[ind + nInd_c*snp], palt[ind + nInd_c*snp], s2+1) * Tmat(s1, s2, pr[snp-1]);
+          sum_der = sum_der + alphaTilde[s1] * der_ep(pOPGP[snp], pep[snp], pref[ind + nInd_c*snp], palt[ind + nInd_c*snp], s2+1) * Tmat(s1, s2, pr[snp-1]);
         }
-        phi[s2][nSnps-1 + snp] = sum_der * 1/w_prev;
-        for(snp_der = nSnps_c-1; snp_der < 2*nSnps_c-1; snp_der++){
+        phi[s2][nSnps_c-1 + snp] = sum_der * 1/w_prev;
+        for(snp_der = 0; snp_der < snp; snp_der++){
           sum_der = 0;
           for(s1 = 0; s1 < 4; s1++){  
-            sum_der = phi_prev[s1][nSnps-1 + snp_der] * Tmat(s1, s2, pr[snp-1]);
+            sum_der = sum_der + phi_prev[s1][snp_der + nSnps_c-1] * Tmat(s1, s2, pr[snp-1]);
           }
-          phi[s2][nSnps-1 + nSnps_c-1] = sum_der * delta * 1/w_prev;
+          phi[s2][snp_der + nSnps_c-1] = sum_der * delta * 1/w_prev;
         }
       }
       // Add contribution to the likelihood
@@ -274,16 +274,8 @@ SEXP score_fs_scaled_multi_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef
       w_prev = w_new;
     }
     llval = llval + log(w_prev);
-    //Rprintf("Likelihood value: %f\n", llval);
     // add contributions to the score vector
-    for(snp_der = 0; snp_der < snp-1; snp_der++){
-      sum_der = 0;
-      for(s2 = 0; s2 < 4; s2++)
-        sum_der = sum_der + phi[s2][snp_der]/w_prev;
-      #pragma omp atomic
-      score_c[snp_der] += sum_der;
-    }
-    for(snp_der = nSnps_c-1; snp_der < 2*nSnps_c-1; snp_der++){
+    for(snp_der = 0; snp_der < 2*nSnps_c-1; snp_der++){
       sum_der = 0;
       for(s2 = 0; s2 < 4; s2++)
         sum_der = sum_der + phi[s2][snp_der]/w_prev;
@@ -297,7 +289,6 @@ SEXP score_fs_scaled_multi_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef
   }
   
   // Clean up and return likelihood value
-  //Rprintf("Likelihood value: %f\n", llval);
   UNPROTECT(1);
   return score;
 }

@@ -21,13 +21,13 @@
 
 #### Likelihood function is written in C in the file 'likelihoods.c'
 ## r.f.'s are equal
-ll_fs_mp_scaled_err <- function(para,ref,alt,bcoef_mat,Kab,OPGP,nInd,nSnps,noFam,seqErr,extra=0,nThreads=1){
+ll_fs_mp_scaled_err <- function(para,ref,alt,bcoef_mat,Kab,OPGP,nInd,nSnps,noFam,seqErr,extra=0,nThreads=1,multiErr=FALSE){
   ## untransform the parameters
   r <- GUSbase::inv.logit2(para[1:(nSnps-1)])
-  if(seqErr)
-    ep = GUSbase::inv.logit(para[nSnps:(2*nSnps-1)])
-  else
-    ep = rep(extra, length.out = nSnps)
+  if(seqErr){
+    if(multiErr)  ep = GUSbase::inv.logit(para[nSnps:(2*nSnps-1)])
+    else          ep = rep(GUSbase::inv.logit(para[nSnps]), length.out = nSnps)
+  } else ep = rep(extra, length.out = nSnps)
   ## define likelihood
   llval = 0
   for(fam in 1:noFam)

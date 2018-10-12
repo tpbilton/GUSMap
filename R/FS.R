@@ -1033,7 +1033,7 @@ Please select one of the following:
                     tab <- cbind(LG=1:nchrom,MI,PI,BI,TOTAL)
                     DIST_MAT <- extendVec(unlist(lapply(private$para$rf_m, function(x) round(sum(mfun(x, fun="haldane", centiM = T)),2))), nrow(tab))
                     DIST_PAT <- extendVec(unlist(lapply(private$para$rf_p, function(x) round(sum(mfun(x, fun="haldane", centiM = T)),2))), nrow(tab))
-                    ERR <- extendVec(round(unlist(private$para$ep),5), nrow(tab))
+                    ERR <- extendVec(round(unlist(lapply(private$para$ep,mean)),5), nrow(tab))
                     tab <- cbind(tab,DIST_MAT,DIST_PAT,ERR)
                     tab <- stats::addmargins(tab, margin = 1, FUN=function(x) sum(x, na.rm=T))
                     rownames(tab) <- NULL
