@@ -1128,7 +1128,7 @@ Please select one of the following:
                       out <- list(LG=LGno, LGPOS=LGindx, CHROM=chrom, POS=pos, TYPE=segType, MEAN_DEPTH=depth, CALLRATE=callrate)
                       ## write out file
                       data.table::fwrite(out, file = outfile, sep="\t", nThread = 1)  
-                      cat(paste0("Linkage analysis results written to file:\nFilename:\t",filename)) 
+                      cat(paste0("Linkage analysis results written to file:\nFilename:\t",filename,"\n")) 
                       return(invisible(NULL))
                     } else
                       stop("Invalid what input.")

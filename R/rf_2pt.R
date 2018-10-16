@@ -96,8 +96,8 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
     stop("There are some missing segregation types in the data.")
   
   ## Set up the Clusters
-  cl <- snow::makeCluster(nClust)
-  doSNOW::registerDoSNOW(cl)
+  cl <- parallel::makeCluster(nClust)
+  doParallel::registerDoParallel(cl)
 
   cat("\nComputing 2-point recombination fraction estimates ...\n")
   cat("Paternal informative SNPs\n")
@@ -122,36 +122,6 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
         rf[[1]][snp2] <- rf.est2$rf
         rf[[2]][snp2] <- rf.est2$LOD
       }
-      # rf.est1 <- optim(GUSbase::logit2(0.2), fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err, method="BFGS",
-      #                  ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-      #                  nInd=nInd,nSnps=nSnps,noFam=noFam,
-      #                  OPGP=list(as.integer(c(5,5) + 2*(config[ind]==3))), seqErr=err)
-      # rf.est2 <- optim(GUSbase::logit2(0.2), fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err, method="BFGS",
-      #                  ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-      #                  nInd=nInd,nSnps=nSnps,noFam=noFam,
-      #                  OPGP=list(as.integer(c(5,6) + 2*(config[ind]==3))), seqErr=err)
-      # rf.ind1 <- switch(which.max(c(rf.est1$loglik,rf.est2$loglik)), TRUE, FALSE)
-      # if(rf.ind1){
-      #   rf[[1]][snp2] <- rf.est1$rf
-      #   if(rf.est1$rf > 0.499)
-      #     rf[[2]][snp2] <- 0
-      #   else
-      #     rf[[2]][snp2] <- rf.est1$loglik + 
-      #                         ll_fs_mp_scaled_err(1000,ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-      #                                           nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,
-      #                                           OPGP=list(as.integer(c(5,5) + 2*(config[ind]==3))),
-      #                                           extra=rf.est2$ep)
-      # } else{
-      #   rf[[1]][snp2] <- rf.est2$rf
-      #   if(rf.est2$rf > 0.499)
-      #     rf[[2]][snp2] <- 0
-      #   else
-      #     rf[[2]][snp2] <- rf.est2$loglik + 
-      #                         ll_fs_mp_scaled_err(1000,ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-      #                                             nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,
-      #                                             OPGP=list(as.integer(c(5,6) + 2*(config[ind]==3))),
-      #                                             extra=rf.est2$ep)
-      # }
     }
     return(rf)
   }
@@ -167,9 +137,6 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
       ind = indx_MI[c(snp1,snp2)]
       ref2 <- list(ref[,ind])
       alt2 <- list(alt[,ind])
-      #bcoef_mat <- list(choose(ref2[[1]]+alt2[[1]],ref2[[1]]))
-      #Kab       <- list(bcoef_mat[[1]]*(1/2)^(ref2[[1]]+alt2[[1]]))
-      ## compute the rf's and LOD
       rf.est1 <- rf_est_FS_2pt(0.2, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(9,9) + 2*(config[ind]==5))), seqErr=err)
       rf.est2 <- rf_est_FS_2pt(0.2, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(9,10) + 2*(config[ind]==5))), seqErr=err)
       rf.ind1 <- switch(which.max(c(rf.est1$loglik,rf.est2$loglik)), TRUE, FALSE)
@@ -181,36 +148,6 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
         rf[[1]][snp2] <- rf.est2$rf
         rf[[2]][snp2] <- rf.est2$LOD
       }
-      #rf.est1 <- optim(GUSbase::logit2(0.2), fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err, method="BFGS",
-      #                  ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-      #                  nInd=nInd,nSnps=nSnps,noFam=noFam,
-      #                  OPGP=list(as.integer(c(9,9) + 2*(config[ind]==5))), seqErr=F)
-      # rf.est2 <- optim(GUSbase::logit2(0.2), fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err, method="BFGS",
-      #                  ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-      #                  nInd=nInd,nSnps=nSnps,noFam=noFam,
-      #                  OPGP=list(as.integer(c(9,10) + 2*(config[ind]==5))), seqErr=F)
-      # rf.ind1 <- switch(which.max(c(rf.est1$loglik,rf.est2$loglik)), TRUE, FALSE)
-      # if(rf.ind1){
-      #   rf[[1]][snp2] <- rf.est1$rf
-      #   if(rf.est1$rf > 0.499)
-      #     rf[[2]][snp2] <- 0
-      #   else
-      #     rf[[2]][snp2] <- rf.est1$loglik + 
-      #                         ll_fs_mp_scaled_err(1000,ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-      #                                             nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,
-      #                                             OPGP=list(as.integer(c(9,9) + 2*(config[ind]==5))),
-      #                                             extra=rf.est1$ep)
-      # } else{
-      #   rf[[1]][snp2] <- rf.est2$rf
-      #   if(rf.est2$rf > 0.499)
-      #     rf[[2]][snp2] <- 0
-      #   else
-      #     rf[[2]][snp2] <- rf.est2$loglik + 
-      #                         ll_fs_mp_scaled_err(1000,ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-      #                                             nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,
-      #                                             OPGP=list(as.integer(c(9,10) + 2*(config[ind]==5))),
-      #                                             extra=rf.est2$ep)
-      # }
     }
     return(rf)
   }  
@@ -226,44 +163,17 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
       ind = indx_BI[c(snp1,snp2)]
       ref2 <- list(ref[,ind])
       alt2 <- list(alt[,ind])
-      #bcoef_mat <- list(choose(ref2[[1]]+alt2[[1]],ref2[[1]]))
-      #Kab       <- list(bcoef_mat[[1]]*(1/2)^(ref2[[1]]+alt2[[1]]))
-      ## compute the rf's and LOD
       # phase 1
       temp1 <- rf_est_FS_2pt(0.1, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(1,1))), seqErr=err)
       temp2 <- rf_est_FS_2pt(0.4, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(1,1))), seqErr=err)
-      # temp1 <- optim(GUSbase::logit2(0.1), fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err, method="BFGS",
-      #                  ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-      #                  nInd=nInd,nSnps=nSnps,noFam=noFam,
-      #                  OPGP=list(as.integer(c(1,1))), seqErr=F)
-      # temp2 <- optim(GUSbase::logit2(0.4), fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err, method="BFGS",
-      #                ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-      #                nInd=nInd,nSnps=nSnps,noFam=noFam,
-      #                OPGP=list(as.integer(c(1,1))), seqErr=F)
-      rf.est1 <- switch(which.max(c(temp1$loglik,temp2$loglik)),temp1,temp2) 
+       rf.est1 <- switch(which.max(c(temp1$loglik,temp2$loglik)),temp1,temp2) 
       # phase 2
       temp1 <- rf_est_FS_2pt(0.1, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(1,2))), seqErr=err)
       temp2 <- rf_est_FS_2pt(0.4, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(1,2))), seqErr=err)
-      # temp1 <- optim(GUSbase::logit2(0.1), fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err, method="BFGS",
-      #                ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-      #                nInd=nInd,nSnps=nSnps,noFam=noFam,
-      #                OPGP=list(as.integer(c(1,2))), seqErr=F)
-      # temp2 <- optim(GUSbase::logit2(0.4), fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err, method="BFGS",
-      #                ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-      #                nInd=nInd,nSnps=nSnps,noFam=noFam,
-      #                OPGP=list(as.integer(c(1,2))), seqErr=F)
       rf.est2 <- switch(which.max(c(temp1$loglik,temp2$loglik)),temp1,temp2) 
       # phase 3
       temp1 <- rf_est_FS_2pt(0.1, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(1,4))), seqErr=err)
       temp2 <- rf_est_FS_2pt(0.4, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(1,4))), seqErr=err)
-      # temp1 <- optim(GUSbase::logit2(0.1), fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err, method="BFGS",
-      #                ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-      #                nInd=nInd,nSnps=nSnps,noFam=noFam,
-      #                OPGP=list(as.integer(c(1,4))), seqErr=F)
-      # temp2 <- optim(GUSbase::logit2(0.4), fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err, method="BFGS",
-      #                ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-      #                nInd=nInd,nSnps=nSnps,noFam=noFam,
-      #                OPGP=list(as.integer(c(1,4))), seqErr=F)
       rf.est4 <- switch(which.max(c(temp1$loglik,temp2$loglik)),temp1,temp2) 
       ## work out which is best
       rf.ind <- switch(which.max(c(rf.est1$loglik,rf.est2$loglik,rf.est4$loglik)), 1, 2, 3)
@@ -279,36 +189,7 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
         rf[[1]][snp2] <- rf.est4$rf
         rf[[2]][snp2] <- rf.est4$LOD
       }
-      #   if(rf.est1$rf > 0.499)
-      #     rf[[2]][snp2] <- 0
-      #   else
-      #     rf[[2]][snp2] <- rf.est1$loglik + 
-      #                         ll_fs_mp_scaled_err(1000,ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-      #                                             nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,
-      #                                             OPGP=list(as.integer(c(1,1))),
-      #                                             extra=rf.est1$ep)
-      # } else if(rf.ind == 2){
-      #   rf[[1]][snp2] <- rf.est2$rf
-      #   if(rf.est2$rf > 0.499)
-      #     rf[[2]][snp2] <- 0
-      #   else
-      #     rf[[2]][snp2] <- rf.est2$loglik + 
-      #                         ll_fs_mp_scaled_err(1000,ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-      #                                             nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,
-      #                                             OPGP=list(as.integer(c(1,2))),
-      #                                             extra=rf.est2$ep)
-      # } else{
-      #   rf[[1]][snp2] <- rf.est4$rf
-      #   if(rf.est4$rf > 0.499)
-      #     rf[[2]][snp2] <- 0
-      #   else
-      #     rf[[2]][snp2] <- rf.est4$loglik + 
-      #                         ll_fs_mp_scaled_err(1000,ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-      #                                             nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,
-      #                                             OPGP=list(as.integer(c(1,4))),
-      #                                             extra=rf.est4$ep)
-      # }
-    }
+     }
     return(rf)
   }
   for(i in 1:2){
@@ -323,19 +204,9 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
       ind <- c(indx_PI[snp.ps],indx_BI[snp.bi])
       ref2 <- list(ref[,ind])
       alt2 <- list(alt[,ind])
-      #bcoef_mat <- list(choose(ref2[[1]]+alt2[[1]],ref2[[1]]))
-      #Kab       <- list(bcoef_mat[[1]]*(1/2)^(ref2[[1]]+alt2[[1]]))
       ## compute the rf's and LOD
       rf.est1 <- rf_est_FS_2pt(0.2, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(5,1) + 2*c(config[ind[[1]]]==3,0))), seqErr=err)
       rf.est2 <- rf_est_FS_2pt(0.2, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(5,2) + 2*c(config[ind[[1]]]==3,0))), seqErr=err)
-      # rf.est1 <- optim(GUSbase::logit2(0.2), fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err, method="BFGS",
-      #                  ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-      #                  nInd=nInd,nSnps=nSnps,noFam=noFam,
-      #                  OPGP=list(as.integer(c(5,1) + 2*c(config[ind[[1]]]==3,0))), seqErr=F)
-      # rf.est2 <- optim(GUSbase::logit2(0.2), fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err, method="BFGS",
-      #                  ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-      #                  nInd=nInd,nSnps=nSnps,noFam=noFam,
-      #                  OPGP=list(as.integer(c(5,2) + 2*c(config[ind[[1]]]==3,0))), seqErr=F)
       rf.ind1 <- switch(which.max(c(rf.est1$loglik,rf.est2$loglik)), TRUE, FALSE)
       if(rf.ind1){
         rf[[1]][snp.bi] <- rf.est1$rf
@@ -345,25 +216,6 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
         rf[[1]][snp.bi] <- rf.est2$rf
         rf[[2]][snp.bi] <- rf.est2$LOD
       }
-      #   if(rf.est1$rf > 0.499)
-      #     rf[[2]][snp.bi] <- 0
-      #   else
-      #     rf[[2]][snp.bi] <- rf.est1$loglik + 
-      #                         ll_fs_mp_scaled_err(1000,ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-      #                                             nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,
-      #                                             OPGP=list(as.integer(c(5,1) + 2*c(config[ind[[1]]]==3,0))),
-      #                                             extra=rf.est1$ep)
-      # } else{
-      #   rf[[1]][snp.bi] <- rf.est2$rf
-      #   if(rf.est2$rf > 0.499)
-      #     rf[[2]][snp.bi] <- 0
-      #   else
-      #     rf[[2]][snp.bi] <-  rf.est2$loglik + 
-      #                         ll_fs_mp_scaled_err(1000,ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-      #                                             nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,
-      #                                             OPGP=list(as.integer(c(5,2) + 2*c(config[ind[[1]]]==3,0))),
-      #                                             extra=rf.est2$ep)
-      # }
     }
     return(rf)
   }
@@ -376,19 +228,9 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
       ind <- c(indx_MI[snp.mi],indx_BI[snp.bi])
       ref2 <- list(ref[,ind])
       alt2 <- list(alt[,ind])
-      #bcoef_mat <- list(choose(ref2[[1]]+alt2[[1]],ref2[[1]]))
-      #Kab       <- list(bcoef_mat[[1]]*(1/2)^(ref2[[1]]+alt2[[1]]))
       ## compute the rf's and LOD
       rf.est1 <- rf_est_FS_2pt(0.2, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(9,1) + 2*c(config[ind[[1]]]==5,0))), seqErr=err)
       rf.est2 <- rf_est_FS_2pt(0.2, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(9,3) + 2*c(config[ind[[1]]]==5,0))), seqErr=err)
-      # rf.est1 <- optim(GUSbase::logit2(0.2), fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err, method="BFGS",
-      #                  ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-      #                  nInd=nInd,nSnps=nSnps,noFam=noFam,
-      #                  OPGP=list(as.integer(c(9,1) + 2*c(config[ind[[1]]]==5,0))), seqErr=F)
-      # rf.est2 <- optim(GUSbase::logit2(0.2), fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err, method="BFGS",
-      #                  ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-      #                  nInd=nInd,nSnps=nSnps,noFam=noFam,
-      #                  OPGP=list(as.integer(c(9,3) + 2*c(config[ind[[1]]]==5,0))), seqErr=F)
       rf.ind1 <- switch(which.max(c(rf.est1$loglik,rf.est2$loglik)), TRUE, FALSE)
       if(rf.ind1){
         rf[[1]][snp.bi] <- rf.est1$rf
@@ -397,25 +239,6 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
         rf[[1]][snp.bi] <- rf.est2$rf
         rf[[2]][snp.bi] <- rf.est2$LOD
       }
-      #   if(rf.est1$rf > 0.499)
-      #     rf[[2]][snp.bi] <- 0
-      #   else
-      #     rf[[2]][snp.bi] <- rf.est1$loglik + 
-      #                         ll_fs_mp_scaled_err(1000,ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-      #                                             nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,
-      #                                             OPGP=list(as.integer(c(9,1) + 2*c(config[ind[[1]]]==5,0))),
-      #                                             extra=rf.est1$ep)
-      # } else{
-      #   rf[[1]][snp.bi] <- rf.est2$rf
-      #   if(rf.est2$rf > 0.499)
-      #     rf[[2]][snp.bi] <- 0
-      #   else
-      #     rf[[2]][snp.bi] <- rf.est2$loglik +
-      #                         ll_fs_mp_scaled_err(1000,ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-      #                                             nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,
-      #                                             OPGP=list(as.integer(c(9,3) + 2*c(config[ind[[1]]]==5,0))),
-      #                                             extra=rf.est2$ep)
-      # }
     }
     return(rf)
   }
@@ -429,19 +252,9 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
       ind <- c(indx_MI[snp.mi],indx_PI[snp.pi])
       ref2 <- list(ref[,ind])
       alt2 <- list(alt[,ind])
-      #bcoef_mat <- list(choose(ref2[[1]]+alt2[[1]],ref2[[1]]))
-      #Kab       <- list(bcoef_mat[[1]]*(1/2)^(ref2[[1]]+alt2[[1]]))
       ## compute the rf's and LOD
       rf.est1 <- rf_est_FS_2pt(0.2, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(9,9) + 2*c(config[ind] %in% c(3,5)))), seqErr=err)
       rf.est2 <- rf_est_FS_2pt(0.2, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(9,10) + 2*c(config[ind] %in% c(3,5)))), seqErr=err)
-      # rf.est1 <- optim(GUSbase::logit2(0.2), fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err, method="BFGS",
-      #                  ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-      #                  nInd=nInd,nSnps=nSnps,noFam=noFam,
-      #                  OPGP=list(as.integer(c(9,9) + 2*c(config[ind] %in% c(3,5)))), seqErr=F)
-      # rf.est2 <- optim(GUSbase::logit2(0.2), fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err, method="BFGS",
-      #                  ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-      #                  nInd=nInd,nSnps=nSnps,noFam=noFam,
-      #                  OPGP=list(as.integer(c(9,10) + 2*(config[ind] %in% c(3,5)))), seqErr=F)
       rf.ind1 <- switch(which.max(c(rf.est1$loglik,rf.est2$loglik)), TRUE, FALSE)
       if(rf.ind1){
         rf[[1]][snp.pi] <- rf.est1$rf
@@ -450,28 +263,10 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
         rf[[1]][snp.pi] <- rf.est2$rf
         rf[[2]][snp.pi] <- rf.est2$LOD
       }
-      #   if(rf.est1$rf > 0.499)
-      #     rf[[2]][snp.pi] <- 0
-      #   else
-      #     rf[[2]][snp.pi] <- rf.est1$value + 
-      #                         ll_fs_mp_scaled_err(1000,ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-      #                                             nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,
-      #                                             OPGP=list(as.integer(c(9,9) + 2*c(config[ind] %in% c(3,5)))),
-      #                                             extra=rf.est$ep)
-      # } else{
-      #   rf[[1]][snp.pi] <- rf.est2$rf
-      #   if(rf.est2$rf > 0.499)
-      #     rf[[2]][snp.pi] <- 0
-      #   else
-      #     rf[[2]][snp.pi] <- rf.est2$loglik + 
-      #                         ll_fs_mp_scaled_err(1000,ref=ref2,alt=alt2,bcoef_mat=bcoef_mat,Kab=Kab,
-      #                                             nInd=nInd,nSnps=nSnps,noFam=noFam,seqErr=F,
-      #                                             OPGP=list(as.integer(c(5,2) + 2*c(config[ind] %in% c(3,5))))))
-      # }
     }
     return(rf)
   }
-  snow::stopCluster(cl) 
+  parallel::stopCluster(cl) 
   
   ## Build the rf and LOD matrices
   origOrder <- order(c(indx_BI,indx_PI,indx_MI))
@@ -502,8 +297,8 @@ rf_2pt_multi <- function(ref, alt, config, group, nClust, noFam, init_r = 0.25){
   nSnps_PI = length(indx_PI)
   
   ## Set up the Clusters
-  cl <- snow::makeCluster(nClust)
-  doSNOW::registerDoSNOW(cl)
+  cl <- parallel::makeCluster(nClust)
+  doParallel::registerDoParallel(cl)
   
   cat("\nComputing 2-point recombination fraction estimates ...\n")
   cat("Paternal informative SNPs\n")
@@ -782,7 +577,7 @@ rf_2pt_multi <- function(ref, alt, config, group, nClust, noFam, init_r = 0.25){
   }
   
   #rf.MI.PI <- replicate(2, matrix(NA, nrow=nSnps_MI, ncol=nSnps_PI),simplify=FALSE)
-  snow::topCluster(cl) 
+  parallel::stopCluster(cl) 
   
   ## Build the rf and LOD matrices
   origOrder <- order(c(indx_BI,indx_PI,indx_MI))
