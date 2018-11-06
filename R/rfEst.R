@@ -91,7 +91,7 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP, noFam=as.integer(1)
     # Arguments for the optim function
     optim.arg <- list(...)
     if(length(optim.arg) == 0)
-      optim.arg <- list(maxit = 1000, reltol=1e-15)
+      optim.arg <- list(maxit = 5000, reltol=1e-15)
     
     ## Compute the K matrix for heterozygous genotypes
     bcoef_mat <- Kab <- vector(mode="list", length=noFam)
@@ -180,53 +180,57 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP, noFam=as.integer(1)
     # Return the results
     return(c(rfReturn, ep=epReturn, loglik=-optim.MLE$value))
   } else{ # EM algorithm approach
-    ## Set up the parameter values
-    temp.arg <- list(...)
-    if(!is.null(temp.arg$maxit) && is.numeric(temp.arg$maxit) && length(temp.arg$maxit) == 1) 
-      EM.arg = c(temp.arg$maxit)
-    else
-      EM.arg = c(1000)
-    if(!is.null(temp.arg$reltol) && is.numeric(temp.arg$reltol) && length(temp.arg$reltol) == 1){
-      EM.arg = c(EM.arg,temp.arg$reltol)
+    if(multiErr)
+      stop("Yet to be implemented")
+    else{
+      ## Set up the parameter values
+      temp.arg <- list(...)
+      if(!is.null(temp.arg$maxit) && is.numeric(temp.arg$maxit) && length(temp.arg$maxit) == 1) 
+        EM.arg = c(temp.arg$maxit)
+      else
+        EM.arg = c(1000)
+      if(!is.null(temp.arg$reltol) && is.numeric(temp.arg$reltol) && length(temp.arg$reltol) == 1){
+        EM.arg = c(EM.arg,temp.arg$reltol)
+      }
+      else
+        EM.arg = c(EM.arg,1e-20)
+      
+      # Determine the initial values
+      if(length(init_r)==1)
+        init_r <- rep(init_r,2*(nSnps-1))
+      else if(length(init_r) != nSnps-1)
+        init_r <- rep(0.1,2*(nSnps-1))
+      
+      if(sexSpec){
+        ps <- sort(unique(unlist(lapply(OPGP,function(x) which(x %in% 1:8)))))[-1] - 1
+        ms <- sort(unique(unlist(lapply(OPGP,function(x) which(x %in% c(1:4,9:12))))))[-1] - 1
+        npar <- c(length(ps),length(ms))
+        ss_rf <- logical(2*(nSnps-1))
+        ss_rf[ps] <- TRUE
+        ss_rf[ms + nSnps-1] <- TRUE
+      }
+      else ss_rf = 0;
+      ## convert the data into the right format:
+      OPGPmat = do.call(what = "rbind",OPGP)
+      ref_mat = do.call(what = "rbind",ref)
+      alt_mat = do.call(what = "rbind",alt)
+      
+      EMout <- .Call("EM_HMM", init_r, ep, ref_mat, alt_mat, OPGPmat,
+                     noFam, unlist(nInd), nSnps, sexSpec, seqErr, EM.arg, as.integer(ss_rf), nThreads=nThreads)
+      
+      EMout[[3]] = EMout[[3]] + sum(log(choose(ref_mat+alt_mat,ref_mat)))
+      
+      if(sexSpec){
+        return(list(rf_p=EMout[[1]][ps],rf_m=EMout[[1]][nSnps-1+ms],
+                    ep=EMout[[2]],
+                    loglik=EMout[[3]]))
+      }
+      else
+        return(list(rf=EMout[[1]][1:(nSnps-1)], 
+                    ep=EMout[[2]],
+                    loglik=EMout[[3]]))
+      
     }
-    else
-      EM.arg = c(EM.arg,1e-20)
-    
-    # Determine the initial values
-    if(length(init_r)==1)
-      init_r <- rep(init_r,2*(nSnps-1))
-    else if(length(init_r) != nSnps-1)
-      init_r <- rep(0.1,2*(nSnps-1))
-    
-    if(sexSpec){
-      ps <- sort(unique(unlist(lapply(OPGP,function(x) which(x %in% 1:8)))))[-1] - 1
-      ms <- sort(unique(unlist(lapply(OPGP,function(x) which(x %in% c(1:4,9:12))))))[-1] - 1
-      npar <- c(length(ps),length(ms))
-      ss_rf <- logical(2*(nSnps-1))
-      ss_rf[ps] <- TRUE
-      ss_rf[ms + nSnps-1] <- TRUE
-    }
-    else ss_rf = 0;
-    ## convert the data into the right format:
-    OPGPmat = do.call(what = "rbind",OPGP)
-    ref_mat = do.call(what = "rbind",ref)
-    alt_mat = do.call(what = "rbind",alt)
-    
-    EMout <- .Call("EM_HMM", init_r, ep, ref_mat, alt_mat, OPGPmat,
-                   noFam, unlist(nInd), nSnps, sexSpec, seqErr, EM.arg, as.integer(ss_rf), nThreads=nThreads)
-    
-    EMout[[3]] = EMout[[3]] + sum(log(choose(ref_mat+alt_mat,ref_mat)))
-    
-    if(sexSpec){
-      return(list(rf_p=EMout[[1]][ps],rf_m=EMout[[1]][nSnps-1+ms],
-                  ep=EMout[[2]],
-                  loglik=EMout[[3]]))
-    }
-    else
-      return(list(rf=EMout[[1]][1:(nSnps-1)], 
-                  ep=EMout[[2]],
-                  loglik=EMout[[3]]))
-    
   }
 }
 

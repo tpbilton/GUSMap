@@ -928,7 +928,7 @@ Please select one of the following:
                   graphics::par(temp_par) # reset the plot margins
                 }, 
                 ## Function for computing the rf's for each chromosome 
-                computeMap = function(chrom=NULL, init_r=0.01, ep=0.001, method="optim", sexSpec=FALSE, err=TRUE, multiErr=FALSE, mapped=TRUE, nThreads=1){
+                computeMap = function(chrom=NULL, init_r=0.001, ep=0.001, method="optim", sexSpec=FALSE, err=TRUE, multiErr=FALSE, mapped=TRUE, nThreads=1){
                   ## do some checks
                   if( !is.null(init_r) & !is.numeric(init_r) )
                     stop("Starting values for the recombination fraction needs to be a numeric vector or integer or a NULL object")
