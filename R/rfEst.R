@@ -64,7 +64,7 @@
 #' ## Simulate some sequencing data
 #' set.seed(6745)
 #' config <- list(list(sample(c(1,2,4), size=30, replace=TRUE)))
-#' F1data <- simFS(0.01, config=config, meanDepth=10, nInd=50)
+#' F1data <- simFS(0.01, config=config, meanDepth=10, nInd=50, epsilon=0.005)
 #' ## Compute 2-point recombination fractions
 #' F1data$rf_2pt(nClust=1)
 #' ## create and order linkage groups
@@ -79,8 +79,9 @@
 #' F1data$computeMap(mapped = FALSE)
 #' @aliases $computeMap
 
-rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
-                      sexSpec=F, seqErr=T, trace=F, noFam=as.integer(1), method = "optim", nThreads=1, ...){
+rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP, noFam=as.integer(1),
+                      sexSpec=FALSE, seqErr=TRUE, multiErr=FALSE, trace=FALSE,
+                      method = "optim", nThreads=1, ...){
   
   ## Do some checks
   nInd <- lapply(ref,nrow)  # number of individuals
@@ -90,7 +91,7 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
     # Arguments for the optim function
     optim.arg <- list(...)
     if(length(optim.arg) == 0)
-      optim.arg <- list(maxit = 1000, reltol=1e-15)
+      optim.arg <- list(maxit = 5000, reltol=1e-15)
     
     ## Compute the K matrix for heterozygous genotypes
     bcoef_mat <- Kab <- vector(mode="list", length=noFam)
@@ -140,156 +141,96 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
       else
         para <- init_r
       # sequencing error
-      if(seqErr)
-        para <- c(para,GUSbase::logit(ep))
+      if(seqErr){
+        if(multiErr) para <- c(para,GUSbase::logit(rep(ep, nSnps)))
+        else para <- c(para,GUSbase::logit(ep))
+      }
       
       ## Find MLE
       optim.MLE <- stats::optim(para, fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err,
                          method="BFGS", control=optim.arg,
                          ref=ref,alt=alt,bcoef_mat=bcoef_mat,Kab=Kab,
                          nInd=nInd,nSnps=nSnps,OPGP=OPGP,noFam=noFam,
-                         seqErr=seqErr,extra=ep,nThreads=nThreads)
+                         seqErr=seqErr,extra=ep,nThreads=nThreads,multiErr=multiErr)
     }
     # Print out the output from the optim procedure (if specified)
     if(trace){
       print(optim.MLE)
     }
+    # Work out what to return for the recombination fractions
+    if(sexSpec)
+      rfReturn <- list(rf_p=GUSbase::inv.logit2(optim.MLE$par[1:npar[1]]),
+                       rf_m=GUSbase::inv.logit2(optim.MLE$par[npar[1]+1:npar[2]]))
+    else
+      rfReturn <- list(rf=GUSbase::inv.logit2(optim.MLE$par[1:(nSnps-1)]))
+    # work out what to return for the sequencing errors
+    if(seqErr){
+      if(sexSpec){
+        if(multiErr) epReturn <- list(GUSbase::inv.logit(optim.MLE$par[sum(npar) + 1:(2*nSnps)]))
+        else         epReturn <- list(GUSbase::inv.logit(optim.MLE$par[sum(npar) + 1]))
+      } else{
+        if(multiErr) epReturn <- list(GUSbase::inv.logit(optim.MLE$par[nSnps:(2*nSnps-1)]))
+        else         epReturn <- list(GUSbase::inv.logit(optim.MLE$par[nSnps]))
+      }
+    }
+    else epReturn <- ep
     # Check for convergence
     if(trace & optim.MLE$convergence != 0)
       warning(paste0('Optimization failed to converge properly with error ',optim.MLE$convergence,'\n smallest MLE estimate is: ', round(min(optim.MLE$par),6)))
-    # Return the MLEs
-    if(sexSpec)
-      return(list(rf_p=GUSbase::inv.logit2(optim.MLE$par[1:npar[1]]),rf_m=GUSbase::inv.logit2(optim.MLE$par[npar[1]+1:npar[2]]),
-                  ep=ifelse(seqErr,GUSbase::inv.logit(optim.MLE$par[sum(npar)+1]),0),
-                  loglik=-optim.MLE$value))
-    else
-      return(list(rf=GUSbase::inv.logit2(optim.MLE$par[1:(nSnps-1)]), 
-                  ep=ifelse(seqErr,GUSbase::inv.logit(optim.MLE$par[nSnps]),0),
-                  loglik=-optim.MLE$value))
-  }
-  if(method=="optim_old"){
-    
-    # Arguments for the optim function
-    optim.arg <- list(...)
-    if(length(optim.arg) == 0)
-      optim.arg <- list(maxit = 1000, reltol=1e-15)
-    
-    ## Compute the K matrix for heterozygous genotypes
-    bcoef_mat <- Kab <- vector(mode="list", length=noFam)
-    for(fam in 1:noFam){
-      bcoef_mat[[fam]] <- choose(ref[[fam]]+alt[[fam]],ref[[fam]])
-      Kab[[fam]] <- bcoef_mat[[fam]]*(1/2)^(ref[[fam]]+alt[[fam]])
-    }
-    
-    ## If we want to estimate sex-specific r.f.'s
-    if(sexSpec){
-      
-      # Work out the indices of the r.f. parameters of each sex
-      ps <- sort(unique(unlist(lapply(OPGP,function(x) which(x %in% 1:8)))))[-1] - 1
-      ms <- sort(unique(unlist(lapply(OPGP,function(x) which(x %in% c(1:4,9:12))))))[-1] - 1
-      npar <- c(length(ps),length(ms))
-      
-      # Determine the initial values
-      if(length(init_r)==1) 
-        para <- GUSbase::logit2(rep(init_r,sum(npar)))
-      else if(length(init_r) != sum(npar)) 
-        para <- GUSbase::logit2(rep(0.1,sum(npar)))
-      else
-        para <- init_r
-      # sequencing error
-      if(seqErr)
-        para <- c(para,GUSbase::logit(ep))
-      
-      ## Find MLE
-      optim.MLE <- stats::optim(para,ll_fs_ss_mp_scaled_err,method="BFGS",control=optim.arg,
-                         ref=ref,alt=alt,bcoef_mat=bcoef_mat,Kab=Kab,
-                         nInd=nInd,nSnps=nSnps,OPGP=OPGP,ps=ps,ms=ms,npar=npar,noFam=noFam,
-                         seqErr=seqErr,extra=ep)
-    }
+    # Return the results
+    return(c(rfReturn, ep=epReturn, loglik=-optim.MLE$value))
+  } else{ # EM algorithm approach
+    if(multiErr)
+      stop("Yet to be implemented")
     else{
-      # Determine the initial values
-      if(length(init_r)==1) 
-        para <- GUSbase::logit2(rep(init_r,nSnps-1))
-      else if(length(init_r) != nSnps-1) 
-        para <- GUSbase::logit2(rep(0.1,nSnps-1))
+      ## Set up the parameter values
+      temp.arg <- list(...)
+      if(!is.null(temp.arg$maxit) && is.numeric(temp.arg$maxit) && length(temp.arg$maxit) == 1) 
+        EM.arg = c(temp.arg$maxit)
       else
-        para <- init_r
-      # sequencing error
-      if(seqErr)
-        para <- c(para,GUSbase::logit(ep))
+        EM.arg = c(1000)
+      if(!is.null(temp.arg$reltol) && is.numeric(temp.arg$reltol) && length(temp.arg$reltol) == 1){
+        EM.arg = c(EM.arg,temp.arg$reltol)
+      }
+      else
+        EM.arg = c(EM.arg,1e-20)
       
-      ## Find MLE
-      optim.MLE <- stats::optim(para,ll_fs_mp_scaled_err,method="BFGS",control=optim.arg,
-                         ref=ref,alt=alt,bcoef_mat=bcoef_mat,Kab=Kab,
-                         nInd=nInd,nSnps=nSnps,OPGP=OPGP,noFam=noFam,
-                         seqErr=seqErr,nThreads=nThreads)
+      # Determine the initial values
+      if(length(init_r)==1)
+        init_r <- rep(init_r,2*(nSnps-1))
+      else if(length(init_r) != nSnps-1)
+        init_r <- rep(0.1,2*(nSnps-1))
+      
+      if(sexSpec){
+        ps <- sort(unique(unlist(lapply(OPGP,function(x) which(x %in% 1:8)))))[-1] - 1
+        ms <- sort(unique(unlist(lapply(OPGP,function(x) which(x %in% c(1:4,9:12))))))[-1] - 1
+        npar <- c(length(ps),length(ms))
+        ss_rf <- logical(2*(nSnps-1))
+        ss_rf[ps] <- TRUE
+        ss_rf[ms + nSnps-1] <- TRUE
+      }
+      else ss_rf = 0;
+      ## convert the data into the right format:
+      OPGPmat = do.call(what = "rbind",OPGP)
+      ref_mat = do.call(what = "rbind",ref)
+      alt_mat = do.call(what = "rbind",alt)
+      
+      EMout <- .Call("EM_HMM", init_r, ep, ref_mat, alt_mat, OPGPmat,
+                     noFam, unlist(nInd), nSnps, sexSpec, seqErr, EM.arg, as.integer(ss_rf), nThreads=nThreads)
+      
+      EMout[[3]] = EMout[[3]] + sum(log(choose(ref_mat+alt_mat,ref_mat)))
+      
+      if(sexSpec){
+        return(list(rf_p=EMout[[1]][ps],rf_m=EMout[[1]][nSnps-1+ms],
+                    ep=EMout[[2]],
+                    loglik=EMout[[3]]))
+      }
+      else
+        return(list(rf=EMout[[1]][1:(nSnps-1)], 
+                    ep=EMout[[2]],
+                    loglik=EMout[[3]]))
+      
     }
-    # Print out the output from the optim procedure (if specified)
-    if(trace){
-      print(optim.MLE)
-    }
-    # Check for convergence
-    if(trace & optim.MLE$convergence != 0)
-      warning(paste0('Optimization failed to converge properly with error ',optim.MLE$convergence,'\n smallest MLE estimate is: ', round(min(optim.MLE$par),6)))
-    # Return the MLEs
-    if(sexSpec)
-      return(list(rf_p=GUSbase::inv.logit2(optim.MLE$par[1:npar[1]]),
-                  rf_m=GUSbase::inv.logit2(optim.MLE$par[npar[1]+1:npar[2]]),
-                  ep=ifelse(seqErr,GUSbase::inv.logit(optim.MLE$par[sum(npar)+1]),0),
-                  loglik=-optim.MLE$value))
-    else
-      return(list(rf=GUSbase::inv.logit2(optim.MLE$par[1:(nSnps-1)]), 
-                  ep=ifelse(seqErr,GUSbase::inv.logit(optim.MLE$par[nSnps]),0),
-                  loglik=-optim.MLE$value))
-  }
-  else{ # EM algorithm approach
-    ## Set up the parameter values
-    temp.arg <- list(...)
-    if(!is.null(temp.arg$maxit) && is.numeric(temp.arg$maxit) && length(temp.arg$maxit) == 1) 
-      EM.arg = c(temp.arg$maxit)
-    else
-      EM.arg = c(1000)
-    if(!is.null(temp.arg$reltol) && is.numeric(temp.arg$reltol) && length(temp.arg$reltol) == 1){
-      EM.arg = c(EM.arg,temp.arg$reltol)
-    }
-    else
-      EM.arg = c(EM.arg,1e-20)
-    
-    # Determine the initial values
-    if(length(init_r)==1)
-      init_r <- rep(init_r,2*(nSnps-1))
-    else if(length(init_r) != nSnps-1)
-      init_r <- rep(0.1,2*(nSnps-1))
-    
-    if(sexSpec){
-      ps <- sort(unique(unlist(lapply(OPGP,function(x) which(x %in% 1:8)))))[-1] - 1
-      ms <- sort(unique(unlist(lapply(OPGP,function(x) which(x %in% c(1:4,9:12))))))[-1] - 1
-      npar <- c(length(ps),length(ms))
-      ss_rf <- logical(2*(nSnps-1))
-      ss_rf[ps] <- TRUE
-      ss_rf[ms + nSnps-1] <- TRUE
-    }
-    else ss_rf = 0;
-    ## convert the data into the right format:
-    OPGPmat = do.call(what = "rbind",OPGP)
-    ref_mat = do.call(what = "rbind",ref)
-    alt_mat = do.call(what = "rbind",alt)
-    
-    EMout <- .Call("EM_HMM", init_r, ep, ref_mat, alt_mat, OPGPmat,
-                   noFam, unlist(nInd), nSnps, sexSpec, seqErr, EM.arg, as.integer(ss_rf), nThreads=nThreads)
-    
-    EMout[[3]] = EMout[[3]] + sum(log(choose(ref_mat+alt_mat,ref_mat)))
-    
-    if(sexSpec){
-      return(list(rf_p=EMout[[1]][ps],rf_m=EMout[[1]][nSnps-1+ms],
-                  ep=EMout[[2]],
-                  loglik=EMout[[3]]))
-    }
-    else
-      return(list(rf=EMout[[1]][1:(nSnps-1)], 
-                  ep=EMout[[2]],
-                  loglik=EMout[[3]]))
-    
   }
 }
 

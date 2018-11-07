@@ -17,25 +17,22 @@
 #########################################################################
 ### Wrapper functions required for calling C code.
 ### Author: Timothy Bilton
-### Date: 06/02/18
-
-#### Wrapper function for likelihoods of the GBS HMM when
-#### Likelihood function is written in C in the file 'likelihoods.c'
-
 #' @useDynLib GUSMap
 
+#### Likelihood function is written in C in the file 'likelihoods.c'
 ## r.f.'s are equal
-ll_fs_mp_scaled_err <- function(para,ref,alt,bcoef_mat,Kab,OPGP,nInd,nSnps,noFam,seqErr,extra=0,nThreads=1){
+ll_fs_mp_scaled_err <- function(para,ref,alt,bcoef_mat,Kab,OPGP,nInd,nSnps,noFam,seqErr,extra=0,nThreads=1,multiErr=FALSE){
   ## untransform the parameters
   r <- GUSbase::inv.logit2(para[1:(nSnps-1)])
-  if(seqErr)
-    ep = GUSbase::inv.logit(para[nSnps])
-  else
-    ep = extra
+  if(seqErr){
+    if(multiErr)  ep = GUSbase::inv.logit(para[nSnps:(2*nSnps-1)])
+    else          ep = rep(GUSbase::inv.logit(para[nSnps]), length.out = nSnps)
+  } else ep = rep(extra, length.out = nSnps)
   ## define likelihood
   llval = 0
   for(fam in 1:noFam)
-    llval = llval + .Call("ll_fs_scaled_err_c",r,ep,ref[[fam]], alt[[fam]], bcoef_mat[[fam]], Kab[[fam]], OPGP[[fam]],nInd[[fam]],nSnps,nThreads)
+    llval = llval + .Call("ll_fs_scaled_err_c",r,ep,ref[[fam]], alt[[fam]], bcoef_mat[[fam]], Kab[[fam]],
+                          OPGP[[fam]],nInd[[fam]],nSnps,nThreads)
   return(llval)
 }
 
@@ -77,21 +74,30 @@ ll_fs_up_ss_scaled_err <- function(para,ref,alt,bcoef_mat,Kab,config,nInd,nSnps,
 
 #### Score functions written in C in the file 'score.c'
 ## r.f.'s are equal
-score_fs_mp_scaled_err <- function(para,ref,alt,bcoef_mat,Kab,OPGP,nInd,nSnps,noFam,seqErr=T,extra=0,nThreads=1){
+score_fs_mp_scaled_err <- function(para,ref,alt,bcoef_mat,Kab,OPGP,nInd,nSnps,noFam,seqErr=TRUE,multiErr=FALSE,extra=0,nThreads=1){
   ## untransform the parameters
   r <- GUSbase::inv.logit2(para[1:(nSnps-1)])
-  if(seqErr)
-    ep <- GUSbase::inv.logit(para[nSnps])
-  else
-    ep = extra
-  ## define likelihood
+  ## Compute score vector
   if(seqErr){
-    score = numeric(nSnps)
-    for(fam in 1:noFam)
-      score = score + .Call("score_fs_scaled_err_c",r,ep,ref[[fam]],alt[[fam]],
-                            bcoef_mat[[fam]],Kab[[fam]],OPGP[[fam]],nInd[[fam]],nSnps,nThreads)
-  } else{
+    # Sequencing error parameter for each SNP
+    if(multiErr){
+      score = numeric(2*nSnps-1)
+      ep <- GUSbase::inv.logit(para[nSnps-1 + 1:nSnps])
+      for(fam in 1:noFam)
+        score = score + .Call("score_fs_scaled_multi_err_c",r,ep,ref[[fam]],alt[[fam]],
+                              bcoef_mat[[fam]],Kab[[fam]],OPGP[[fam]],nInd[[fam]],nSnps,nThreads)
+    }
+    # A single sequencing error parameter for all the SNPs
+    else{
+      score = numeric(nSnps)
+      ep <- GUSbase::inv.logit(para[nSnps])
+      for(fam in 1:noFam)
+        score = score + .Call("score_fs_scaled_err_c",r,ep,ref[[fam]],alt[[fam]],
+                              bcoef_mat[[fam]],Kab[[fam]],OPGP[[fam]],nInd[[fam]],nSnps,nThreads)
+    }
+  } else{  # No sequencing error parameter
     score = numeric(nSnps - 1)
+    ep = extra
     for(fam in 1:noFam)
       score = score + .Call("score_fs_scaled_c",r,ep,ref[[fam]], alt[[fam]], bcoef_mat[[fam]],
                             Kab[[fam]],OPGP[[fam]],nInd[[fam]],nSnps)

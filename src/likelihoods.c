@@ -53,12 +53,12 @@ SEXP ll_fs_scaled_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef_mat, SEX
                         SEXP nSnps, SEXP nThreads){
   // Initialize variables
   int s1, s2, ind, snp, nInd_c, nSnps_c, nThreads_c, *pOPGP, maxThreads, *pref, *palt;
-  double *pll, *pr, *pKab, *pbcoef_mat, ep_c;
+  double *pll, *pr, *pKab, *pbcoef_mat, *pep;
   double alphaTilde[4], alphaDot[4], sum, w_new;
   // Load R input variables into C
   nInd_c = INTEGER(nInd)[0];
   nSnps_c = INTEGER(nSnps)[0];
-  ep_c = REAL(ep)[0];
+  pep = REAL(ep);
   // Define the pointers to the other input R variables
   pOPGP = INTEGER(OPGP);
   pbcoef_mat = REAL(bcoef_mat);
@@ -85,16 +85,18 @@ SEXP ll_fs_scaled_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef_mat, SEX
   }
   
   // define the density values for the emission probs
-  long size = (long) nSnps_c * nInd_c;
-  double pKaa[size];
-  double pKbb[size];
-  #pragma omp parallel for num_threads(nThreads_c)
-  for (long i = 0; i < size; i++) {
-    pKaa[i] = pbcoef_mat[i] * pow(1.0 - ep_c, pref[i]) * pow(ep_c, palt[i]);
-    pKbb[i] = pbcoef_mat[i] * pow(1.0 - ep_c, palt[i]) * pow(ep_c, pref[i]);
+  int index;
+  double pKaa[nSnps_c * nInd_c];
+  double pKbb[nSnps_c * nInd_c];
+//  #pragma omp parallel for num_threads(nThreads_c) private(index, snp)
+  for(ind = 0; ind < nInd_c; ind++){
+    for(snp = 0; snp < nSnps_c; snp++){
+      index = ind + snp*nInd_c;
+      pKaa[index] = pbcoef_mat[index] * pow(1.0 - pep[snp], pref[index]) * pow(pep[snp], palt[index]);
+      pKbb[index] = pbcoef_mat[index] * pow(1.0 - pep[snp], palt[index]) * pow(pep[snp], pref[index]);
+    }
   }
-  
-  
+
   // Now compute the likelihood
   #pragma omp parallel for reduction(+:llval) num_threads(nThreads_c) \
                            private(sum, s1, alphaDot, alphaTilde, snp, s2, w_new)
