@@ -8,6 +8,7 @@ Maintainer: Timothy P. Bilton <tbilton@maths.otago.ac.nz>
 Depends: R (>= 3.3.0), GUSbase, plotly
 Imports: R6, smacof, princurve (>= 2.0), Rdpack, data.table, stats, grDevices, graphics, utils, parallel, doParallel, iterators, foreach, 
 RdMacros: Rdpack
+LinkingTo: Rcpp
 Description: Package for constructing linkage maps using outcrossed full-sib family populations that have been sequenced using next generation multiplexing sequencing methods.
 License: GPL-3 | file LICENSE
 LazyData: true

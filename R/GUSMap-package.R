@@ -39,6 +39,7 @@
 #' @importFrom GUSbase inv.logit
 #' @importFrom GUSbase logit2
 #' @importFrom GUSbase inv.logit2
+#' @importFrom Rcpp sourceCpp
 #' @import plotly foreach doSNOW
 NULL
 

@@ -11,3 +11,7 @@
 "Welcome to GUSMap v1.0.0"
      )}
 }
+
+#.onUnload <- function (libpath) {
+#  library.dynam.unload("GUSMap", libpath)
+#}

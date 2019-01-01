@@ -20,6 +20,110 @@
 
 #include <Rcpp.h>
 using namespace Rcpp;
+#include "probFun.h"
+
+
+//' @export
+
+/*
+/////////////////////////////////////////////////////////////////////////
+// Function for extracting entries of the emission probability matrix
+// when the OPGPs are known
+double Qentry(int OPGP,double Kaa,double Kab, double Kbb,int elem){
+  switch(OPGP){
+  case 1:
+    if(elem == 1)
+      return Kbb;
+    else if ((elem == 2)|(elem == 3))  
+      return Kab;
+    else if (elem == 4)
+      return Kaa;
+  case 2:
+    if(elem == 3)
+      return Kbb;
+    else if ((elem == 1)|(elem == 4))
+      return Kab;
+    else if (elem == 2)
+      return Kaa;
+  case 3:
+    if(elem == 2) 
+      return Kbb;
+    else if ((elem == 1)|(elem == 4))
+      return Kab;
+    else if (elem == 3)
+      return Kaa;
+  case 4:
+    if(elem == 4) 
+      return Kbb;
+    else if ((elem == 2)|(elem == 3))
+      return Kab;
+    else if (elem == 1)
+      return Kaa;
+  case 5:
+    if ((elem == 1)|(elem == 2))
+      return Kab;
+    else if ((elem == 3)|(elem == 4))
+      return Kaa;
+  case 6:
+    if ((elem == 1)|(elem == 2))
+      return Kaa;
+    else if ((elem == 3)|(elem == 4))
+      return Kab;
+  case 7:
+    if ((elem == 1)|(elem == 2))
+      return Kbb;
+    else if ((elem == 3)|(elem == 4))
+      return Kab;
+  case 8:
+    if ((elem == 1)|(elem == 2))
+      return Kab;
+    else if ((elem == 3)|(elem == 4))
+      return Kbb;
+  case 9:
+    if ((elem == 1)|(elem == 3))
+      return Kab;
+    else if ((elem == 2)|(elem == 4))
+      return Kaa;
+  case 10:
+    if ((elem == 1)|(elem == 3))
+      return Kaa;
+    else if ((elem == 2)|(elem == 4))
+      return Kab;
+  case 11:
+    if ((elem == 1)|(elem == 3))
+      return Kbb;
+    else if ((elem == 2)|(elem == 4))
+      return Kab;
+  case 12:
+    if ((elem == 1)|(elem == 3))
+      return Kab;
+    else if ((elem == 2)|(elem == 4))
+      return Kbb;
+  case 13:
+    return Kaa;
+  case 14:
+    return Kab;
+  case 15:
+    return Kab;
+  case 16:
+    return Kbb;
+  } // end of Switch
+  return -1;
+}
+
+// Function for returning a specified enetry of the transition matrix for a given recombination fraction value
+double Tmat(int s1, int s2, double rval){
+  int sSum = s1 + s2*4;
+  if((sSum == 0)|(sSum == 5)|(sSum == 10)|(sSum == 15))
+    return (1-rval)*(1-rval);
+  else if((sSum == 3)|(sSum == 6)|(sSum == 9)|(sSum == 12))
+    return rval*rval;
+  else
+    return (1-rval)*rval;
+}
+*/
+ 
+///////////////////////////////////////////////////////////////
 
 // [[Rcpp::export]]
 NumericMatrix viterbi_fs_err(NumericVector rf, NumericVector ep, int nInd, int nSnps,
@@ -50,6 +154,9 @@ NumericMatrix viterbi_fs_err(NumericVector rf, NumericVector ep, int nInd, int n
     //sum = 0;
     for(s1 = 0; s1 < 4; s1++){
       eta(s1, 0) = 0.25 * Qentry(OPGP[0], pAA(ind, 0), pAB(ind, 0), pBB(ind, 0), s1+1);
+      if(ind < 2){
+        Rcpp::Rcout << "ind :" << ind  << " - eta :" << eta(s1, 0) << std::endl;
+      }
       //sum = sum + alphaDot[s1];
     }
     
@@ -57,25 +164,32 @@ NumericMatrix viterbi_fs_err(NumericVector rf, NumericVector ep, int nInd, int n
       // compute the next forward probabilities for snp \ell
       for(s2 = 0; s2 < 4; s2++){
         for(s1 = 0; s1 < 4; s1++){
-          etaTemp[s1] = eta(s1, snp) * Tmat(s1, s2, rf[snp-1]);
+          etaTemp[s1] = eta(s1, snp - 1) * Tmat(s1, s2, rf[snp-1]);
+          if(ind < 2){
+            Rcpp::Rcout << "snp :" << snp << " - Tmat :" << Tmat(s1, s2, rf[snp-1]) << std::endl;
+            Rcpp::Rcout << "snp :" << snp << " - eta :" << eta(s1, snp) << std::endl;
+          }
         }
         eta(s2, snp) = etaTemp[which_max(etaTemp)] * Qentry(OPGP[snp], pAA(ind, snp), pAB(ind, snp), pBB(ind, snp), s2+1);
+        //if(ind < 2){
+        //  Rcpp::Rcout << "snp :" << snp << " - eta :" << eta(s2, snp) << std::endl;
+        //}
       }
     }
     
-/*    for(s1 = 0; s1 < 4; s1++){
+    for(s1 = 0; s1 < 4; s1++){
       etaTemp[s1] = eta(s1, nSnps - 1);
     }
-    inferState = which.max(etaTemp);
+    inferState = which_max(etaTemp);
     states(ind, nSnps - 1) = inferState;
     // Now compute the most likely states in reverse
     for(snp = nSnps - 2; snp > -1; snp--){
       for(s1 = 0; s1 < 4; s1++){
         etaTemp[s1] = eta(s1, snp) * Tmat(s1, inferState, rf[snp-1]);
       }
-      inferState = which.max(etaTemp);
+      inferState = which_max(etaTemp);
       states(ind, snp) = inferState;
-    }*/
+    }
   }
   return states;
 }
