@@ -273,7 +273,7 @@ mySpecies$removeSNP(c(
 )
 ```
 
-### Compute Linakge Maps
+### Compute Linkage Maps
 
 Now that we have finished ordering and tidying up the combined linkage groups, we proceed to compute the linkage maps using the `$computeMap` function.
 ```{r computeMap}
