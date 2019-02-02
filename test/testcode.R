@@ -64,5 +64,12 @@ infer_m[1:nInd+nInd], OPGP %in% c(5:8)] <- NA
 sum(GUSMap:::mfun(newrf/(2*nInd), centiM=T))
 
 
+## createLG_cpp function
+dd <- runif(50*(50-1)/2,0,10)
+LOD <- matrix(0, nrow=50, ncol=50)
+LOD[upper.tri(LOD)] <- dd
+LOD[lower.tri(LOD)] <- t(LOD)[lower.tri(LOD)]
+createLG_cpp(0:49, LOD, 3, 4)
+
 
 
