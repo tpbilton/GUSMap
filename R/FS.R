@@ -373,9 +373,9 @@ FS <- R6Class("FS",
                                          private$group, private$group_infer,
                                          nClust, private$nInd, err=err)
                   else
-                    stop("Multiple families have yet to be implemented")
-                    #mat <- rf_2pt_multi(private$ref, private$alt,
-                    #                    private$config,private$group, nClust, private$noFam)
+                    #stop("Multiple families have yet to be implemented")
+                    mat <- rf_2pt_multi(private$ref, private$alt,
+                                        private$config,private$group, nClust, private$noFam)
                   ## Save the results to the object
                   private$rf <- mat$rf
                   private$LOD <- mat$LOD

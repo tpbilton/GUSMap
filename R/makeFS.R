@@ -89,7 +89,7 @@
 #' @export
 
 ### Make a full-sib family population
-makeFS <- function(RAobj, pedfile, family=NULL, 
+makeFS <- function(RAobj, pedfile, family=NULL, MNIF=1,
                    filter=list(MAF=0.05, MISS=0.2, BIN=100, DEPTH=5, PVALUE=0.01)){
   #inferSNPs = FALSE, perInfFam=1){
   inferSNPs = FALSE; perInfFam=1 # some variables for multiple familes needed for later
@@ -490,18 +490,17 @@ makeFS <- function(RAobj, pedfile, family=NULL,
       "  Total SNPs:\t",length(unlist(group)),"\n\n"))
   }
   else{
-    noInfoFam <- ceiling(perInfFam*noFam)
     group <- group.temp <- list()
     ## Work out the SNP groupings
     # BI
     tabInf_BI <- table(unlist(sapply(1:noFam,function(y) which(config_all[[y]] %in% c(1) & indx[[y]]))))
-    group.temp$BI <- as.numeric(names(tabInf_BI)[which(tabInf_BI >= noInfoFam)])
+    group.temp$BI <- as.numeric(names(tabInf_BI)[which(tabInf_BI >= MNIF)])
     # MI 
     tabInf_MI <- table(unlist(sapply(1:noFam,function(y) which(config_all[[y]] %in% c(4,5) & indx[[y]]))))
-    group.temp$MI <- setdiff(as.numeric(names(tabInf_MI)[which(tabInf_MI >= noInfoFam)]), group.temp$BI)
+    group.temp$MI <- setdiff(as.numeric(names(tabInf_MI)[which(tabInf_MI >= MNIF)]), group.temp$BI)
     # PI 
     tabInf_PI <- table(unlist(sapply(1:noFam,function(y) which(config_all[[y]] %in% c(2,3) & indx[[y]]))))
-    group.temp$PI <- setdiff(as.numeric(names(tabInf_PI)[which(tabInf_PI >= noInfoFam)]), group.temp$BI)
+    group.temp$PI <- setdiff(as.numeric(names(tabInf_PI)[which(tabInf_PI >= MNIF)]), group.temp$BI)
     
     ## Work out which SNPs to keep
     indx_all <- logical(nSnps)
@@ -538,9 +537,24 @@ makeFS <- function(RAobj, pedfile, family=NULL,
       cat(names(famInfo)[fam],":", nInd_all[[fam]],"\n")
     cat("\n")
     
+    ## Create the summary info:
+    temp <- do.call("rbind", ref_all) + do.call("list",alt_all)
+    summaryInfo <- list()
+    summaryInfo$data <- paste0(c(
+      "Multiple Family Linkage analysis:\n\n",
+      "Data Summary:\n",
+      "Data file:\t", RAobj$.__enclos_env__$private$infilename,"\n",
+      "Mean Depth:\t", round(mean(temp),4),"\n",
+      "Mean Call Rate:\t",round(sum(temp!=0)/length(temp),4),"\n",
+      "Number of ...\n",
+      "  Progeny:\t",sum(unlist(nInd)),"\n",
+      "  MI SNPs:\t",length(group$MI),"\n",
+      "  PI SNPs:\t",length(group$PI),"\n",
+      "  BI SNPs:\t",length(group$BI),"\n",
+      "  Total SNPs:\t",length(unlist(group)),"\n\n"))
+    
     group_infer <- NULL
     config_infer_all <- NULL
-    summaryInfo  <- NULL
   }
   
   ## Update the R6 object and return it
