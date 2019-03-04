@@ -57,7 +57,7 @@ first (and preferably ordered from the \code{\link{$orderLG}} function).
 ## Simulate some sequencing data
 set.seed(6745)
 config <- list(list(sample(c(1,2,4), size=30, replace=TRUE)))
-F1data <- simFS(0.01, config=config, meanDepth=10, nInd=50)
+F1data <- simFS(0.01, config=config, meanDepth=10, nInd=50, epsilon=0.005)
 ## Compute 2-point recombination fractions
 F1data$rf_2pt(nClust=1)
 ## create and order linkage groups
