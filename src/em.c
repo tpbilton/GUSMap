@@ -473,7 +473,6 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam, SEXP nIn
               //Rprintf("Ibb :%i at s1 %i and snp %i and ind %i\n", Ibb[s1][indx][snp], s1,snp, indx);
               sumA = sumA + uProb[s1][indx][snp]*(b*Iaa[s1][indx][snp] +  a*Ibb[s1][indx][snp]);
               sumB = sumB + uProb[s1][indx][snp]*(a*Iaa[s1][indx][snp] +  b*Ibb[s1][indx][snp]);
-
             }
           }
         }
@@ -551,8 +550,8 @@ SEXP EM_HMM_multierr(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam,
   for(snp = 0; snp < nSnps_c - 1; snp++){
     for(parent = 0; parent < 2; parent++){
       r_c[snp+parent*(nSnps_c-1)] = REAL(r)[snp+parent*(nSnps_c-1)];
-      ep_c[snp] = REAL(ep)[snp];
     }
+    ep_c[snp] = REAL(ep)[snp];
   }
   ep_c[nSnps_c-1] = REAL(ep)[nSnps_c-1];
   pep = &ep_c[0];
@@ -633,7 +632,7 @@ SEXP EM_HMM_multierr(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam,
   pllout = REAL(llout);
   SEXP pout = PROTECT(allocVector(VECSXP, 3));
   double llval = 0, prellval = 0;
-
+  
   /////// Start algorithm
   iter = 0;
   while( (iter < 2) || ((iter < nIter) & ((llval - prellval) > delta))){
@@ -921,7 +920,7 @@ SEXP EM_HMM_UP(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP config, SEXP noFam, SEX
   // Initialize variables
   int s1, s2, fam, ind, snp, g, iter, nIter, indx, parent, noFam_c, nSnps_c, seqError_c, nThreads_c, maxThreads;
   double sum, sumA, sumB, a, b, delta;
-
+  
   // set up number of threads
   nThreads_c = asInteger(nThreads);
   maxThreads = omp_get_max_threads();
