@@ -87,22 +87,22 @@
 
 ## Function for simulating sequencing data for a single full-sib family
 simFS <- function(rVec_f, rVec_m=rVec_f, epsilon=0, config, nInd=100, meanDepth=5, thres=NULL,
-                  rd_dist="Neg_Binom", seed1=1, seed2=1){
+                  rd_dist="Neg_Binom", seed1=1, seed2=1, MNIF=1){
   
   ## perform some checks for data input
-  if(isValue(nInd, type="pos_integer", minv=1))
+  if(GUSbase::checkVector(nInd, type="pos_integer", minv=1))
     stop("Input for the number of individuals to simulate is invalid.")
   noFam = length(nInd)
   if( !is.numeric(rVec_f) || !is.numeric(rVec_m) || length(rVec_f) != 1 || length(rVec_m) != 1 || 
       any(rVec_f < 0) || any(rVec_m < 0) || any(rVec_f > 0.5) || any(rVec_m > 0.5) )
     stop("Recombination factions are required to be a numeric number between 0 and 0.5")
-  if( isValue(epsilon, type="pos_numeric", minv=0, maxv=1, equal=FALSE) || length(epsilon) != 1)
+  if( GUSbase::checkVector(epsilon, type="pos_numeric", minv=0, maxv=1, equal=FALSE) || length(epsilon) != 1)
     stop("Sequencing error parameter is not single numeric number between 0 and 1")
   if(!is.list(config) || length(config) != noFam)
     stop("Segregation information needs to be a list equal to the nunber of chromosomes.")
   else{
     noChr <- unique(unlist(lapply(config, length)))
-    if(length(noChr) != 1 && isValue(noChr, minv=1))  
+    if(length(noChr) != 1 && GUSbase::checkVector(noChr, minv=1))  
       stop("Number of chromosomes found in the 'config' list is not the same for each family")
     if(!all(unlist(lapply(config, is.list))))
       stop("'config' argument is not set-up correctly. Needs to be a nested list.")
@@ -113,17 +113,18 @@ simFS <- function(rVec_f, rVec_m=rVec_f, epsilon=0, config, nInd=100, meanDepth=
     for(fam in 1:noFam){
       for(chr in 1:noChr){
         temp <- config[[fam]][[chr]]
-        if(isValue(temp, type="pos_integer", minv=1, maxv=9))
+        if(GUSbase::checkVector(temp, type="pos_integer", minv=1, maxv=9))
           stop(paste0("Segregation information for chromosome ",chr," in familiy ",fam," needs to be an integer vector with entires from 1 to 9"))
       }
     }
   }
-  if( isValue(meanDepth, type="pos_numeric", minv = 0) || length(meanDepth) != 1)
+  if( GUSbase::checkVector(meanDepth, type="pos_numeric", minv = 0) || length(meanDepth) != 1)
     stop("The mean of the read depth distribution is not a finitie positive number.")
   if( !is.null(thres) && (isValue(thres, type="pos_numeric", minv=0, equal=FALSE) || length(thres) != 1))
     stop("The read depth threshold value is not a finite numeric number")
-  if( isValue(seed1, type="pos_integer") || isValue(seed2, type = "pos_integer"))
+  if( GUSbase::checkVector(seed1, type="pos_integer") || GUSbase::checkVector(seed2, type = "pos_integer"))
     stop("Seed values for the randomziation need to be positive numeric values")
+  if(noFam > 1 && GUSbase::checkVector(MNIF, type="pos_integer", minv=1, maxv=noFam, equal=FALSE))
   
   OPGP <- replicate(n = noChr, vector(mode = "list", length = noFam), simplify = F)
   genon <- ref <- alt <- vector(mode = "list", length=noFam)
@@ -220,23 +221,21 @@ simFS <- function(rVec_f, rVec_m=rVec_f, epsilon=0, config, nInd=100, meanDepth=
       "  Total SNPs:\t",length(unlist(group)),"\n\n"))
   }
   else{
-    noInfoFam <- ceiling(0.51*noFam)
     group.temp <- list()
     config <- lapply(config, unlist)
-    # BI 
-    tabInf_BI <- table(unlist(sapply(1:noFam,function(y) which(config[[y]] %in% c(1)))))
-    group.temp$BI <- as.numeric(names(tabInf_BI)[which(tabInf_BI >= noInfoFam)])
-    # MI 
-    tabInf_MI <- table(unlist(sapply(1:noFam,function(y) which(config[[y]] %in% c(4,5)))))
-    group.temp$MI <- setdiff(as.numeric(names(tabInf_MI)[which(tabInf_MI >= noInfoFam)]), group.temp$BI)
-    # PI 
-    tabInf_PI <- table(unlist(sapply(1:noFam,function(y) which(config[[y]] %in% c(2,3)))))
-    group.temp$PI <- setdiff(as.numeric(names(tabInf_PI)[which(tabInf_PI >= noInfoFam)]), group.temp$BI)
-    ## add paternal and maternal SNPs to BI group
-    add.bi <- group.temp$PI[which(group.temp$PI %in% group.temp$MI)]
-    group.temp$BI <- sort(c(group.temp$BI,add.bi))
-    group.temp$MI <- setdiff(group.temp$MI,group.temp$BI)
-    group.temp$PI <- setdiff(group.temp$PI,group.temp$BI)
+    # count the seg types for each SNP
+    
+    # MI
+    count_MI <- apply(sapply(1:noFam,function(y) config[[y]] %in% c(4,5)),1,sum)*apply(sapply(1:noFam,function(y) !(config[[y]] %in% c(1,2,3))),1,all)
+    group.temp$MI <- which(count_MI > (MNIF-1))
+    # PI
+    count_PI <- apply(sapply(1:noFam,function(y) config[[y]] %in% c(2,3)),1,sum)*apply(sapply(1:noFam,function(y) !(config[[y]] %in% c(1,4,5))),1,all)
+    group.temp$PI <- which(count_PI > (MNIF-1))
+    # BI
+    count_BI <- apply(sapply(1:noFam,function(y) config[[y]] %in% c(1:5)),1,sum)*(
+      apply(sapply(1:noFam,function(y) config[[y]] %in% c(1)),1,any) | apply(sapply(1:noFam,function(y) config[[y]] %in% c(2,3)),1,any) & apply(sapply(1:noFam,function(y) config[[y]] %in% c(4,5)),1,any))
+    group.temp$BI <- which(count_BI > (MNIF-1))
+    
     ## create the groups
     group$BI <- which(sort(unique(unlist(group.temp))) %in% group.temp$BI)
     group$MI <- which(sort(unique(unlist(group.temp))) %in% group.temp$MI)
@@ -253,11 +252,11 @@ simFS <- function(rVec_f, rVec_m=rVec_f, epsilon=0, config, nInd=100, meanDepth=
     }
     chrom <- chrom[indx]
     pos <- pos[indx]
-    nSnps <- length(indx)
+    nSnps <- sum(indx)
   }
   
   obj <- GUSbase::RA$new(
-    list(genon = genon, ref = ref, alt = alt, chrom = chrom, pos = pos,
+    list(genon = genon, ref = ref, alt = alt, chrom = chrom, pos = pos, noFam = as.integer(noFam),
          SNP_Names = NULL, indID = 1:sum(nInd), nSnps = nSnps, nInd = lapply(as.list(nInd), as.integer), 
          gform = "simFS", AFrq = NULL, infilename="Simulated dataset")
   )
