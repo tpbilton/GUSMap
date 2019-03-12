@@ -409,7 +409,7 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam, SEXP nIn
             for(s1 = 0; s1 < 4; s1++){
               g = Iindx(pOPGP[snp*noFam_c + fam], s1 + 1);
               sumA += uProb[s1][snp]*(b*Iaa(g) +  a*Ibb(g));
-              sumB += sumB + uProb[s1][snp]*(a*Iaa(g) +  b*Ibb(g));
+              sumB += uProb[s1][snp]*(a*Iaa(g) +  b*Ibb(g));
             }
           }
         }

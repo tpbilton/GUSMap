@@ -928,7 +928,8 @@ Please select one of the following:
                   graphics::par(temp_par) # reset the plot margins
                 }, 
                 ## Function for computing the rf's for each chromosome 
-                computeMap = function(chrom=NULL, init_r=0.001, ep=0.001, method="optim", sexSpec=FALSE, err=TRUE, multiErr=FALSE, mapped=TRUE, nThreads=1){
+                computeMap = function(chrom=NULL, init_r=0.001, ep=0.001, method="optim", sexSpec=FALSE, err=TRUE, multiErr=FALSE, 
+                                      mapped=TRUE, nThreads=1, inferOPGP=FALSE){
                   ## do some checks
                   if( !is.null(init_r) & !is.numeric(init_r) )
                     stop("Starting values for the recombination fraction needs to be a numeric vector or integer or a NULL object")
@@ -960,13 +961,16 @@ Please select one of the following:
                       ref_temp <- lapply(private$ref, function(x) x[,indx_chrom])
                       alt_temp <- lapply(private$alt, function(x) x[,indx_chrom])
                       ## estimate OPGP's
-                      tempOPGP <- list()
-                      for(fam in 1:private$noFam){
-                        tempOPGP <- c(tempOPGP,list(as.integer(infer_OPGP_FS(ref_temp[[fam]],alt_temp[[fam]],private$config[[fam]][indx_chrom], method="EM", nThreads=nThreads))))
+                      curOPGP <- private$para$OPGP[i]
+                      if(inferOPGP || !is.list(curOPGP) || length(curOPGP[[1]]) != length(indx_chrom)){
+                        tempOPGP <- list()
+                        for(fam in 1:private$noFam){
+                          tempOPGP <- c(tempOPGP,list(as.integer(infer_OPGP_FS(ref_temp[[fam]],alt_temp[[fam]],private$config[[fam]][indx_chrom], method=method, nThreads=nThreads))))
                         }
-                      private$para$OPGP <- tempOPGP
+                        private$para$OPGP[i] <- tempOPGP
+                      }
                       ## estimate the rf's
-                      MLE <- rf_est_FS(init_r=init_r, ep=ep, ref=ref_temp, alt=alt_temp, OPGP=private$para$OPGP,
+                      MLE <- rf_est_FS(init_r=init_r, ep=ep, ref=ref_temp, alt=alt_temp, OPGP=private$para$OPGP[1],
                                          sexSpec=sexSpec, seqErr=err, method=method, nThreads=nThreads, multiErr=multiErr)
                       if(sexSpec){
                         private$para$rf_p[i]   <- list(MLE$rf_p)
@@ -1006,11 +1010,14 @@ Please select one of the following:
                       ref_temp <- lapply(private$ref, function(x) x[,indx_chrom])
                       alt_temp <- lapply(private$alt, function(x) x[,indx_chrom])
                       ## estimate OPGP's
-                      tempOPGP <- list()
-                      for(fam in 1:private$noFam){
-                        tempOPGP <- c(tempOPGP,list(as.integer(infer_OPGP_FS(ref_temp[[fam]],alt_temp[[fam]],private$config[[fam]][indx_chrom], method="EM", nThreads=nThreads))))
+                      curOPGP <- private$para$OPGP[i]
+                      if(inferOPGP || !is.list(curOPGP) || length(curOPGP[[1]]) != length(indx_chrom)){
+                        tempOPGP <- list()
+                        for(fam in 1:private$noFam){
+                          tempOPGP <- c(tempOPGP,list(as.integer(infer_OPGP_FS(ref_temp[[fam]],alt_temp[[fam]],private$config[[fam]][indx_chrom], method="EM", nThreads=nThreads))))
+                        }
+                        private$para$OPGP[i] <- tempOPGP
                       }
-                      private$para$OPGP[i] <- tempOPGP
                       ## estimate the rf's
                       MLE <- rf_est_FS(init_r=init_r, ep=ep, ref=ref_temp, alt=alt_temp, OPGP=private$para$OPGP[i],
                                        sexSpec=sexSpec, seqErr=err, method=method, nThreads=nThreads, multiErr=multiErr)

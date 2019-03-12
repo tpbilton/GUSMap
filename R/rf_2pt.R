@@ -96,8 +96,8 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
     stop("There are some missing segregation types in the data.")
   
   ## Set up the Clusters
-  cl <- parallel::makeCluster(nClust)
-  doParallel::registerDoParallel(cl)
+  #cl <- parallel::makeCluster(nClust)
+  doParallel::registerDoParallel(nClust)
 
   cat("\nComputing 2-point recombination fraction estimates ...\n")
   cat("Paternal informative SNPs\n")
@@ -266,7 +266,7 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
     }
     return(rf)
   }
-  parallel::stopCluster(cl) 
+  #parallel::stopCluster(cl) 
   
   ## Build the rf and LOD matrices
   origOrder <- order(c(indx_BI,indx_PI,indx_MI))

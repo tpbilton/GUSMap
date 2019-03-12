@@ -6,12 +6,12 @@ mkfs <- makeFS(mkdata, pedfile = mkfile$ped)
 
 
 ### Simulated data
-noChr=1
+noChr=2
 nSnps=50
 noFam=1
 set.seed(5721)
 config <- list(sapply(1:noChr, function(x) list(sample(c(1,2,4),size=nSnps, prob=c(1,2,2)/5, replace=T)), simplify=T))
-simData <- simFS(0.001,epsilon=0.001,config=config,nInd=200, meanDepth=5, seed1=687534, seed2=6772)
+simData <- simFS(0.01,epsilon=0.001,config=config,nInd=200, meanDepth=5, seed1=687534, seed2=6772)
 
 ref <- simData$.__enclos_env__$private$ref
 alt <- simData$.__enclos_env__$private$alt
@@ -19,10 +19,10 @@ config <- simData$.__enclos_env__$private$config
 OPGP <- as.integer(GUSMap:::infer_OPGP_FS(ref[[1]],alt[[1]],config[[1]], method="EM"))
 
 rf1 <- GUSMap:::rf_est_FS(ref=ref,alt=alt, OPGP=list(OPGP), method="optim")
-rf2 <- GUSMap:::rf_est_FS(ref=ref,alt=alt, OPGP=list(OPGP), method="EM", nThreads = 3)
+rf2 <- GUSMap:::rf_est_FS(ref=ref,alt=alt, OPGP=list(OPGP), method="EM")
 
 
-simData$rf_2pt(nClust=3, err=T)
+simData$rf_2pt(nClust=2, err=F)
 ## plot the results
 simData$plotChr(parent="maternal", lmai = 0.5)
 simData$plotChr(parent="paternal", lmai = 0.5)
@@ -37,9 +37,9 @@ simData$addBIsnps(LODthres=5)
 simData$plotLG(parent="maternal")
 simData$plotLG(parent="paternal")
 
-simData$orderLG(weight = "none", mapfun = "morgan", ndim=30)
+simData$orderLG(weight = "none", mapfun = "morgan", ndim=2)
 
-simData$rf_est()
+simData$computeMap()
 
 simData$plotSyn()
 
