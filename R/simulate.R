@@ -125,6 +125,7 @@ simFS <- function(rVec_f, rVec_m=rVec_f, epsilon=0, config, nInd=100, meanDepth=
   if( GUSbase::checkVector(seed1, type="pos_integer") || GUSbase::checkVector(seed2, type = "pos_integer"))
     stop("Seed values for the randomziation need to be positive numeric values")
   if(noFam > 1 && GUSbase::checkVector(MNIF, type="pos_integer", minv=1, maxv=noFam, equal=FALSE))
+    stop(paste0("Minimum number of informative families must be between 1 and ",noFam))
   
   OPGP <- replicate(n = noChr, vector(mode = "list", length = noFam), simplify = F)
   genon <- ref <- alt <- vector(mode = "list", length=noFam)
