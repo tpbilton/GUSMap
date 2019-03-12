@@ -8,7 +8,7 @@
 #This is free software, and you are welcome to redistribute it
 #under certain conditions.
 #------------------------------------------------------------------------
-"Welcome to GUSMap v1.0.0"
+"Welcome to GUSMap v1.1.0"
      )}
 }
 
