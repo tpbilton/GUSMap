@@ -29,8 +29,8 @@ infer_OPGP_FS <- function(ref, alt, config, ep=0.001, method="optim", nThreads=1
   
   nSnps <- ncol(ref); nInd <- nrow(ref)
   
-  if(nInd*nSnps > 25000)          # if data set is too large, there are memory issues with R for EM algorithm
-    method = "optim"
+  #if(nInd*nSnps > 25000)          # if data set is too large, there are memory issues with R for EM algorithm
+  #  method = "optim"
   
   ## Index the informative loci
   Isnps <- which(!(config %in% 6:9))
