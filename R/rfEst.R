@@ -276,7 +276,7 @@ rf_est_FS_UP <- function(ref, alt, config, ep, method="optim", trace=F, nThreads
     npar <- c(length(ps),length(ms))
     
     ## Compute the K matrix for heterozygous genotypes
-    bcoef_mat <- choose(ref+alt,ref)
+    bcoef_mat <- matrix(1, nrow=nrow(ref), ncol=ncol(ref))   #choose(ref+alt,ref)
     Kab <- bcoef_mat*(1/2)^(ref+alt)
     
     ## Are we estimating the error parameters?
