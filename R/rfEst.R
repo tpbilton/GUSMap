@@ -99,6 +99,8 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP, noFam=as.integer(1)
       d <- (ref+alt)[badcalls]
       ref[badcalls] <- round(ref[badcalls]/d * 1000)
       alt[badcalls] <- round(alt[badcalls]/d * 1000)
+      ref <- matrix(as.integer(ref), nrow=nrow(ref), ncol=ncol(ref))
+      alt <- matrix(as.integer(alt), nrow=nrow(alt), ncol=ncol(alt))
     }
     
     ## Compute the K matrix for heterozygous genotypes
@@ -269,6 +271,8 @@ rf_est_FS_UP <- function(ref, alt, config, ep, method="optim", trace=F, nThreads
     d <- (ref+alt)[badcalls]
     ref[badcalls] <- round(ref[badcalls]/d * 1000)
     alt[badcalls] <- round(alt[badcalls]/d * 1000)
+    ref <- matrix(as.integer(ref), nrow=nrow(ref), ncol=ncol(ref))
+    alt <- matrix(as.integer(alt), nrow=nrow(alt), ncol=ncol(alt))
   }
   
   nInd <- nrow(ref)  # number of individuals
