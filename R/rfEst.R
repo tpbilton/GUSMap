@@ -93,6 +93,14 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP, noFam=as.integer(1)
     if(length(optim.arg) == 0)
       optim.arg <- list(maxit = 5000, reltol=1e-15)
     
+    ## Check for depths that are too large
+    badcalls <- which(ref+alt > 1000)
+    if(length(badcalls) > 0){
+      d <- (ref+alt)[badcalls]
+      ref[badcalls] <- round(ref[badcalls]/d * 1000)
+      alt[badcalls] <- round(alt[badcalls]/d * 1000)
+    }
+    
     ## Compute the K matrix for heterozygous genotypes
     bcoef_mat <- Kab <- vector(mode="list", length=noFam)
     for(fam in 1:noFam){
@@ -254,6 +262,14 @@ rf_est_FS_UP <- function(ref, alt, config, ep, method="optim", trace=F, nThreads
     trace = FALSE
   if(!(method %in% c("EM","optim")))
     stop("Specified optimization method is unknown. Please select one of 'EM' or 'optim'")
+  
+  ## Check for depths that are too large
+  badcalls <- which(ref+alt > 1000)
+  if(length(badcalls) > 0){
+    d <- (ref+alt)[badcalls]
+    ref[badcalls] <- round(ref[badcalls]/d * 1000)
+    alt[badcalls] <- round(alt[badcalls]/d * 1000)
+  }
   
   nInd <- nrow(ref)  # number of individuals
   nSnps <- ncol(ref)  # number of SNPs
