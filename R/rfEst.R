@@ -81,20 +81,22 @@
 
 rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP, noFam=as.integer(1),
                       sexSpec=FALSE, seqErr=TRUE, multiErr=FALSE, trace=FALSE,
-                      method = "optim", nThreads=1, ...){
+                      method = "optim", nThreads=1, thres=1000, ...){
   
   ## Do some checks
   nInd <- lapply(ref,nrow)  # number of individuals
   nSnps <- ncol(ref[[1]])   # number of SNPs
   
   ## Check for depths that are too large
-  badcalls <- which( (ref+alt) > 500)
-  if(length(badcalls) > 0){
-    d <- (ref+alt)[badcalls]
-    ref[badcalls] <- round(ref[badcalls]/d * 500)
-    alt[badcalls] <- round(alt[badcalls]/d * 500)
-    ref <- matrix(as.integer(ref), nrow=nInd, ncol=nSnps)
-    alt <- matrix(as.integer(alt), nrow=nInd, ncol=nSnps)
+  for(fam in 1:noFam){
+    badcalls <- which( (ref[[fam]]+alt[[fam]]) > thres)
+    if(length(badcalls) > 0){
+      d <- (ref[[fam]]+alt[[fam]])[badcalls]
+      ref[[fam]][badcalls] <- round(ref[[fam]][badcalls]/d * thres)
+      alt[[fam]][badcalls] <- round(alt[[fam]][badcalls]/d * thres)
+      ref[[fam]] <- matrix(as.integer(ref[[fam]]), nrow=nInd[[fam]], ncol=nSnps)
+      alt[[fam]] <- matrix(as.integer(alt[[fam]]), nrow=nInd[[fam]], ncol=nSnps)
+    }
   }
   
   if(method=="optim"){
@@ -251,7 +253,7 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP, noFam=as.integer(1)
 
 ## recombination estimates for case where the phase is unkonwn.
 ## The r.f.'s are sex-specific and constrained to the range [0,1]
-rf_est_FS_UP <- function(ref, alt, config, ep, method="optim", trace=F, nThreads=0, ...){
+rf_est_FS_UP <- function(ref, alt, config, ep, method="optim", trace=F, nThreads=0, thres=1000, ...){
   
   ## Check imputs
   if( any( ref<0 | !is.finite(ref)) || any(!(ref == round(ref))))
@@ -266,11 +268,11 @@ rf_est_FS_UP <- function(ref, alt, config, ep, method="optim", trace=F, nThreads
     stop("Specified optimization method is unknown. Please select one of 'EM' or 'optim'")
   
   ## Check for depths that are too large
-  badcalls <- which( (ref+alt) > 500)
+  badcalls <- which( (ref+alt) > thres)
   if(length(badcalls) > 0){
     d <- (ref+alt)[badcalls]
-    ref[badcalls] <- round(ref[badcalls]/d * 500)
-    alt[badcalls] <- round(alt[badcalls]/d * 500)
+    ref[badcalls] <- round(ref[badcalls]/d * thres)
+    alt[badcalls] <- round(alt[badcalls]/d * thres)
     ref <- matrix(as.integer(ref), nrow=nrow(ref), ncol=ncol(ref))
     alt <- matrix(as.integer(alt), nrow=nrow(alt), ncol=ncol(alt))
   }
