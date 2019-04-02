@@ -890,7 +890,7 @@ SEXP EM_HMM_UP(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP config, SEXP noFam, SEX
     // Compute the forward and backward probabilities for each individual
     for(fam = 0; fam < noFam_c; fam++){
       #pragma omp parallel for reduction(+:llval,sumA,sumB) num_threads(nThreads_c) \
-                               private(sum, s1, s2, g, a, b, alphaDot, snp, w_new, betaDot, alphaTilde, betaTilde, log_w, uProb, vProb)
+                               private(sum, s1, s2, g, a, b, indx, alphaDot, snp, w_new, betaDot, alphaTilde, betaTilde, log_w, uProb, vProb)
       for(ind = 0; ind < nInd_c[fam]; ind++){
         indx = ind + indSum[fam];
          /////////////////////////////////////////
