@@ -133,36 +133,45 @@ BC <- R6Class("BC",
                       else{
                         cat("Pseudo-testcross Linkage Group with BI SNPs Summary:\n")
                         LGlist <- c(private$LG_mat_bi,private$LG_pat_bi)
-                        nmat <- 1:length(private$LG_mat_bi)
-                        npat <- length(private$LG_mat_bi) + 1:length(private$LG_pat_bi)
                         ## maternal
-                        cat("Maternal LGs:\n")
-                        MI <- unlist(lapply(LGlist[nmat], function(x) sum(x %in% private$group$MI)))
-                        BI <- unlist(lapply(LGlist[nmat], function(x) sum(x %in% private$group$BI)))
-                        TOTAL <- unlist(lapply(LGlist[nmat], length))
-                        tab <- cbind(LG=nmat,MI,BI,TOTAL)
-                        tab <- stats::addmargins(tab, margin = 1)
-                        rownames(tab) <- NULL
-                        tab[nrow(tab), 1] <- "TOTAL"
-                        prmatrix(tab, rowlab = rep("",nrow(tab)), quote=F)
+                        if(!is.null(private$LG_mat_bi)){
+                          cat("Maternal LGs:\n")
+                          nmat <- 1:length(private$LG_mat_bi)
+                          MI <- unlist(lapply(LGlist[nmat], function(x) sum(x %in% private$group$MI)))
+                          BI <- unlist(lapply(LGlist[nmat], function(x) sum(x %in% private$group$BI)))
+                          TOTAL <- unlist(lapply(LGlist[nmat], length))
+                          tab <- cbind(LG=nmat,MI,BI,TOTAL)
+                          tab <- stats::addmargins(tab, margin = 1)
+                          rownames(tab) <- NULL
+                          tab[nrow(tab), 1] <- "TOTAL"
+                          prmatrix(tab, rowlab = rep("",nrow(tab)), quote=F)
+                        }
                         ## paternal
-                        cat("Paternal LGs:\n")
-                        PI <- unlist(lapply(LGlist[npat], function(x) sum(x %in% private$group$PI)))
-                        BI <- unlist(lapply(LGlist[npat], function(x) sum(x %in% private$group$BI)))
-                        TOTAL <- unlist(lapply(LGlist[npat], length))
-                        tab <- cbind(LG=npat,PI,BI,TOTAL)
-                        tab <- stats::addmargins(tab, margin = 1)
-                        rownames(tab) <- NULL
-                        tab[nrow(tab), 1] <- "TOTAL"
-                        prmatrix(tab, rowlab = rep("",nrow(tab)), quote=F)
+                        if(!is.null(private$LG_pat_bi)){
+                          cat("Paternal LGs:\n")
+                          npat <- length(private$LG_mat_bi) + 1:length(private$LG_pat_bi)
+                          PI <- unlist(lapply(LGlist[npat], function(x) sum(x %in% private$group$PI)))
+                          BI <- unlist(lapply(LGlist[npat], function(x) sum(x %in% private$group$BI)))
+                          TOTAL <- unlist(lapply(LGlist[npat], length))
+                          tab <- cbind(LG=npat,PI,BI,TOTAL)
+                          tab <- stats::addmargins(tab, margin = 1)
+                          rownames(tab) <- NULL
+                          tab[nrow(tab), 1] <- "TOTAL"
+                          prmatrix(tab, rowlab = rep("",nrow(tab)), quote=F)
+                        }
                       }
                     }
                     if(any(what == "map")){
                       if(is.null(private$para))
-                        warning("no maps have been estimated. Use the 'rf_est' function to compute some maps.")
+                        warning("no maps have been estimated. Use the '$computeMap' function to compute linkage maps.")
                       else{
                         cat(private$summaryInfo$map[[1]])
-                        prmatrix(private$summaryInfo$map[[2]], rowlab = rep("",nrow(private$summaryInfo$map[[2]])), quote=F)
+                        cat(private$summaryInfo$map[[2]])
+                        prmatrix(private$summaryInfo$map[[3]], rowlab = rep("",nrow(private$summaryInfo$map[[3]])), quote=F)
+                        if(length(private$summaryInfo$map) == 5){
+                          cat(private$summaryInfo$map[[4]])
+                          prmatrix(private$summaryInfo$map[[5]], rowlab = rep("",nrow(private$summaryInfo$map[[5]])), quote=F)
+                        }
                       }
                     }
                   }
@@ -307,8 +316,8 @@ BC <- R6Class("BC",
                   }
                   if(where == "LG-pts"){
                     ## Check that we have linkage groups
-                    if(is.null(private$LG_mat) || is.null(private$LG_pat))
-                      stop("No linkage groups exist. Please use the `$createLG`` function to create some linkage groups")
+                    if(is.null(private$LG_mat) & is.null(private$LG_pat))
+                      stop("No linkage groups exist. Please use the `$createLG` function to create some linkage groups")
                     nmat <- length(private$LG_mat)
                     npat <- length(private$LG_pat)
                     ## check input
@@ -354,7 +363,7 @@ BC <- R6Class("BC",
                         private$LG_pat[patgroups[-1]] <- NULL
                     }
                   } else if(where == "LG_bi"){
-                    if(is.null(private$LG_mat_bi) || is.null(private$LG_pat_bi))
+                    if(is.null(private$LG_mat_bi) & is.null(private$LG_pat_bi))
                       stop("There are no linkage groups with BI SNPs. Use the '$addBIsnps' to create linkage groups with BI snps.")
                     nmat <- length(private$LG_mat_bi)
                     npat <- length(private$LG_pat_bi)
@@ -445,8 +454,8 @@ BC <- R6Class("BC",
                     private$LG_mat <- createLG(private$group, private$LOD, "maternal", LODthres, nComp, masked=private$masked)
                   if(parent == "paternal" || parent == "both")
                     private$LG_pat <- createLG(private$group, private$LOD, "paternal", LODthres, nComp, masked=private$masked)
-                  if(!is.null(private$LG))
-                    private$LG <- NULL
+                  private$LG_mat_bi <- private$LG_pat_bi <- NULL
+                  private$LG_map <- summaryInfo <- NULL
                   ## display the results
                   self$print(what = "LG-pts")
                   return(invisible(NULL))
@@ -509,27 +518,13 @@ BC <- R6Class("BC",
                 #   return(invisible())
                 # },
                 ## Function for adding the informative SNPs to the LGs
-                addBIsnps = function(parent = "both", LODthres=10, nComp=10){
+                addBIsnps = function(LODthres=10, nComp=10){
                   
                   ## Do some checks
-                  if(!is.character(parent) || length(parent) != 1 || !(parent %in% c("maternal","paternal","both")))
-                    stop(paste("parent argument is not a string of length one or is invalid:",
-                         "   Please select one of the following:",
-                         "   maternal: Only MI SNPs",
-                         "   paternal: Only PI SNPs",
-                         "   both:     MI and PI SNPs", sep="\n"))
-                  if(parent == "maternal" || parent == "both" ){
-                    if(is.null(private$LG_mat))
-                      stop("Maternal linkage groups have not been created. Use the $createLG function to create maternal linkage groups")
-                  }
-                  if(parent == "paternal" || parent == "both" ){
-                    if(is.null(private$LG_pat))
-                      stop("Paternal linkage groups have not been created. Use the $createLG function to create Paternal linkage groups")
-                  }
-                  ##if(parent == "maternal" && length(private$LG_mat) == 0)
-                  #  stop("There are no maternal linkage groups. Please use 'createLG' function to create the linkage groups first")
-                  #else if(parent == "paternal" && length(private$LG_pat) == 0)
-                  #  stop("There are no paternal linkage groups. Please use 'createLG' function to create the linkage groups first")
+                  if(!is.null(private$LG_mat) & !is.null(private$LG_pat)) parent = "both"
+                  else if(!is.null(private$LG_mat)) parent = "maternal"
+                  else if(!is.null(private$LG_pat)) parent = "paternal"
+                  else stop("No linkage groups exist. Use the `$createLG` function to create linkage groups")
                   if(!is.numeric(LODthres) || !is.vector(LODthres) || length(LODthres) != 1 || LODthres < 0 || !is.finite(LODthres))
                     stop("The LOD threshold (argument 1) needs to be a finite positive numeric number.")
                   if(!is.numeric(nComp) || !is.vector(nComp) || length(nComp) != 1 || nComp < 0 || !is.finite(nComp) ||
@@ -560,23 +555,20 @@ BC <- R6Class("BC",
                   return(invisible(NULL))
                 },
                 ## Function for ordering linkage groups
-                orderLG = function(parent = "both", LG = NULL, mapfun = "haldane", weight="LOD2", ndim=30, spar=NULL, filename=NULL){
+                orderLG = function(LG = NULL, mapfun = "haldane", weight="LOD2", ndim=30, spar=NULL, filename=NULL){
                   ## do some checks
-                  if(!is.character(parent) || length(parent) != 1 || !(parent %in% c("maternal","paternal","both")))
-                    stop(paste("parent argument is not a string of length one or is invalid:",
-                               "   Please select one of the following:",
-                               "   maternal: Only MI SNPs",
-                               "   paternal: Only PI SNPs",
-                               "   both:     MI and PI SNPs", sep="\n"))
-                  if(parent == "maternal" || parent == "both" ){
-                    if(is.null(private$LG_mat_bi)){
-                      stop("Maternal linkage groups have not have BI SNPs added. Use the `$addBIsnps` function to add BI SNPs")
-                    }
-                  }
-                  if(parent == "paternal" || parent == "both" ){
-                    if(is.null(private$LG_pat_bi)){
-                      stop("Paternal linkage groups have not have BI SNPs added. Use the `$addBIsnps` function to add BI SNPs")
-                    }
+                  if(is.null(private$LG_mat_bi) & is.null(private$LG_pat_bi)){
+                    warning("Linkage groups do not contain BI SNPs. Proceeding with only partially informative SNPs")
+                    if(!is.null(private$LG_mat) & !is.null(private$LG_pat)) parent = "both"
+                    else if(!is.null(private$LG_mat)) parent = "maternal"
+                    else if(!is.null(private$LG_pat)) parent = "paternal"
+                    else stop("No linkage groups exist. Use the `$createLG` function to create linkage groups")
+                    private$LG_mat_bi <- private$LG_mat
+                    private$LG_pat_bi <- private$LG_pat
+                  } else{
+                    if(!is.null(private$LG_mat_bi) & !is.null(private$LG_pat_bi)) parent = "both"
+                    else if(!is.null(private$LG_mat_bi)) parent = "maternal"
+                    else if(!is.null(private$LG_pat_bi)) parent = "paternal"
                   }
                   LGlist <- c(private$LG_mat_bi,private$LG_pat_bi)
                   nmat <- length(private$LG_mat_bi)
@@ -597,8 +589,10 @@ BC <- R6Class("BC",
                     if(!temp)
                       stop("Error in filename. Cannot create pdf")
                   }
-                  matgroups <- LG[which(LG %in% 1:nmat)]
-                  patgroups <- LG[which(LG %in% (nmat + 1:npat))]
+                  if(nmat > 0) matgroups <- LG[which(LG %in% 1:nmat)]
+                  else matgroups <- NULL
+                  if(npat > 0) patgroups <- LG[which(LG %in% (nmat + 1:npat))]
+                  else patgroups <- NULL
                   ## order the linkage groups
                   for(lg in LG){
                     ind <- LGlist[[lg]]
@@ -809,14 +803,16 @@ BC <- R6Class("BC",
                 },
                 ## Function for plotting the linkage groups
                 plotLM = function(LG = NULL, fun="haldane", col="black"){
-                  if(is.null(private$para))
+                  if(is.null(private$LG_map))
                     stop("There are no linkage maps availabe to plot. Use the '$computeMap' function to compute linkage maps.")
-                  nLGs = length(private$para[[1]])
+                  nLGs = length(private$LG_map)
                   if(is.null(LG))
-                    LG <- 1:length(private$para$rf_p)
+                    LG <- 1:nLGs
                   if(isValue(LG, type="pos_integer", minv=1, maxv=nLGs))
                     stop(paste0("The LG indices must be an integer vector between 1 and the number of linkage groups which is ",nLGs))
-                  LG = LG[which(!unlist(lapply(private$para$rf_p[LG], function(x) any(is.na(x)))))]
+                  matlg <- which(!unlist(lapply(private$para$rf_m[LG], function(x) any(is.na(x)))))
+                  patlg <- which(!unlist(lapply(private$para$rf_p[LG], function(x) any(is.na(x)))))
+                  LG = c(matlg,patlg)
                   nLGs = length(LG)
                   if(nLGs == 0)
                     stop("There are no linkage maps for the specified linkage groups.")
@@ -840,7 +836,7 @@ BC <- R6Class("BC",
                   
                   ellipseEq_pos <- function(x) c2 + sqrt(b^2*(1-round((x-c1)^2/a^2,7)))
                   ellipseEq_neg <- function(x) c2 - sqrt(b^2*(1-round((x-c1)^2/a^2,7)))
-                  mapDist = lapply(private$para$rf_p[LG],mfun, fun=fun, centi=TRUE)
+                  mapDist = lapply(c(private$para$rf_m[matlg],private$para$rf_p[patlg]),mfun, fun=fun, centi=TRUE)
                   yCoor = max(unlist(lapply(mapDist,sum)))
                   graphics::par(mar=rep(2,4), mfrow=c(1,1))
                   graphics::plot(NULL,NULL, ylim=c(yCoor+0.01*yCoor,-0.01*yCoor),xlim=c(0,0.25*(nLGs+1)), xaxt='n',bty='n',xlab="",ylab="")
@@ -883,7 +879,7 @@ BC <- R6Class("BC",
                   graphics::abline(v=LGbreaks)
                   graphics::mtext(text = unique(private$chrom[orgOrder]), side = 2, 
                                   at = apply(cbind(c(min(orgOrder),chrBreaks),c(chrBreaks,max(orgOrder))),1,mean))
-                  graphics::mtext(text = 1:length(private$LG), side = 1, 
+                  graphics::mtext(text = 1:length(LGlist), side = 1, 
                                   at = apply(cbind(c(min(LGorder),LGbreaks),c(LGbreaks,max(LGorder))),1,mean))
                   graphics::par(temp_par) # reset the plot margins
                 }, 
@@ -952,8 +948,10 @@ BC <- R6Class("BC",
                   }
                   else{
                     LGlist <- c(private$LG_mat_bi,private$LG_pat_bi)
-                    matlg <- 1:length(private$LG_mat_bi)
-                    patlg <- max(matlg) + 1:length(private$LG_pat_bi)
+                    if(!is.null(private$LG_mat_bi)) matlg <- 1:length(private$LG_mat_bi)
+                    else matlg <- NULL
+                    if(!is.null(private$LG_pat_bi)) patlg <- length(private$LG_mat_bi) + 1:length(private$LG_pat_bi)
+                    else patlg <- NULL
                     ## Check the input
                     if((length(LGlist) == 0) && length(is.null(LGlist) == 0))
                       stop("Linkage groups have not been ordered. Use the $orderLG function to order SNPs")
@@ -991,31 +989,44 @@ BC <- R6Class("BC",
                       ## estimate the rf's
                       MLE <- rf_est_FS(init_r=init_r, ep=ep, ref=ref_temp, alt=alt_temp, OPGP=private$para$OPGP[i],
                                        sexSpec=F, seqErr=err, method=method, nThreads=nThreads, multiErr=multiErr)
-                      if(chrom %in% matlg)
+                      if(i %in% matlg)
                         private$para$rf_m[i]   <- list(MLE$rf)
-                      else if(chrom %in% patlg)
-                        private$para$rf_m[i]   <- list(MLE$rf)
+                      else if(i %in% patlg)
+                        private$para$rf_p[i]   <- list(MLE$rf)
                       else stop("Bug in code")
                       private$para$ep[i]       <- list(MLE$ep)
                       private$para$loglik[i]   <- list(MLE$loglik)
                       private$LG_map[[i]]      <- LGlist[[i]]
                     }
                     ## Create summary of results:
-                    MI <- unlist(lapply(private$LG_map, function(x) sum(x %in% private$group$MI)))
-                    PI <- unlist(lapply(private$LG_map, function(x) sum(x %in% private$group$PI)))
-                    BI <- unlist(lapply(private$LG_map, function(x) sum(x %in% private$group$BI)))
-                    TOTAL <- unlist(lapply(private$LG_map, length))
-                    tab <- cbind(LG=1:nchrom,MI,PI,BI,TOTAL)
-                    DIST_MAT <- extendVec(unlist(lapply(private$para$rf_m, function(x) round(sum(mfun(x, fun="haldane", centiM = T)),2))), nrow(tab))
-                    DIST_PAT <- extendVec(unlist(lapply(private$para$rf_p, function(x) round(sum(mfun(x, fun="haldane", centiM = T)),2))), nrow(tab))
-                    ERR <- extendVec(round(unlist(lapply(private$para$ep,mean)),5), nrow(tab))
-                    tab <- cbind(tab,DIST_MAT,DIST_PAT,ERR)
-                    tab <- stats::addmargins(tab, margin = 1, FUN=function(x) sum(x, na.rm=T))
-                    rownames(tab) <- NULL
-                    tab[nrow(tab), 1] <- "TOTAL"
-                    if(ncol(tab) > 7)
-                      tab[nrow(tab),8] <- ""
-                    private$summaryInfo$map <- list("Linkage Map Summaries:\n", tab)
+                    templist <- list("Linkage Map Summaries:\n")
+                    ## maternal
+                    MI <- unlist(lapply(private$LG_map[matlg], function(x) sum(x %in% private$group$MI)))
+                    BI <- unlist(lapply(private$LG_map[matlg], function(x) sum(x %in% private$group$BI)))
+                    TOTAL <- unlist(lapply(private$LG_map[matlg], length))
+                    tab1 <- cbind(LG=matlg,MI,BI,TOTAL)
+                    DIST <- extendVec(unlist(lapply(private$para$rf_m[matlg], function(x) round(sum(mfun(x, fun="haldane", centiM = T)),2))), nrow(tab1))
+                    ERR <- extendVec(round(unlist(lapply(private$para$ep[matlg],mean)),5), nrow(tab1))
+                    tab1 <- cbind(tab1,DIST,ERR)
+                    tab1 <- stats::addmargins(tab1, margin = 1)
+                    rownames(tab1) <- NULL
+                    tab1[nrow(tab1), 1] <- "TOTAL"
+                    tab1[nrow(tab1),6] <- ""
+                    templist <- c(templist,list("\nMaternal LGs:\n"), list(tab1))
+                    ## paternal
+                    PI <- unlist(lapply(private$LG_map[patlg], function(x) sum(x %in% private$group$PI)))
+                    BI <- unlist(lapply(private$LG_map[patlg], function(x) sum(x %in% private$group$BI)))
+                    TOTAL <- unlist(lapply(private$LG_map[patlg], length))
+                    tab2 <- cbind(LG=patlg,PI,BI,TOTAL)
+                    DIST <- extendVec(unlist(lapply(private$para$rf_p[patlg], function(x) round(sum(mfun(x, fun="haldane", centiM = T)),2))), nrow(tab2))
+                    ERR <- extendVec(round(unlist(lapply(private$para$ep[patlg],mean)),5), nrow(tab2))
+                    tab2 <- cbind(tab2,DIST,ERR)
+                    tab2 <- stats::addmargins(tab2, margin = 1)
+                    rownames(tab2) <- NULL
+                    tab2[nrow(tab2), 1] <- "TOTAL"
+                    tab2[nrow(tab2),6] <- ""
+                    templist <- c(templist,list("\nPaternal LGs:\n"), list(tab2))
+                    private$summaryInfo$map <- templist
                     self$print(what = "map")
                     return(invisible(NULL))
                   }
@@ -1068,20 +1079,22 @@ BC <- R6Class("BC",
                       chrom <- private$chrom[unlist(LGlist)]
                       pos <- private$pos[unlist(LGlist)]
                       depth <- colMeans(private$ref[[1]][,unlist(LGlist)] + private$alt[[1]][,unlist(LGlist)])
-                      segType <- (c("BI","PI","PI","MI","MI","U"))[private$config[[1]][unlist(private$LG_map[LG])]]
+                      segType <- (c("BI","PI","PI","MI","MI","U"))[private$config[[1]][unlist(LGlist)]]
                       temp <- private$ref[[1]][,unlist(LGlist)] > 0 | private$alt[[1]][,unlist(LGlist)] > 0
                       callrate <- colMeans(temp)
-                      rf_p <- unlist(lapply(private$para$rf_p[LG], function(y) {if(!is.na(y[1])) return(format(round(cumsum(c(0,y)),6),digits=6,scientific=F))} ))
-                      rf_m <- unlist(lapply(private$para$rf_m[LG], function(y) {if(!is.na(y[1])) return(format(round(cumsum(c(0,y)),6),digits=6,scientific=F))} ))
+                      rf_m <- c(unlist(lapply(private$para$rf_m[LG], function(y) {if(!is.na(y[1])) return(format(round(cumsum(c(0,y)),6),digits=6,scientific=F))} )),
+                                rep(0,length(unlist(private$para$rf_p[LG]))))
+                      rf_p <- c(rep(0,length(unlist(private$para$rf_p[LG]))),
+                                unlist(lapply(private$para$rf_m[LG], function(y) {if(!is.na(y[1])) return(format(round(cumsum(c(0,y)),6),digits=6,scientific=F))} )))
                       ep <- format(rep(round(unlist(private$para$ep[LG]),8), unlist(lapply(LGlist, length))),digits=8,scientific=F)
                       out <- list(LG=LGno, LG_POS=LGindx, CHROM=chrom, POS=pos, TYPE=segType, RF_PAT=rf_p, RF_MAT=rf_m,
                                   ERR=ep, MEAN_DEPTH=depth, CALLRATE=callrate)
                       ## write out file
                       data.table::fwrite(out, file = outfile, sep="\t", nThread = 1)  
-                      cat(paste0("Linkage analysis results written to file:\nFilename:\t",filename)) 
+                      cat(paste0("Linkage analysis results written to file:\nFilename:\t",filename,"\n")) 
                       return(invisible(NULL))
                     } else if(what == "LG-bi"){
-                      if(!is.null(private$LG_mat_bi) || !is.null(private$LG_pat_bi))
+                      if(is.null(private$LG_mat_bi) && is.null(private$LG_pat_bi))
                         stop("No ordered linkage groups available to write to file.")
                       LGlist <- c(private$LG_mat_bi,private$LG_pat_bi)
                       if(is.null(LG)){
@@ -1097,7 +1110,7 @@ BC <- R6Class("BC",
                       chrom <- private$chrom[unlist(LGlist)]
                       pos <- private$pos[unlist(LGlist)]
                       depth <- colMeans(private$ref[[1]][,unlist(LGlist)] + private$alt[[1]][,unlist(LGlist)])
-                      segType <- (c("BI","PI","PI","MI","MI","U"))[private$config[[1]][unlist(private$LG[LG])]]
+                      segType <- (c("BI","PI","PI","MI","MI","U"))[private$config[[1]][unlist(LGlist)]]
                       temp <- private$ref[[1]][,unlist(LGlist)] > 0 | private$alt[[1]][,unlist(LGlist)] > 0
                       callrate <- colMeans(temp)
                       out <- list(LG=LGno, LGPOS=LGindx, CHROM=chrom, POS=pos, TYPE=segType, MEAN_DEPTH=depth, CALLRATE=callrate)
@@ -1163,7 +1176,7 @@ BC <- R6Class("BC",
                   return(newLGlist)
                 }
               ), lock_objects = FALSE
-                    )
+)
 
 ### Function for extending a vector to length n
 extendVec <- function(vec, n){
