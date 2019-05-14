@@ -10,8 +10,8 @@ BCobj <- makeBC(RAobj, pedfile, family=NULL,
                 filter=list(MAF=0.05, MISS=0.2, BIN=100, DEPTH=5, PVALUE=0.01))
 
 ## Functions (Methods) of an BC object
-BCobj$addBIsnps(LODthres = 10, nComp = 10)
-BCobj$computeMap(chrom=NULL, init_r=0.01, ep=0.001, method="optim", sexSpec=F, err=T, mapped=T, nThreads=1)
+BCobj$addBIsnps(parent = "both", LODthres = 10, nComp = 10)
+BCobj$computeMap(chrom=NULL, init_r=0.01, ep=0.001, method="optim", err=T, mapped=T, nThreads=1)
 BCobj$createLG(parent = "both", LODthres = 10, nComp = 10)
 BCobj$maskSNP(snps)
 BCobj$mergeLG(LG, where = NULL, mergeTo = NULL)
@@ -28,18 +28,18 @@ BCobj$unmaskSNP(snps)
 BCobj$writeLM(file, direct = "./", LG = NULL, what = NULL)
 }
 \description{
-Class for storing BC data and associated functions for analysis of full-sib family populations.
+Class for storing BC data and associated functions for analysis of backcross family populations.
 }
 \details{
 An BC object is created from the \code{\link{makeBC}} function and contains RA data,
 various statistics of the dataset that have been computed, and functions (methods)
-for analyzing the data. Information in an BC object are specific to full-sib family populations.
+for analyzing the data. Information in an BC object are specific to backcross family populations.
 }
 \section{Methods(Functions)}{
 
 \describe{
 \item{\code{\link{$addBIsnps}}}{Add Both-Informative (BI) snps to the maternal and/or
-paternal linkage groups and merge the parental linkage groups.}
+paternal linkage groups.}
 \item{\code{\link{$createLG}}}{Create linkage group(s).}
 \item{\code{\link{$computeMap}}}{Compute linkage maps for a given marker order.}
 \item{\code{\link{$maskSNP}}}{Mask SNP(s) in the dataset.}
