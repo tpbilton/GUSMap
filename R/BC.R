@@ -348,11 +348,15 @@ BC <- R6Class("BC",
                         private$LG_mat[[matgroups[1]]] <- mergedLG
                         private$LG_mat[matgroups[-1]] <- NULL
                         private$config[[1]][private$LG_pat[patgroups][[1]]] <- private$config[[1]][private$LG_pat[patgroups][[1]]] + 2
+                        private$group$PI <- setdiff(private$group$PI, private$LG_pat[patgroups[1]][[1]])
+                        private$group$MI <- sort(c(private$group$MI,private$LG_pat[patgroups[1]][[1]]))
                         private$LG_pat[patgroups] <- NULL
                       } else if(mergeTo == "paternal"){
                         private$LG_pat[[patgroups[1]]] <- mergedLG
                         private$LG_pat[patgroups[-1]] <- NULL
                         private$config[[1]][private$LG_mat[matgroups][[1]]] <- private$config[[1]][private$LG_mat[matgroups][[1]]] - 2
+                        private$group$MI <- setdiff(private$group$MI, private$LG_mat[matgroups[1]][[1]])
+                        private$group$PI <- sort(c(private$group$PI,private$LG_mat[matgroups[1]][[1]]))
                         private$LG_mat[matgroups] <- NULL
                       }
                     } else{
@@ -362,7 +366,7 @@ BC <- R6Class("BC",
                       if(length(patgroups) > 1)
                         private$LG_pat[patgroups[-1]] <- NULL
                     }
-                  } else if(where == "LG_bi"){
+                  } else if(where == "LG-bi"){
                     if(is.null(private$LG_mat_bi) & is.null(private$LG_pat_bi))
                       stop("There are no linkage groups with BI SNPs. Use the '$addBIsnps' to create linkage groups with BI snps.")
                     nmat <- length(private$LG_mat_bi)
@@ -449,6 +453,15 @@ BC <- R6Class("BC",
                      round(nComp) != nComp)
                     stop("The number of comparsion points (argument 3) needs to be a finite integer number.")
                   
+                  ## Reset the groups 
+                  private$group$BI <- which(private$config_orig[[1]] == 1)
+                  private$group$PI <- which(private$config_orig[[1]] %in% c(2,3))
+                  private$group$MI <- which(private$config_orig[[1]] %in% c(4,5))
+                  private$group_infer$BI <- which(private$config_infer_orig[[1]] == 1) 
+                  private$group_infer$SI <- which(private$config_infer_orig[[1]] %in% c(4,5))
+                  private$config <- private$config_orig
+                  private$config_infer <- private$config_infer_orig
+                  
                   ## Create the groups
                   if(parent == "maternal" || parent == "both")
                     private$LG_mat <- createLG(private$group, private$LOD, "maternal", LODthres, nComp, masked=private$masked)
@@ -476,8 +489,8 @@ BC <- R6Class("BC",
 
                   ## Find the unmapped loci
                   
-                  unmapped <- sort(unlist(c(which(!(private$group$MI %in% unlist(c(self$LG_mat,self$LG_pat)))),
-                                              which(!(private$group$PI %in% unlist(c(self$LG_mat,self$LG_pat)))),
+                  unmapped <- sort(unlist(c(which(!(private$group$MI %in% unlist(c(private$LG_mat,private$LG_pat)))),
+                                              which(!(private$group$PI %in% unlist(c(private$LG_mat,private$LG_pat)))),
                                               private$group_infer$SI)))
                   
                   if(length(unmapped) == 0)
@@ -491,6 +504,7 @@ BC <- R6Class("BC",
                   ## Run algorithm for generating the linkage groups
                   noneMapped = FALSE
                   count = 0
+                  added <- numeric(0)
                   while(!noneMapped){
                     noneMapped = TRUE
                     ## check that there are still SNPs remaining that need to be mapped
@@ -504,6 +518,7 @@ BC <- R6Class("BC",
                           LODvalue[lg] <- mean(sort(private$LOD[snp,newLGlist[[lg]]],decreasing=T)[1:nComp],na.rm=T)
                         if(max(LODvalue) >= LODthres & sort(LODvalue, decreasing = T)[2] < LODthres){
                           count = count + 1
+                          added <- c(added, snp)
                           newLG <- which.max(LODvalue)
                           newLGlist[[newLG]] <- c(newLGlist[[newLG]], snp)
                           unmapped <- unmapped[-which(unmapped == snp)]
@@ -516,8 +531,22 @@ BC <- R6Class("BC",
                   if(count == 0){
                     stop("No SNPs were added to the Linkage Groups")
                   } else{ ## else set the new LGs
+                    added_mat <- added[which(added %in% private$group$MI)]
+                    added_pat <- added[which(added %in% private$group$PI)]
+                    added_mat_infer <- added[which( (added %in% unlist(newLGlist[1:length(private$LG_mat)])) &
+                                                      (added %in% private$group_infer$SI))]
+                    added_pat_infer <- added[which(added %in% unlist(newLGlist[length(private$LG_mat) + 1:length(private$LG_pat)]))]
                     private$LG_mat <- newLGlist[1:length(private$LG_mat)]
                     private$LG_pat <- newLGlist[length(private$LG_mat) + 1:length(private$LG_pat)]
+
+                    ## If inferred SNPs have been added, update there configuraton and the group variable
+                    # Paternal
+                    added_pat <- private$group_infer$SI[which(private$group_infer$SI %in% unlist(newLGlist[length(private$LG_mat) + 1:length(private$LG_pat)]))]
+                    private$config_infer[[1]][added_pat] <- private$config_infer[[1]][added_pat] - 2
+                    private$group$PI <- sort(c(private$group$PI,added_pat))
+                    # Maternal
+                    added_mat <- private$group_infer$SI[which(private$group_infer$SI %in% unlist(newLGlist[1:length(private$LG_mat)]))]
+                    private$group$MI <- sort(c(private$group$MI,added_mat))
                   }
                   return(invisible())
                 },
