@@ -352,7 +352,7 @@ BC <- R6Class("BC",
                         added_pat <- private$LG_pat[patgroups][[1]][private$LG_pat[patgroups][[1]] %in% c(private$group$MI,private$group$PI)]
                         if(length(added_pat) > 0)
                           private$config[[1]][added_pat] <- c(private$config[[1]][added_pat] %% 2) + 4
-                        added_pat_infer <- private$LG_pat[patgroups][[1]][private$LG_mat[patgroups][[1]] %in% private$group_infer$SI]
+                        added_pat_infer <- private$LG_pat[patgroups][[1]][private$LG_pat[patgroups][[1]] %in% private$group_infer$SI]
                         if(length(added_pat_infer) > 0)
                           private$config_infer[[1]][added_pat_infer] <- c(private$config_infer[[1]][added_pat_infer] %% 2) + 4
                         #private$group$PI <- setdiff(private$group$PI, private$LG_pat[patgroups[1]][[1]])
@@ -454,7 +454,7 @@ BC <- R6Class("BC",
                 createLG = function(parent="both", LODthres=10, nComp=10){
                   ## Do some checks
                   if(is.null(private$rf) || is.null(private$LOD))
-                    stop("Recombination fractions and LOD scores have not been computed.\nUse $rf_2pt() to compute the recombination fractions and LOD scores.")
+                    stop("Recombination fractions and LOD scores have not been computed.\n  Use $rf_2pt() to compute the recombination fractions and LOD scores.")
                   if(!is.character(parent) || length(parent) != 1 || !(parent %in% c("maternal","paternal","both")))
                     stop(cat("parent argument is not a string of length one or is invalid:",
                          "   Please select one of the following:",
@@ -552,7 +552,8 @@ BC <- R6Class("BC",
                                                (added %in% unlist(newLGlist[length(private$LG_pat) + 1:length(private$LG_mat)])))]
                     added_mat_infer <- added[which( (added %in% unlist(newLGlist[1:length(private$LG_mat)])) &
                                                       (added %in% private$group_infer$SI))]
-                    added_pat_infer <- added[which(added %in% unlist(newLGlist[length(private$LG_mat) + 1:length(private$LG_pat)]))]
+                    added_pat_infer <- added[which( (added %in% unlist(newLGlist[length(private$LG_mat) + 1:length(private$LG_pat)])) &
+                                                     (added %in% private$group_infer$SI))]
                     ## update configations if required
                     if(length(added_mat) > 0)
                       private$config[[1]][added_mat] <- (c(private$config[[1]][added_mat]) %% 2) + 2
@@ -1033,12 +1034,18 @@ BC <- R6Class("BC",
                       indx_chrom <- LGlist[[i]]
                       ref_temp <- lapply(private$ref, function(x) x[,indx_chrom])
                       alt_temp <- lapply(private$alt, function(x) x[,indx_chrom])
+                      config_temp <- lapply(private$config, function(x) x[indx_chrom])
+                      for(fam in 1:private$noFam){
+                        tempIndx <- !is.na(private$config_infer[[fam]][indx_chrom])
+                        config_temp[[fam]][tempIndx] <- private$config_infer[[fam]][indx_chrom[tempIndx]]
+                      }
+                      
                       ## estimate OPGP's
                       curOPGP <- private$para$OPGP[i]
                       if(inferOPGP || !is.list(curOPGP) || length(curOPGP[[1]]) != length(indx_chrom)){
                         tempOPGP <- list()
                         for(fam in 1:private$noFam){
-                          tempOPGP <- c(tempOPGP,list(as.integer(infer_OPGP_FS(ref_temp[[fam]],alt_temp[[fam]],private$config[[fam]][indx_chrom], method="EM", nThreads=nThreads))))
+                          tempOPGP <- c(tempOPGP,list(as.integer(infer_OPGP_FS(ref_temp[[fam]],alt_temp[[fam]],config_temp[[fam]], method="EM", nThreads=nThreads))))
                         }
                         private$para$OPGP[i] <- tempOPGP
                       }
@@ -1057,8 +1064,8 @@ BC <- R6Class("BC",
                     ## Create summary of results:
                     templist <- list("Linkage Map Summaries:\n")
                     ## maternal
-                    MI <- unlist(lapply(private$LG_map[matlg], function(x) sum(x %in% private$group$MI)))
-                    BI <- unlist(lapply(private$LG_map[matlg], function(x) sum(x %in% private$group$BI)))
+                    MI <- unlist(lapply(private$LG_map[matlg], function(x) sum(c(private$config[[1]][x],private$config_infer[[1]][x]) %in% c(4,5), na.rm=T)))
+                    BI <- unlist(lapply(private$LG_map[matlg], function(x) sum(c(private$config[[1]][x],private$config_infer[[1]][x]) == 1, na.rm=T)))
                     TOTAL <- unlist(lapply(private$LG_map[matlg], length))
                     tab1 <- cbind(LG=matlg,MI,BI,TOTAL)
                     DIST <- extendVec(unlist(lapply(private$para$rf_m[matlg], function(x) round(sum(mfun(x, fun="haldane", centiM = T)),2))), nrow(tab1))
@@ -1070,8 +1077,8 @@ BC <- R6Class("BC",
                     tab1[nrow(tab1),6] <- ""
                     templist <- c(templist,list("\nMaternal LGs:\n"), list(tab1))
                     ## paternal
-                    PI <- unlist(lapply(private$LG_map[patlg], function(x) sum(x %in% private$group$PI)))
-                    BI <- unlist(lapply(private$LG_map[patlg], function(x) sum(x %in% private$group$BI)))
+                    PI <- unlist(lapply(private$LG_map[patlg], function(x) sum(c(private$config[[1]][x],private$config_infer[[1]][x]) %in% c(2,3), na.rm=T)))
+                    BI <- unlist(lapply(private$LG_map[patlg], function(x) sum(c(private$config[[1]][x],private$config_infer[[1]][x]) == 1, na.rm=T)))
                     TOTAL <- unlist(lapply(private$LG_map[patlg], length))
                     tab2 <- cbind(LG=patlg,PI,BI,TOTAL)
                     DIST <- extendVec(unlist(lapply(private$para$rf_p[patlg], function(x) round(sum(mfun(x, fun="haldane", centiM = T)),2))), nrow(tab2))
@@ -1135,13 +1142,17 @@ BC <- R6Class("BC",
                       chrom <- private$chrom[unlist(LGlist)]
                       pos <- private$pos[unlist(LGlist)]
                       depth <- colMeans(private$ref[[1]][,unlist(LGlist)] + private$alt[[1]][,unlist(LGlist)])
-                      segType <- (c("BI","PI","PI","MI","MI","U"))[private$config[[1]][unlist(LGlist)]]
+                      config_temp <- private$config[[1]]
+                      config_temp[!is.na(private$config_infer[[1]])] <- private$config_infer[[1]][!is.na(private$config_infer[[1]])] 
+                      segType <- (c("BI","PI","PI","MI","MI","U"))[config_temp[unlist(LGlist)]]
                       temp <- private$ref[[1]][,unlist(LGlist)] > 0 | private$alt[[1]][,unlist(LGlist)] > 0
                       callrate <- colMeans(temp)
+                      matgroups <- which(unlist(lapply(private$para$rf_p[LG], function(x) all(is.na(x)))))
+                      patgroups <- which(unlist(lapply(private$para$rf_m[LG], function(x) all(is.na(x)))))
                       rf_m <- c(unlist(lapply(private$para$rf_m[LG], function(y) {if(!is.na(y[1])) return(format(round(cumsum(c(0,y)),6),digits=6,scientific=F))} )),
-                                rep(0,length(unlist(private$para$rf_p[LG]))))
-                      rf_p <- c(rep(0,length(unlist(private$para$rf_p[LG]))),
-                                unlist(lapply(private$para$rf_m[LG], function(y) {if(!is.na(y[1])) return(format(round(cumsum(c(0,y)),6),digits=6,scientific=F))} )))
+                                rep(0,length(unlist(unlist(LGlist[patgroups])))))
+                      rf_p <- c(rep(0,length(unlist(unlist(LGlist[matgroups])))),
+                                unlist(lapply(private$para$rf_p[LG], function(y) {if(!is.na(y[1])) return(format(round(cumsum(c(0,y)),6),digits=6,scientific=F))} )))
                       ep <- format(rep(round(unlist(private$para$ep[LG]),8), unlist(lapply(LGlist, length))),digits=8,scientific=F)
                       out <- list(LG=LGno, LG_POS=LGindx, CHROM=chrom, POS=pos, TYPE=segType, RF_PAT=rf_p, RF_MAT=rf_m,
                                   ERR=ep, MEAN_DEPTH=depth, CALLRATE=callrate)
