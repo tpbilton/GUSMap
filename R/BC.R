@@ -137,8 +137,8 @@ BC <- R6Class("BC",
                         if(!is.null(private$LG_mat_bi)){
                           cat("Maternal LGs:\n")
                           nmat <- 1:length(private$LG_mat_bi)
-                          MI <- unlist(lapply(LGlist[nmat], function(x) sum(x %in% private$group$MI)))
-                          BI <- unlist(lapply(LGlist[nmat], function(x) sum(x %in% private$group$BI)))
+                          MI <- unlist(lapply(LGlist[nmat], function(x) sum(c(private$config[[1]][x],private$config_infer[[1]][x]) %in% c(4,5), na.rm=T)))
+                          BI <- unlist(lapply(LGlist[nmat], function(x) sum(c(private$config[[1]][x],private$config_infer[[1]][x]) == 1, na.rm=T)))
                           TOTAL <- unlist(lapply(LGlist[nmat], length))
                           tab <- cbind(LG=nmat,MI,BI,TOTAL)
                           tab <- stats::addmargins(tab, margin = 1)
@@ -150,8 +150,8 @@ BC <- R6Class("BC",
                         if(!is.null(private$LG_pat_bi)){
                           cat("Paternal LGs:\n")
                           npat <- length(private$LG_mat_bi) + 1:length(private$LG_pat_bi)
-                          PI <- unlist(lapply(LGlist[npat], function(x) sum(x %in% private$group$PI)))
-                          BI <- unlist(lapply(LGlist[npat], function(x) sum(x %in% private$group$BI)))
+                          PI <- unlist(lapply(LGlist[npat], function(x) sum(c(private$config[[1]][x],private$config_infer[[1]][x]) %in% c(2,3), na.rm=T)))
+                          BI <- unlist(lapply(LGlist[npat], function(x) sum(c(private$config[[1]][x],private$config_infer[[1]][x]) == 1, na.rm=T)))
                           TOTAL <- unlist(lapply(LGlist[npat], length))
                           tab <- cbind(LG=npat,PI,BI,TOTAL)
                           tab <- stats::addmargins(tab, margin = 1)
@@ -345,18 +345,32 @@ BC <- R6Class("BC",
                       ## merge groups
                       mergedLG <- unlist(c(private$LG_mat[matgroups[1]],private$LG_pat[patgroups[1]]))
                       if(mergeTo == "maternal"){
+                        ## Added merged linkage groups
                         private$LG_mat[[matgroups[1]]] <- mergedLG
                         private$LG_mat[matgroups[-1]] <- NULL
-                        private$config[[1]][private$LG_pat[patgroups][[1]]] <- private$config[[1]][private$LG_pat[patgroups][[1]]] + 2
-                        private$group$PI <- setdiff(private$group$PI, private$LG_pat[patgroups[1]][[1]])
-                        private$group$MI <- sort(c(private$group$MI,private$LG_pat[patgroups[1]][[1]]))
+                        ## remove paternal linkage groups and change config
+                        added_pat <- private$LG_pat[patgroups][[1]][private$LG_pat[patgroups][[1]] %in% c(private$group$MI,private$group$PI)]
+                        if(length(added_pat) > 0)
+                          private$config[[1]][added_pat] <- c(private$config[[1]][added_pat] %% 2) + 4
+                        added_pat_infer <- private$LG_pat[patgroups][[1]][private$LG_mat[patgroups][[1]] %in% private$group_infer$SI]
+                        if(length(added_pat_infer) > 0)
+                          private$config_infer[[1]][added_pat_infer] <- c(private$config_infer[[1]][added_pat_infer] %% 2) + 4
+                        #private$group$PI <- setdiff(private$group$PI, private$LG_pat[patgroups[1]][[1]])
+                        #private$group$MI <- sort(c(private$group$MI,private$LG_pat[patgroups[1]][[1]]))
                         private$LG_pat[patgroups] <- NULL
                       } else if(mergeTo == "paternal"){
+                        ## add merged linkage groups
                         private$LG_pat[[patgroups[1]]] <- mergedLG
                         private$LG_pat[patgroups[-1]] <- NULL
-                        private$config[[1]][private$LG_mat[matgroups][[1]]] <- private$config[[1]][private$LG_mat[matgroups][[1]]] - 2
-                        private$group$MI <- setdiff(private$group$MI, private$LG_mat[matgroups[1]][[1]])
-                        private$group$PI <- sort(c(private$group$PI,private$LG_mat[matgroups[1]][[1]]))
+                        ## remove maternal linkage groups and change config
+                        added_mat <- private$LG_mat[matgroups][[1]][private$LG_mat[matgroups][[1]] %in% c(private$group$MI,private$group$PI)]
+                        if(length(added_mat) > 0)
+                          private$config[[1]][added_mat] <- c(private$config[[1]][added_mat] %% 2) + 2
+                        added_mat_infer <- private$LG_mat[matgroups][[1]][private$LG_mat[matgroups][[1]] %in% private$group_infer$SI]
+                        if(length(added_mat_infer) > 0)
+                          private$config_infer[[1]][added_mat_infer] <- c(private$config_infer[[1]][added_mat_infer] %% 2) + 2
+                        #private$group$MI <- setdiff(private$group$MI, private$LG_mat[matgroups[1]][[1]])
+                        #private$group$PI <- sort(c(private$group$PI,private$LG_mat[matgroups[1]][[1]]))
                         private$LG_mat[matgroups] <- NULL
                       }
                     } else{
@@ -442,11 +456,11 @@ BC <- R6Class("BC",
                   if(is.null(private$rf) || is.null(private$LOD))
                     stop("Recombination fractions and LOD scores have not been computed.\nUse $rf_2pt() to compute the recombination fractions and LOD scores.")
                   if(!is.character(parent) || length(parent) != 1 || !(parent %in% c("maternal","paternal","both")))
-                    stop("parent argument is not a string of length one or is invalid:
-                         Please select one of the following:
-                         maternal: Only MI SNPs
-                         paternal: Only PI SNPs
-                         both:     MI and PI SNPs")
+                    stop(cat("parent argument is not a string of length one or is invalid:",
+                         "   Please select one of the following:",
+                         "     maternal: Only MI SNPs",
+                         "     paternal: Only PI SNPs",
+                         "     both:     MI and PI SNPs"))
                   if(!is.numeric(LODthres) || !is.vector(LODthres) || length(LODthres) != 1 || is.na(nComp) ||  LODthres < 0 || !is.finite(LODthres))
                     stop("The LOD threshold (argument 2) needs to be a finite numeric number.")
                   if(!is.numeric(nComp) || !is.vector(nComp) || length(nComp) != 1 || is.na(nComp) || nComp < 0 || !is.finite(nComp) ||
@@ -454,11 +468,11 @@ BC <- R6Class("BC",
                     stop("The number of comparsion points (argument 3) needs to be a finite integer number.")
                   
                   ## Reset the groups 
-                  private$group$BI <- which(private$config_orig[[1]] == 1)
-                  private$group$PI <- which(private$config_orig[[1]] %in% c(2,3))
-                  private$group$MI <- which(private$config_orig[[1]] %in% c(4,5))
-                  private$group_infer$BI <- which(private$config_infer_orig[[1]] == 1) 
-                  private$group_infer$SI <- which(private$config_infer_orig[[1]] %in% c(4,5))
+                  #private$group$BI <- which(private$config_orig[[1]] == 1)
+                  #private$group$PI <- which(private$config_orig[[1]] %in% c(2,3))
+                  #private$group$MI <- which(private$config_orig[[1]] %in% c(4,5))
+                  #private$group_infer$BI <- which(private$config_infer_orig[[1]] == 1) 
+                  #private$group_infer$SI <- which(private$config_infer_orig[[1]] %in% c(4,5))
                   private$config <- private$config_orig
                   private$config_infer <- private$config_infer_orig
                   
@@ -487,17 +501,18 @@ BC <- R6Class("BC",
                      round(nComp) != nComp)
                     stop("The number of comparsion points (argument 2) needs to be a finite positive integer number.")
 
+                  ## new LGs for adding BI snps to
+                  newLGlist <- c(private$LG_mat, private$LG_pat)
+                  
                   ## Find the unmapped loci
                   
-                  unmapped <- sort(unlist(c(which(!(private$group$MI %in% unlist(c(private$LG_mat,private$LG_pat)))),
-                                              which(!(private$group$PI %in% unlist(c(private$LG_mat,private$LG_pat)))),
-                                              private$group_infer$SI)))
+                  unmapped <- sort(unlist(c(private$group$MI[which(!(private$group$MI %in% unlist(newLGlist)))],
+                                            private$group$PI[which(!(private$group$PI %in% unlist(newLGlist)))],
+                                            private$group_infer$SI[which(!(private$group_infer$SI %in% unlist(newLGlist)))])))
                   
                   if(length(unmapped) == 0)
                     stop("There are no SNPs remaining that are unmapped")
-
-                  ## new LGs for adding BI snps to
-                  newLGlist <- c(private$LG_mat, private$LG_pat)
+                  
                   ## count the number of LGs
                   nLG <- length(newLGlist)
 
@@ -530,23 +545,26 @@ BC <- R6Class("BC",
                   ## Check to see if any SNPs were added
                   if(count == 0){
                     stop("No SNPs were added to the Linkage Groups")
-                  } else{ ## else set the new LGs
-                    added_mat <- added[which(added %in% private$group$MI)]
-                    added_pat <- added[which(added %in% private$group$PI)]
+                  } else{
+                    added_mat <- added[which((added %in% unlist(c(private$group$MI,private$group$PI))) & 
+                                               (added %in% unlist(newLGlist[1:length(private$LG_pat)])))]
+                    added_pat <- added[which((added %in% unlist(c(private$group$MI,private$group$PI))) & 
+                                               (added %in% unlist(newLGlist[length(private$LG_pat) + 1:length(private$LG_mat)])))]
                     added_mat_infer <- added[which( (added %in% unlist(newLGlist[1:length(private$LG_mat)])) &
                                                       (added %in% private$group_infer$SI))]
                     added_pat_infer <- added[which(added %in% unlist(newLGlist[length(private$LG_mat) + 1:length(private$LG_pat)]))]
+                    ## update configations if required
+                    if(length(added_mat) > 0)
+                      private$config[[1]][added_mat] <- (c(private$config[[1]][added_mat]) %% 2) + 2
+                    if(length(added_pat) > 0)
+                      private$config[[1]][added_pat] <- (c(private$config[[1]][added_pat]) %% 2) + 4
+                    if(length(added_mat_infer) > 0)
+                      private$config_infer[[1]][added_mat_infer] <- (c(private$config_infer[[1]][added_mat_infer]) %% 2) + 4
+                    if(length(added_pat_infer) > 0)
+                      private$config_infer[[1]][added_pat_infer] <- (c(private$config_infer[[1]][added_pat_infer]) %% 2) + 2
+                    ## set the new LGs
                     private$LG_mat <- newLGlist[1:length(private$LG_mat)]
                     private$LG_pat <- newLGlist[length(private$LG_mat) + 1:length(private$LG_pat)]
-
-                    ## If inferred SNPs have been added, update there configuraton and the group variable
-                    # Paternal
-                    added_pat <- private$group_infer$SI[which(private$group_infer$SI %in% unlist(newLGlist[length(private$LG_mat) + 1:length(private$LG_pat)]))]
-                    private$config_infer[[1]][added_pat] <- private$config_infer[[1]][added_pat] - 2
-                    private$group$PI <- sort(c(private$group$PI,added_pat))
-                    # Maternal
-                    added_mat <- private$group_infer$SI[which(private$group_infer$SI %in% unlist(newLGlist[1:length(private$LG_mat)]))]
-                    private$group$MI <- sort(c(private$group$MI,added_mat))
                   }
                   return(invisible())
                 },
@@ -795,7 +813,7 @@ BC <- R6Class("BC",
                   return(invisible())
                 },
                 ## Function for plotting chromosome in their original ordering
-                plotChr = function(parent = "maternal", mat=c("rf"), filename=NULL, chrS=2, lmai=2){
+                plotChr = function(chrom=NULL, parent = "maternal", mat=c("rf"), filename=NULL, chrS=2, lmai=2){
                   ## do some checks
                   if(!is.vector(mat) || !is.character(mat) || length(mat) != 1 || !(mat %in% c('rf','LOD')))
                     stop("Argument specifying which matrix to plot (argument 1) must be either 'rf' or 'LOD'")
@@ -805,6 +823,11 @@ BC <- R6Class("BC",
                                "   maternal: Only MI and BI SNPs",
                                "   paternal: Only PI and BI SNPs",
                                "   both:     MI, PI and BI SNPs", sep="\n"))
+                  nChrom = length(unique((private$chrom == x)))
+                  if(is.null(chrom)){
+                    chrom <- 1:nChrom
+                  } else if(GUSbase::checkVector(chrom, type = "pos_integer", maxv=nChrom))
+                    stop(paste0("Invalid chromosome number (first argument). Must be an integer number between 0 and ",nChrom,".\n"))
                   
                   if(is.null(filename))
                     temp_par <- par(no.readonly = TRUE) # save the current plot margins
@@ -814,16 +837,16 @@ BC <- R6Class("BC",
                     ## workout the indices for the chromosomes
                     names <- unique(private$chrom)
                     if(parent == "maternal")
-                      LG <- sapply(names, function(x) which((private$chrom == x) & !private$masked & (private$config[[1]] %in% c(1,4,5))), simplify=F)
+                      LGlist <- sapply(names, function(x) which((private$chrom == x) & !private$masked & (private$config[[1]] %in% c(1,4,5))), simplify=F)
                     else if(parent == "paternal")
-                      LG <- sapply(names, function(x) which((private$chrom == x) & !private$masked & (private$config[[1]] %in% c(1,2,3))), simplify=F)
+                      LGlist <- sapply(names, function(x) which((private$chrom == x) & !private$masked & (private$config[[1]] %in% c(1,2,3))), simplify=F)
                     else if(parent == "both")
-                      LG <- sapply(names, function(x) which((private$chrom == x) & !private$masked & (private$config[[1]] %in% c(1,2,3,4,5))), simplify=F)
+                      LGlist <- sapply(names, function(x) which((private$chrom == x) & !private$masked & (private$config[[1]] %in% c(1,2,3,4,5))), simplify=F)
                     ## plot the chromsomes rf info
                     if(mat == "rf")
-                      plotLG(mat=private$rf, LG=LG, filename=filename, names=names, chrS=chrS, lmai=lmai, chrom=T, type="rf")
+                      plotLG(mat=private$rf, LG=LGlist[chrom], filename=filename, names=names, chrS=chrS, lmai=lmai, chrom=T, type="rf")
                     else if(mat == "LOD")
-                      plotLG(mat=private$LOD, LG=LG, filename=filename, names=names, chrS=chrS, lmai=lmai, chrom=T, type="LOD")
+                      plotLG(mat=private$LOD, LG=LGlist[chrom], filename=filename, names=names, chrS=chrS, lmai=lmai, chrom=T, type="LOD")
                     else
                       stop("Matrix to be plotted not found.") ## shouldn't get here
                     if(is.null(filename))

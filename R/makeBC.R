@@ -441,6 +441,8 @@ makeBC <- function(RAobj, pedfile, family=NULL, MNIF=1, inferSNPs=FALSE,
     config[!indx_temp] <- config_infer[!indx_temp] <- NA
 
     ## Determine the segregation groups
+    #config[is.na(config)] <- -1
+    #config_infer[is.na(config_infer)] <- -1
     config_all[[fam]] <- config
     config_infer_all[[fam]] <- config_infer
     nInd_all[[fam]] <- nInd
