@@ -169,19 +169,19 @@ makeFS <- function(RAobj, pedfile, family=NULL, MNIF=1,
     famInfo[[as.character(fam)]]$parents <- list(Father=ped$SampleID[which(ped$IndividualID==father)],
                                                  Mother=ped$SampleID[which(ped$IndividualID==mother)])
     ## Check to see if there are any grandparents
-    grandparents = ped[which(ped$IndividualID==father),c("Mother","Father")]
+    grandparents = unique(ped[which(ped$IndividualID==father),c("Mother","Father")])
     if(nrow(grandparents) == 1){
       famInfo[[as.character(fam)]]$grandparents$paternalGrandFather <- ped$SampleID[which(ped$IndividualID == grandparents[,"Father"])]
       famInfo[[as.character(fam)]]$grandparents$paternalGrandMother <- ped$SampleID[which(ped$IndividualID == grandparents[,"Mother"])]
     }
-    else if(nrow(grandparents) > 2)
+    else if(nrow(grandparents) > 1)
       stop("Father of family ",fam," has mutiple parents. Please check the pedigree file.")
-    grandparents = ped[which(ped$IndividualID==mother),c("Mother","Father")]
+    grandparents = unique(ped[which(ped$IndividualID==mother),c("Mother","Father")])
     if(nrow(grandparents) == 1){
       famInfo[[as.character(fam)]]$grandparents$maternalGrandFather <- ped$SampleID[which(ped$IndividualID == grandparents[,"Father"])]
       famInfo[[as.character(fam)]]$grandparents$maternalGrandMother <- ped$SampleID[which(ped$IndividualID == grandparents[,"Mother"])]
     }   
-    else if(nrow(grandparents) > 2)
+    else if(nrow(grandparents) > 1)
       stop("Mother of family ",fam," has mutiple parents. Please check the pedigree file.")
   }
   
@@ -211,9 +211,9 @@ makeFS <- function(RAobj, pedfile, family=NULL, MNIF=1,
     patgranddadIndx <- which(indID %in% patgranddad)
     matgrandmumIndx <- which(indID %in% matgrandmum)
     matgranddadIndx <- which(indID %in% matgranddad)
-    if(!is.null(patgrandmumIndx) && !is.null(patgranddadIndx))
+    if((!is.null(patgrandmumIndx) & length(patgrandmumIndx)>0) && (!is.null(patgranddadIndx) & length(patgranddadIndx)>0))
       patgrandparents <- TRUE
-    if(!is.null(matgrandmumIndx) && !is.null(matgranddadIndx))
+    if((!is.null(matgrandmumIndx) & length(matgrandmumIndx)>0) && (!is.null(matgranddadIndx) & length(matgranddadIndx)>0))
       matgrandparents <- TRUE
     ## index the progeny
     progIndx <- which(indID %in% famInfo[[fam]]$progeny)
@@ -386,24 +386,29 @@ makeFS <- function(RAobj, pedfile, family=NULL, MNIF=1,
     }
     
     chrom <- FSobj$.__enclos_env__$private$chrom
+    chrom_temp <- chrom
+    if(inferSNPs) chrom_temp[(MAF <= filter$MAF) & (miss >= filter$MISS) & (is.na(config) & is.na(seg_Infer))] <- NA
+    else  chrom_temp[which((MAF <= filter$MAF) | (miss >= filter$MISS) | (is.na(config)))] <- NA
     pos <- FSobj$.__enclos_env__$private$pos
     ## Extract one SNP from each read.
     set.seed(36475)
     if(filter$BIN > 0){
       oneSNP <- rep(FALSE,nSnps)
       oneSNP[unlist(sapply(unique(chrom), function(x){
-        ind <- which(chrom == x)
-        g1_diff <- diff(pos[ind])
-        SNP_bin <- c(0,cumsum(g1_diff > filter$BIN)) + 1
-        set.seed(58473+as.numeric(which(x==chrom))[1])
-        keepPos <- sapply(unique(SNP_bin), function(y) {
-          ind2 <- which(SNP_bin == y)
-          if(length(ind2) > 1)
-            return(sample(ind2,size=1))
-          else if(length(ind2) == 1)
-            return(ind2)
-        })
-        return(ind[keepPos])
+        ind <- which(chrom_temp == x)
+        if(length(ind) > 0){
+          g1_diff <- diff(pos[ind])
+          SNP_bin <- c(0,cumsum(g1_diff > filter$BIN)) + 1
+          set.seed(58473+as.numeric(which(x==chrom))[1])
+          keepPos <- sapply(unique(SNP_bin), function(y) {
+            ind2 <- which(SNP_bin == y)
+            if(length(ind2) > 1)
+              return(sample(ind2,size=1))
+            else if(length(ind2) == 1)
+              return(ind2)
+          })
+          return(ind[keepPos])
+        } else return(NULL)
       },USE.NAMES = F ))] <- TRUE
     }
     else 
