@@ -369,13 +369,13 @@ FS <- R6Class("FS",
                   ## If there is only one family
                   if(private$noFam == 1)
                     mat <- rf_2pt_single(private$ref[[1]], private$alt[[1]],
-                                         private$config[[1]], private$config_infer[[1]],
+                                         private$config_orig[[1]], private$config_infer_orig[[1]],
                                          private$group, private$group_infer,
                                          nClust, private$nInd, err=err)
                   else
                     #stop("Multiple families have yet to be implemented")
                     mat <- rf_2pt_multi(private$ref, private$alt,
-                                        private$config,private$group, nClust, private$noFam)
+                                        private$config_orig,private$group, nClust, private$noFam)
                   ## Save the results to the object
                   private$rf <- mat$rf
                   private$LOD <- mat$LOD
@@ -387,16 +387,20 @@ FS <- R6Class("FS",
                   if(is.null(private$rf) || is.null(private$LOD))
                     stop("Recombination fractions and LOD scores have not been computed.\nUse $rf_2pt() to compute the recombination fractions and LOD scores.")
                   if(!is.character(parent) || length(parent) != 1 || !(parent %in% c("maternal","paternal","both")))
-                    stop("parent argument is not a string of length one or is invalid:
-Please select one of the following:
-   maternal: Only MI SNPs
-   paternal: Only PI SNPs
-   both:     MI and PI SNPs")
+                    stop(cat("parent argument is not a string of length one or is invalid:",
+                             "   Please select one of the following:",
+                             "     maternal: Only MI SNPs",
+                             "     paternal: Only PI SNPs",
+                             "     both:     MI and PI SNPs"))
                   if(!is.numeric(LODthres) || !is.vector(LODthres) || length(LODthres) != 1 || is.na(nComp) ||  LODthres < 0 || !is.finite(LODthres))
                     stop("The LOD threshold (argument 2) needs to be a finite numeric number.")
                   if(!is.numeric(nComp) || !is.vector(nComp) || length(nComp) != 1 || is.na(nComp) || nComp < 0 || !is.finite(nComp) ||
                      round(nComp) != nComp)
                     stop("The number of comparsion points (argument 3) needs to be a finite integer number.")
+                  
+                  private$config <- private$config_orig
+                  private$config_infer <- private$config_infer_orig
+                  
                   
                   ## Create the groups
                   if(parent == "maternal" || parent == "both")
@@ -410,62 +414,95 @@ Please select one of the following:
                   return(invisible(NULL))
                 },
                 ## function for adding the unmapped (or inferred SNPs) to the linkage groups
-                # addSNPs = function(LODthres=10, nComp=10){
-                # 
-                #   if(length(self$LG_mat) == 0 || length(self$LG_pat) == 0)
-                #     stop("There are no linkage groups. Please use 'createLG' function to create the linkage groups first")
-                #   if(!is.numeric(LODthres) || !is.vector(LODthres) || length(LODthres) != 1 || LODthres < 0 || !is.finite(LODthres))
-                #     stop("The LOD threshold (argument 1) needs to be a finite positive numeric number.")
-                #   if(!is.numeric(nComp) || !is.vector(nComp) || length(nComp) != 1 || nComp < 0 || !is.finite(nComp) ||
-                #      round(nComp) != nComp)
-                #     stop("The number of comparsion points (argument 2) needs to be a finite positive integer number.")
-                # 
-                #   ## Find the unmapped loci
-                #   
-                #   unmapped <- sort(unlist(c(which(!(private$group$MI %in% unlist(c(self$LG_mat,self$LG_pat)))),
-                #                             which(!(private$group$PI %in% unlist(c(self$LG_mat,self$LG_pat)))),
-                #                             private$group_infer$SI)))
-                #   if(length(unmapped) == 0)
-                #     stop("There are no SNPs remaining that are unmapped")
-                # 
-                #   ## new LGs for adding BI snps to
-                #   newLGlist <- c(self$LG_mat, self$LG_pat)
-                #   ## count the number of LGs
-                #   nLG <- length(newLGlist)
-                #   
-                #   ## Run algorithm for generating the linkage groups
-                #   noneMapped = FALSE
-                #   count = 0
-                #   while(!noneMapped){
-                #     noneMapped = TRUE
-                #     ## check that there are still SNPs remaining that need to be mapped
-                #     if(length(unmapped) == 0)
-                #       next
-                #     ## run the algorithm to map the SNPs
-                #     else{
-                #       for(snp in unmapped){
-                #         LODvalue = numeric(nLG)
-                #         for(lg in 1:nLG)
-                #           LODvalue[lg] <- mean(sort(private$LOD[snp,newLGlist[[lg]]],decreasing=T)[1:nComp],na.rm=T)
-                #         if(max(LODvalue) >= LODthres & sort(LODvalue, decreasing = T)[2] < LODthres){
-                #           count = count + 1
-                #           newLG <- which.max(LODvalue)
-                #           newLGlist[[newLG]] <- c(newLGlist[[newLG]], snp)
-                #           unmapped <- unmapped[-which(unmapped == snp)]
-                #           noneMapped = FALSE
-                #         }
-                #       }
-                #     }
-                #   }
-                #   ## Check to see if any SNPs were added
-                #   if(count == 0){
-                #     stop("No SNPs were added to the Linkage Groups")
-                #   } else{ ## else set the new LGs
-                #     self$LG_mat_temp <- newLGlist[1:length(self$LG_mat)]
-                #     self$LG_pat_temp <- newLGlist[length(self$LG_mat) + 1:length(self$LG_pat)]
-                #   }
-                #   return(invisible())
-                # },
+                addSNPs = function(LODthres=10, nComp=10){
+                  
+                  ## Do some checks
+                  if(!is.null(private$LG_mat) & !is.null(private$LG_pat)) parent = "both"
+                  else if(!is.null(private$LG_mat)) parent = "maternal"
+                  else if(!is.null(private$LG_pat)) parent = "paternal"
+                  else stop("No linkage groups exist. Use the `$createLG` function to create linkage groups")
+                  if(!is.numeric(LODthres) || !is.vector(LODthres) || length(LODthres) != 1 || LODthres < 0 || !is.finite(LODthres))
+                    stop("The LOD threshold (argument 1) needs to be a finite positive numeric number.")
+                  if(!is.numeric(nComp) || !is.vector(nComp) || length(nComp) != 1 || nComp < 0 || !is.finite(nComp) ||
+                     round(nComp) != nComp)
+                    stop("The number of comparsion points (argument 2) needs to be a finite positive integer number.")
+                  
+                  ## new LGs for adding BI snps to
+                  newLGlist <- c(private$LG_mat, private$LG_pat)
+                  
+                  ## Find the unmapped loci
+                  
+                  unmapped <- sort(unlist(c(private$group$MI[which(!(private$group$MI %in% unlist(newLGlist)))],
+                                            private$group$PI[which(!(private$group$PI %in% unlist(newLGlist)))],
+                                            private$group_infer$SI[which(!(private$group_infer$SI %in% unlist(newLGlist)))])))
+                  
+                  if(length(unmapped) == 0)
+                    stop("There are no SNPs remaining that are unmapped")
+                  
+                  ## count the number of LGs
+                  nLG <- length(newLGlist)
+                  
+                  ## Run algorithm for generating the linkage groups
+                  noneMapped = FALSE
+                  count = 0
+                  added <- numeric(0)
+                  while(!noneMapped){
+                    noneMapped = TRUE
+                    ## check that there are still SNPs remaining that need to be mapped
+                    if(length(unmapped) == 0)
+                      next
+                    ## run the algorithm to map the SNPs
+                    else{
+                      for(snp in unmapped){
+                        LODvalue = numeric(nLG)
+                        for(lg in 1:nLG)
+                          LODvalue[lg] <- mean(sort(private$LOD[snp,newLGlist[[lg]]],decreasing=T)[1:nComp],na.rm=T)
+                        if(max(LODvalue) >= LODthres & sort(LODvalue, decreasing = T)[2] < LODthres){
+                          count = count + 1
+                          added <- c(added, snp)
+                          newLG <- which.max(LODvalue)
+                          newLGlist[[newLG]] <- c(newLGlist[[newLG]], snp)
+                          unmapped <- unmapped[-which(unmapped == snp)]
+                          noneMapped = FALSE
+                        }
+                      }
+                    }
+                  }
+                  ## Check to see if any SNPs were added
+                  if(count == 0){
+                    stop("No SNPs were added to the Linkage Groups")
+                  } else{
+                    if(length(private$LG_mat) > 0){
+                      added_mat <- added[which((added %in% unlist(c(private$group$MI,private$group$PI))) & 
+                                                 (added %in% unlist(newLGlist[1:length(private$LG_mat)])))]
+                    } else added_mat <- numeric(0)
+                    if(length(private$LG_pat) > 0){
+                      added_pat <- added[which((added %in% unlist(c(private$group$MI,private$group$PI))) & 
+                                                 (added %in% unlist(newLGlist[length(private$LG_mat) + 1:length(private$LG_pat)])))]
+                    } else added_pat <- numeric(0)
+                    if(length(private$LG_mat) > 0){
+                      added_mat_infer <- added[which( (added %in% unlist(newLGlist[1:length(private$LG_mat)])) &
+                                                        (added %in% private$group_infer$SI))]
+                    } else added_mat_infer <- numeric(0)
+                    if(length(private$LG_pat) > 0){
+                      added_pat_infer <- added[which( (added %in% unlist(newLGlist[length(private$LG_mat) + 1:length(private$LG_pat)])) &
+                                                        (added %in% private$group_infer$SI))]
+                    } else added_pat_infer <- numeric(0)
+                    ## update configations if required
+                    if(length(added_mat) > 0)
+                      private$config[[1]][added_mat] <- (c(private$config[[1]][added_mat]) %% 2) + 2
+                    if(length(added_pat) > 0)
+                      private$config[[1]][added_pat] <- (c(private$config[[1]][added_pat]) %% 2) + 4
+                    if(length(added_mat_infer) > 0)
+                      private$config_infer[[1]][added_mat_infer] <- (c(private$config_infer[[1]][added_mat_infer]) %% 2) + 4
+                    if(length(added_pat_infer) > 0)
+                      private$config_infer[[1]][added_pat_infer] <- (c(private$config_infer[[1]][added_pat_infer]) %% 2) + 2
+                    ## set the new LGs
+                    private$LG_mat <- newLGlist[1:length(private$LG_mat)]
+                    private$LG_pat <- newLGlist[length(private$LG_mat) + 1:length(private$LG_pat)]
+                  }
+                  return(invisible())
+                },
                 ## Function for adding the informative SNPs to the LGs
                 addBIsnps = function(LODthres=10, nComp=10){
                   
@@ -1167,6 +1204,8 @@ Please select one of the following:
                 ##############################################################
                     ),
                   private = list(
+                    config_orig  = NULL,
+                    config_infer_orig = NULL,
                     config       = NULL,
                     config_infer = NULL,
                     group        = NULL,

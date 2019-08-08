@@ -35,6 +35,7 @@
 #' This filter is to remove SNPs where the parental information is insufficient to infer segregation type accurately.}
 #' \item{Segregation test P-value (\code{PVALUE}): }{SNPs are discarded if the p-value from a segregation test is smaller than the threshold (default is 0.01).
 #'  This filters out SNPs where the segregation type has been inferred wrong.}
+#' \item{Maximum averge SNP depth (\code{MAXDEPTH}}{SNPs with an average read depth above the threshold value are discarded.}
 #' }
 #' The segregation type of each SNP is inferred based on the genotypes of the parents. The parental genotypes are called homozygous for the 
 #' reference allele if there is only reference reads seen, heterozygous if at least one read for the reference and alternate allele are seen,
@@ -89,10 +90,10 @@
 #' @export
 
 ### Make a full-sib family population
-makeFS <- function(RAobj, pedfile, family=NULL, MNIF=1,
-                   filter=list(MAF=0.05, MISS=0.2, BIN=100, DEPTH=5, PVALUE=0.01)){
+makeFS <- function(RAobj, pedfile, family=NULL, MNIF=1, inferSNPs=FALSE,
+                   filter=list(MAF=0.05, MISS=0.2, BIN=100, DEPTH=5, PVALUE=0.01, MAXDEPTH=500)){
   #inferSNPs = FALSE, perInfFam=1){
-  inferSNPs = FALSE; perInfFam=1 # some variables for multiple familes needed for later
+  perInfFam=1 # some variables for multiple familes needed for later
   ## Do some checks
   if(!all(class(RAobj) %in% c("RA","R6")))
     stop("First argument supplied is not of class 'R6' and 'RA'")
@@ -118,6 +119,12 @@ makeFS <- function(RAobj, pedfile, family=NULL, MNIF=1,
     warning("P-value for segregation test is not specified or invalid. Setting a P-value of 0.01:")
     filter$PVALUE <- 0.05
   }
+  if(is.null(filter$MAXDEPTH) || filter$MAXDEPTH<0 || is.infinite(filter$MAXDEPTH) || !is.numeric(filter$MAXDEPTH)){
+    warning("P-value for segregation test is not specified or invalid. Setting a P-value of 0.01:")
+    filter$MAXDEPTH <- 500
+  }
+  if(!is.logical(inferSNPs) || !is.vector(inferSNPs) || length(inferSNPs) != 1)
+    stop("Argument for `inferSNPs` not a logical value.")
   
   ## initalize the UR object
   FSobj <- FS$new(RAobj)
@@ -131,7 +138,8 @@ makeFS <- function(RAobj, pedfile, family=NULL, MNIF=1,
   cat("Percentage of missing genotypes > ", filter$MISS*100,"%\n", sep="")
   cat("Distance for binning SNPs <= ", filter$BIN," bp\n", sep="")
   cat("Read depth associated with at least one parental genotype <= ", filter$DEPTH,"\n", sep="")
-  cat("P-value for segregation test < ", filter$PVALUE,"%\n\n", sep="")
+  cat("P-value for segregation test < ", filter$PVALUE,"\n\n", sep="")
+  cat("Average SNP depth is > ", filter$MAXDEPTH,"\n\n", sep="")
   ## Extract the private variables we want
   indID <- FSobj$.__enclos_env__$private$indID
   nSnps <- FSobj$.__enclos_env__$private$nSnps
@@ -249,6 +257,23 @@ makeFS <- function(RAobj, pedfile, family=NULL, MNIF=1,
                                     FSobj$.__enclos_env__$private$alt[matgranddadIndx,], nrow=length(matgranddadIndx), ncol=nSnps)
     }
     
+    ## Run the filtering of the progeny SNPs
+    MAF <- colMeans(genon, na.rm=T)/2
+    MAF <- pmin(MAF,1-MAF)
+    miss <- apply(genon,2, function(x) sum(is.na(x))/length(x))
+    maxdepth <- colMeans(ref + alt)
+    indx_temp <- rep(TRUE, nSnps)
+    indx_temp[which(MAF < filter$MAF | miss > filter$MISS | maxdepth > filter$MAXDEPTH)] <- FALSE
+    
+    ## fix max depth to be at 500 total reads
+    ## Run into numeric issues otherwise
+    high_depth <- which((ref+alt) > 500)
+    ref_temp <- ref[high_depth]
+    alt_temp <- alt[high_depth]
+    ref[high_depth] <- as.integer(ref_temp/(ref_temp+alt_temp)*500)
+    alt[high_depth] <- as.integer(alt_temp/(ref_temp+alt_temp)*500)
+   
+    ## Determine segregation type
     parHap_pat <- sapply(1:nSnps,function(x){
       x_p = genon_dad[,x]; d_p = depth_dad[,x]
       if(any(x_p==1,na.rm=T))
@@ -342,60 +367,52 @@ makeFS <- function(RAobj, pedfile, family=NULL, MNIF=1,
       }
     },simplify = T)
     config[which(seg_Dis)] <- NA
-    
-    ## Run the filtering of the progeny SNPs
-    MAF <- colMeans(genon, na.rm=T)/2
-    MAF <- pmin(MAF,1-MAF)
-    miss <- apply(genon,2, function(x) sum(is.na(x))/length(x))
-    
+
     ## Infer geotypes for over SNPs that have passed the MAF and MISS thresholds
     #propHeter <- sapply(1:nSnps, function(x) sum(genon[,x] == 1,na.rm=T)/sum(!is.na(genon[,x])))
+    config_infer <- rep(NA, nSnps)
     if(inferSNPs){
-      toInfer <- (MAF > filter$MAF) & (miss < filter$MISS) & is.na(config)
+      toInfer <- which(indx_temp & is.na(config))
       
       seg_Infer <- sapply(1:nSnps, function(x){
-        if(!toInfer[x])
+        d = ref[,x] + alt[,x]
+        g = genon[,x]
+        K = sum(1/2^(d[which(d != 0)])*0.5)/sum(d != 0)
+        nAA = sum(g==2, na.rm=T)
+        nAB = sum(g==1, na.rm=T)
+        nBB = sum(g==0, na.rm=T)
+        ## check that there are sufficient data to perform the chisq test
+        if(sum(nAA+nAB+nBB)/length(g) <= (1-filter$MISS))
           return(NA)
-        else{
-          d = ref[,x] + alt[,x]
-          g = genon[,x]
-          K = sum(1/2^(d[which(d != 0)])*0.5)/sum(d != 0)
-          nAA = sum(g==2, na.rm=T)
-          nAB = sum(g==1, na.rm=T)
-          nBB = sum(g==0, na.rm=T)
-          ## check that there are sufficient data to perform the chisq test
-          if(sum(nAA+nAB+nBB)/length(g) <= (1-filter$MISS))
-            return(NA)
-          ## compute chiseq test for both loci types
-          exp_prob_BI <- c(0.25 + K,0.5 - 2*K, 0.25 + K)
-          exp_prob_SI <- c(K, 0.5 - 2*K, 0.5 + K)
-          ctest_BI <- suppressWarnings(stats::chisq.test(c(nBB,nAB,nAA), p = exp_prob_BI))
-          ctest_SI_1 <- suppressWarnings(stats::chisq.test(c(nBB,nAB,nAA), p = exp_prob_SI))
-          ctest_SI_2 <- suppressWarnings(stats::chisq.test(c(nBB,nAB,nAA), p = rev(exp_prob_SI)))
-          ## do tests to see if we can infer type
-          if( ctest_BI$p.value > filter$PVALUE & ctest_SI_1$p.value < filter$PVALUE & ctest_SI_2$p.value < filter$PVALUE )
-            return(1)
-          else if ( ctest_BI$p.value < filter$PVALUE & ctest_SI_1$p.value > filter$PVALUE & ctest_SI_2$p.value < filter$PVALUE )
-            return(4)
-          else if ( ctest_BI$p.value < filter$PVALUE & ctest_SI_1$p.value < filter$PVALUE & ctest_SI_2$p.value > filter$PVALUE )
-            return(5)
-          else
-            return(NA)
-        }
+        ## compute chiseq test for both loci types
+        exp_prob_BI <- c(0.25 + K,0.5 - 2*K, 0.25 + K)
+        exp_prob_SI <- c(K, 0.5 - 2*K, 0.5 + K)
+        ctest_BI <- suppressWarnings(stats::chisq.test(c(nBB,nAB,nAA), p = exp_prob_BI))
+        ctest_SI_1 <- suppressWarnings(stats::chisq.test(c(nBB,nAB,nAA), p = exp_prob_SI))
+        ctest_SI_2 <- suppressWarnings(stats::chisq.test(c(nBB,nAB,nAA), p = rev(exp_prob_SI)))
+        ## do tests to see if we can infer type
+        if( ctest_BI$p.value > filter$PVALUE & ctest_SI_1$p.value < filter$PVALUE & ctest_SI_2$p.value < filter$PVALUE )
+          return(1)
+        else if ( ctest_BI$p.value < filter$PVALUE & ctest_SI_1$p.value > filter$PVALUE & ctest_SI_2$p.value < filter$PVALUE )
+          return(4)
+        else if ( ctest_BI$p.value < filter$PVALUE & ctest_SI_1$p.value < filter$PVALUE & ctest_SI_2$p.value > filter$PVALUE )
+          return(5)
+        else
+          return(NA)
       },simplify = T)
+      config_infer[toInfer] <- seg_Infer
     }
     
     chrom <- FSobj$.__enclos_env__$private$chrom
-    chrom_temp <- chrom
-    if(inferSNPs) chrom_temp[(MAF <= filter$MAF) & (miss >= filter$MISS) & (is.na(config) & is.na(seg_Infer))] <- NA
-    else  chrom_temp[which((MAF <= filter$MAF) | (miss >= filter$MISS) | (is.na(config)))] <- NA
+    chrom[indx_temp | (is.na(config) & is.na(config_infer))] <- NA
     pos <- FSobj$.__enclos_env__$private$pos
+    pos[indx_temp | (is.na(config) & is.na(config_infer))] <- NA
     ## Extract one SNP from each read.
     set.seed(36475)
     if(filter$BIN > 0){
       oneSNP <- rep(FALSE,nSnps)
       oneSNP[unlist(sapply(unique(chrom), function(x){
-        ind <- which(chrom_temp == x)
+        ind <- which(chrom == x)
         if(length(ind) > 0){
           g1_diff <- diff(pos[ind])
           SNP_bin <- c(0,cumsum(g1_diff > filter$BIN)) + 1
@@ -414,21 +431,19 @@ makeFS <- function(RAobj, pedfile, family=NULL, MNIF=1,
     else 
       oneSNP <- rep(TRUE,nSnps)
     
-    if(inferSNPs){
-      indx[[fam]] <- (MAF > filter$MAF) & (miss < filter$MISS) & ( !is.na(config) | !is.na(seg_Infer) ) & oneSNP
-      config[!indx[[fam]]] <- seg_Infer[!indx[[fam]]] <- NA
-    }
-    else
-      indx[[fam]] <- (MAF > filter$MAF) & (miss < filter$MISS) & (!is.na(config)) & oneSNP
-    
-    
+    indx_temp[which(indx_temp & (!oneSNP | (is.na(config) & is.na(config_infer))))] <- FALSE
+    indx[[fam]] <- indx_temp
+    config[!indx_temp] <- config_infer[!indx_temp] <- NA
+
     ## Determine the segregation groups
     config_all[[fam]] <- config
-    if(inferSNPs)
-      config_infer_all[[fam]] <- seg_Infer
-    
+    config_infer_all[[fam]] <- config_infer
     nInd_all[[fam]] <- nInd
-    
+    if(noFam > 1){
+      ref[,!indx_temp] <- as.integer(0)
+      alt[,!indx_temp] <- as.integer(0)
+      genon[,!indx_temp] <- NA
+    }
     genon_all[[fam]] <- genon
     ref_all[[fam]] <- ref
     alt_all[[fam]] <- alt
@@ -460,8 +475,7 @@ makeFS <- function(RAobj, pedfile, family=NULL, MNIF=1,
     group_infer$SI <- which(config_infer_all[[fam]][indx_all] %in% c(4,5))
     
     config_all[[fam]] <- config_all[[fam]][indx_all]
-    if(inferSNPs)
-      config_infer_all[[fam]] <- config_infer_all[[fam]][indx_all]
+    config_infer_all[[fam]] <- config_infer_all[[fam]][indx_all]
     
     cat("-------------\n")
     cat("Summary:\n\n")
@@ -481,18 +495,38 @@ makeFS <- function(RAobj, pedfile, family=NULL, MNIF=1,
     ## Create the summary info:
     temp <- ref_all[[1]] + alt_all[[1]]
     summaryInfo <- list()
-    summaryInfo$data <- paste0(c(
-      "Single Family Linkage analysis:\n\n",
-      "Data Summary:\n",
-      "Data file:\t", RAobj$.__enclos_env__$private$infilename,"\n",
-      "Mean Depth:\t", round(mean(temp),4),"\n",
-      "Mean Call Rate:\t",round(sum(temp!=0)/length(temp),4),"\n",
-      "Number of ...\n",
-      "  Progeny:\t",unlist(nInd),"\n",
-      "  MI SNPs:\t",length(group$MI),"\n",
-      "  PI SNPs:\t",length(group$PI),"\n",
-      "  BI SNPs:\t",length(group$BI),"\n",
-      "  Total SNPs:\t",length(unlist(group)),"\n\n"))
+    if(!inferSNPs){
+      summaryInfo$data <- paste0(c(
+        "Single Family Linkage analysis:\n\n",
+        "Data Summary:\n",
+        "Data file:\t", RAobj$.__enclos_env__$private$infilename,"\n",
+        "Mean Depth:\t", round(mean(temp),4),"\n",
+        "Mean Call Rate:\t",round(sum(temp!=0)/length(temp),4),"\n",
+        "Number of ...\n",
+        "  Progeny:\t",unlist(nInd),"\n",
+        "  MI SNPs:\t",length(group$MI),"\n",
+        "  PI SNPs:\t",length(group$PI),"\n",
+        "  BI SNPs:\t",length(group$BI),"\n",
+        "  Total SNPs:\t",length(unlist(group)),"\n\n"))
+    } else{
+      summaryInfo$data <- paste0(c(
+        "Single Family Linkage analysis:\n\n",
+        "Data Summary:\n",
+        "Data file:\t", RAobj$.__enclos_env__$private$infilename,"\n",
+        "Mean Depth:\t", round(mean(temp),4),"\n",
+        "Mean Call Rate:\t",round(sum(temp!=0)/length(temp),4),"\n",
+        "Number of ...\n",
+        "  Progeny:\t",unlist(nInd),"\n",
+        "  SNPs with known segregation\n",
+        "    MI SNPs:\t",length(group$MI),"\n",
+        "    PI SNPs:\t",length(group$PI),"\n",
+        "    BI SNPs:\t",length(group$BI),"\n",
+        "    Total SNPs:",length(unlist(group)),"\n",
+        "  SNPs with inferred segregation\n",
+        "    SI SNPs:\t",length(group_infer$SI),"\n",
+        "    BI SNPs:\t",length(group_infer$BI),"\n",
+        "    Total SNPs:",length(unlist(group_infer)),"\n\n"))
+    }
   }
   else{
     group <- group.temp <- list()
@@ -565,8 +599,8 @@ makeFS <- function(RAobj, pedfile, family=NULL, MNIF=1,
   ## Update the R6 object and return it
   FSobj$.__enclos_env__$private$updatePrivate(list(
     genon = genon_all, ref = ref_all, alt = alt_all, chrom = chrom_all, pos = pos_all,
-    group = group, group_infer = group_infer, config = config_all, config_infer = config_infer_all,
-    nInd = nInd_all, nSnps = sum(indx_all), noFam = noFam, indID = indID_all, SNP_Names = SNP_Names,
+    group = group, group_infer = group_infer, config_orig = config_all, config_infer_orig = config_infer_all,
+    config = config_all, config_infer = config_infer_all, nInd = nInd_all, nSnps = sum(indx_all), noFam = noFam, indID = indID_all, SNP_Names = SNP_Names,
     masked=rep(FALSE,sum(indx_all)), famInfo=famInfo, summaryInfo=summaryInfo)
   )
   
