@@ -115,12 +115,12 @@ makeFS <- function(RAobj, pedfile, family=NULL, MNIF=1, inferSNPs=FALSE,
     warning("Minimum depth on the parental genotypes filter has not be specified or is invalid. Setting to a depth of 5")
     filter$DEPTH <- 5
   }
-  if(is.null(filter$PVALUE) || filter$PVALUE<0 || is.infinite(filter$PVALUE) || !is.numeric(filter$PVALUE)){
+  if(is.null(filter$PVALUE) || filter$PVALUE<0 || filter$PVALUE > 1 || !is.numeric(filter$PVALUE)){
     warning("P-value for segregation test is not specified or invalid. Setting a P-value of 0.01:")
-    filter$PVALUE <- 0.05
+    filter$PVALUE <- 0.01
   }
   if(is.null(filter$MAXDEPTH) || filter$MAXDEPTH<0 || is.infinite(filter$MAXDEPTH) || !is.numeric(filter$MAXDEPTH)){
-    warning("P-value for segregation test is not specified or invalid. Setting a P-value of 0.01:")
+    warning("Maximum SNP depth filter is invalid. Setting to 500 by defualt.")
     filter$MAXDEPTH <- 500
   }
   if(!is.logical(inferSNPs) || !is.vector(inferSNPs) || length(inferSNPs) != 1)
@@ -138,7 +138,7 @@ makeFS <- function(RAobj, pedfile, family=NULL, MNIF=1, inferSNPs=FALSE,
   cat("Percentage of missing genotypes > ", filter$MISS*100,"%\n", sep="")
   cat("Distance for binning SNPs <= ", filter$BIN," bp\n", sep="")
   cat("Read depth associated with at least one parental genotype <= ", filter$DEPTH,"\n", sep="")
-  cat("P-value for segregation test < ", filter$PVALUE,"\n\n", sep="")
+  cat("P-value for segregation test < ", filter$PVALUE,"\n", sep="")
   cat("Average SNP depth is > ", filter$MAXDEPTH,"\n\n", sep="")
   ## Extract the private variables we want
   indID <- FSobj$.__enclos_env__$private$indID
@@ -404,9 +404,9 @@ makeFS <- function(RAobj, pedfile, family=NULL, MNIF=1, inferSNPs=FALSE,
     }
     
     chrom <- FSobj$.__enclos_env__$private$chrom
-    chrom[indx_temp | (is.na(config) & is.na(config_infer))] <- NA
+    chrom[!(indx_temp | (is.na(config) & is.na(config_infer)))] <- NA
     pos <- FSobj$.__enclos_env__$private$pos
-    pos[indx_temp | (is.na(config) & is.na(config_infer))] <- NA
+    pos[!(indx_temp | (is.na(config) & is.na(config_infer)))] <- NA
     ## Extract one SNP from each read.
     set.seed(36475)
     if(filter$BIN > 0){
@@ -427,9 +427,7 @@ makeFS <- function(RAobj, pedfile, family=NULL, MNIF=1, inferSNPs=FALSE,
           return(ind[keepPos])
         } else return(NULL)
       },USE.NAMES = F ))] <- TRUE
-    }
-    else 
-      oneSNP <- rep(TRUE,nSnps)
+    } else oneSNP <- rep(TRUE,nSnps)
     
     indx_temp[which(indx_temp & (!oneSNP | (is.na(config) & is.na(config_infer))))] <- FALSE
     indx[[fam]] <- indx_temp

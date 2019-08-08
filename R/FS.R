@@ -132,9 +132,9 @@ FS <- R6Class("FS",
                         warning("Linkage groups do not have any BI SNPs. Use the '$addBIsnps' to add BIsnps to the linkage groups.")
                       else{
                         cat("Combined Linkage Group Summary:\n")
-                        MI <- unlist(lapply(private$LG, function(x) sum(x %in% private$group$MI)))
-                        PI <- unlist(lapply(private$LG, function(x) sum(x %in% private$group$PI)))
-                        BI <- unlist(lapply(private$LG, function(x) sum(x %in% private$group$BI)))
+                        MI <- unlist(lapply(private$LG, function(x) sum(c(private$config[[1]][x],private$config_infer[[1]][x]) %in% c(4,5), na.rm=T)))
+                        PI <- unlist(lapply(private$LG, function(x) sum(c(private$config[[1]][x],private$config_infer[[1]][x]) %in% c(2,3), na.rm=T)))
+                        BI <- unlist(lapply(private$LG, function(x) sum(c(private$config[[1]][x],private$config_infer[[1]][x]) == 1, na.rm=T)))
                         TOTAL <- unlist(lapply(private$LG, length))
                         tab <- cbind(LG=1:(length(private$LG)),MI,PI,BI,TOTAL)
                         tab <- stats::addmargins(tab, margin = 1)
@@ -145,10 +145,15 @@ FS <- R6Class("FS",
                     }
                     if(any(what == "map")){
                       if(is.null(private$para))
-                        warning("no maps have been estimated. Use the 'rf_est' function to compute some maps.")
+                        warning("no maps have been estimated. Use the '$computeMap' function to compute some maps.")
                       else{
                         cat(private$summaryInfo$map[[1]])
-                        prmatrix(private$summaryInfo$map[[2]], rowlab = rep("",nrow(private$summaryInfo$map[[2]])), quote=F)
+                        cat(private$summaryInfo$map[[2]])
+                        prmatrix(private$summaryInfo$map[[3]], rowlab = rep("",nrow(private$summaryInfo$map[[3]])), quote=F)
+                        if(length(private$summaryInfo$map) == 5){
+                          cat(private$summaryInfo$map[[4]])
+                          prmatrix(private$summaryInfo$map[[5]], rowlab = rep("",nrow(private$summaryInfo$map[[5]])), quote=F)
+                        }
                       }
                     }
                   }
@@ -308,12 +313,24 @@ FS <- R6Class("FS",
                       if(mergeTo == "maternal"){
                         private$LG_mat[[matgroups[1]]] <- mergedLG
                         private$LG_mat[matgroups[-1]] <- NULL
-                        private$config[[1]][private$LG_pat[patgroups][[1]]] <- private$config[[1]][private$LG_pat[patgroups][[1]]] + 2
+                        ## remove paternal linkage groups and change config
+                        added_pat <- private$LG_pat[patgroups][[1]][private$LG_pat[patgroups][[1]] %in% c(private$group$MI,private$group$PI)]
+                        if(length(added_pat) > 0)
+                          private$config[[1]][added_pat] <- c(private$config[[1]][added_pat] %% 2) + 4
+                        added_pat_infer <- private$LG_pat[patgroups][[1]][private$LG_pat[patgroups][[1]] %in% private$group_infer$SI]
+                        if(length(added_pat_infer) > 0)
+                          private$config_infer[[1]][added_pat_infer] <- c(private$config_infer[[1]][added_pat_infer] %% 2) + 4
                         private$LG_pat[patgroups] <- NULL
                       } else if(mergeTo == "paternal"){
                         private$LG_pat[[patgroups[1]]] <- mergedLG
                         private$LG_pat[patgroups[-1]] <- NULL
-                        private$config[[1]][private$LG_mat[matgroups][[1]]] <- private$config[[1]][private$LG_mat[matgroups][[1]]] - 2
+                        ## remove maternal linkage groups and change config
+                        added_mat <- private$LG_mat[matgroups][[1]][private$LG_mat[matgroups][[1]] %in% c(private$group$MI,private$group$PI)]
+                        if(length(added_mat) > 0)
+                          private$config[[1]][added_mat] <- c(private$config[[1]][added_mat] %% 2) + 2
+                        added_mat_infer <- private$LG_mat[matgroups][[1]][private$LG_mat[matgroups][[1]] %in% private$group_infer$SI]
+                        if(length(added_mat_infer) > 0)
+                          private$config_infer[[1]][added_mat_infer] <- c(private$config_infer[[1]][added_mat_infer] %% 2) + 2
                         private$LG_mat[matgroups] <- NULL
                       }
                     } else{
@@ -846,16 +863,23 @@ Please select one of the following:
                   return(invisible())
                 },
                 ## Function for plotting chromosome in their original ordering
-                plotChr = function(parent = "maternal", mat=c("rf"), filename=NULL, chrS=2, lmai=2){
+                plotChr = function(chrom = NULL, parent = "maternal", mat=c("rf"), filename=NULL, chrS=2, lmai=2){
                   ## do some checks
                   if(!is.vector(mat) || !is.character(mat) || length(mat) != 1 || !(mat %in% c('rf','LOD')))
                     stop("Argument specifying which matrix to plot (argument 1) must be either 'rf' or 'LOD'")
                   if(!is.character(parent) || length(parent) != 1 || !(parent %in% c("maternal","paternal","both")))
-                    stop("parent argument is not a string of length one or is invalid:
-Please select one of the following:
-  maternal: Add BI SNPs to MI LGs
-  paternal: Add BI SNPs to PI LGs
-  both:     Add BI SNPs to both MI and PI LGs")
+                    stop(paste("parent argument is not a string of length one or is invalid:",
+                         "Please select one of the following:",
+                         "maternal: Add BI SNPs to MI LGs",
+                         "paternal: Add BI SNPs to PI LGs",
+                         "both:     Add BI SNPs to both MI and PI LGs", sep="\n"))
+                  
+                  nChrom = length(unique(private$chrom))
+                  if(is.null(chrom)){
+                    chrom <- 1:nChrom
+                  } else if(GUSbase::checkVector(chrom, type = "pos_integer", maxv=nChrom))
+                    stop(paste0("Invalid chromosome number (first argument). Must be an integer number between 0 and ",nChrom,".\n"))
+                  
                   
                   if(is.null(filename))
                     temp_par <- par(no.readonly = TRUE) # save the current plot margins
@@ -872,9 +896,9 @@ Please select one of the following:
                       LG <- sapply(names, function(x) which((private$chrom == x) & !private$masked & (private$config[[1]] %in% c(1,2,3,4,5))), simplify=F)
                     ## plot the chromsomes rf info
                     if(mat == "rf")
-                      plotLG(mat=private$rf, LG=LG, filename=filename, names=names, chrS=chrS, lmai=lmai, chrom=T, type="rf")
+                      plotLG(mat=private$rf, LG=LG[chrom], filename=filename, names=names, chrS=chrS, lmai=lmai, chrom=T, type="rf")
                     else if(mat == "LOD")
-                      plotLG(mat=private$LOD, LG=LG, filename=filename, names=names, chrS=chrS, lmai=lmai, chrom=T, type="LOD")
+                      plotLG(mat=private$LOD, LG=LG[chrom], filename=filename, names=names, chrS=chrS, lmai=lmai, chrom=T, type="LOD")
                     else
                       stop("Matrix to be plotted not found.") ## shouldn't get here
                     if(is.null(filename))
@@ -1089,16 +1113,6 @@ Please select one of the following:
                     return(invisible(NULL))
                   }
                 },
-                ## Ratio of alleles for heterozygous genotype calls (observed vs expected)
-                # Slightly different than the one in RA class
-                #cometPlot = function(model="random", alpha=NULL, filename="HeteroPlot", cex=1, maxdepth=500){
-                #  ref <- alt <- NULL
-                #  for(fam in 1:private$noFam){
-                #    ref <- rbind(ref,private$ref[[fam]])
-                #    alt <- rbind(alt,private$alt[[fam]])
-                #  }
-                #  cometPlot(ref, alt, model=model, alpha=alpha, filename=filename, cex=cex, maxdepth=maxdepth)
-                #},
                 #### Write output
                 writeLM = function(file, direct = "./", LG = NULL, what = NULL){
                   ## do some checks
@@ -1188,7 +1202,7 @@ Please select one of the following:
                     else if(x == 2 | x == 4) return(c(0,0.5,0.5))
                     else if(x == 3 | x == 5) return(c(0.5,0.5,0))
                   })
-                  GUSbase::cometPlot(private$ref, private$alt, ploid=2, freq=freq, filename=filename, cex=cex, maxdepth=maxdepth, maxSNPs=maxSNPs, ...)
+                  GUSbase::cometPlot(private$ref[[1]], private$alt[[1]], ploid=2, freq=freq, filename=filename, cex=cex, maxdepth=maxdepth, maxSNPs=maxSNPs, ...)
                 },
                 # Ratio of alleles for heterozygous genotype calls (observed vs expected)
                 RRDPlot = function(filename=NULL, maxdepth=500, maxSNPs=1e5, ...){
