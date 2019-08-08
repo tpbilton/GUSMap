@@ -546,14 +546,22 @@ BC <- R6Class("BC",
                   if(count == 0){
                     stop("No SNPs were added to the Linkage Groups")
                   } else{
-                    added_mat <- added[which((added %in% unlist(c(private$group$MI,private$group$PI))) & 
-                                               (added %in% unlist(newLGlist[1:length(private$LG_pat)])))]
-                    added_pat <- added[which((added %in% unlist(c(private$group$MI,private$group$PI))) & 
-                                               (added %in% unlist(newLGlist[length(private$LG_pat) + 1:length(private$LG_mat)])))]
-                    added_mat_infer <- added[which( (added %in% unlist(newLGlist[1:length(private$LG_mat)])) &
-                                                      (added %in% private$group_infer$SI))]
-                    added_pat_infer <- added[which( (added %in% unlist(newLGlist[length(private$LG_mat) + 1:length(private$LG_pat)])) &
-                                                     (added %in% private$group_infer$SI))]
+                    if(length(private$LG_mat) > 0){
+                      added_mat <- added[which((added %in% unlist(c(private$group$MI,private$group$PI))) & 
+                                                 (added %in% unlist(newLGlist[1:length(private$LG_mat)])))]
+                    } else added_mat <- numeric(0)
+                    if(length(private$LG_pat) > 0){
+                      added_pat <- added[which((added %in% unlist(c(private$group$MI,private$group$PI))) & 
+                                                 (added %in% unlist(newLGlist[length(private$LG_mat) + 1:length(private$LG_pat)])))]
+                    } else added_pat <- numeric(0)
+                    if(length(private$LG_mat) > 0){
+                      added_mat_infer <- added[which( (added %in% unlist(newLGlist[1:length(private$LG_mat)])) &
+                                                        (added %in% private$group_infer$SI))]
+                    } else added_mat_infer <- numeric(0)
+                    if(length(private$LG_pat) > 0){
+                      added_pat_infer <- added[which( (added %in% unlist(newLGlist[length(private$LG_mat) + 1:length(private$LG_pat)])) &
+                                                       (added %in% private$group_infer$SI))]
+                    } else added_pat_infer <- numeric(0)
                     ## update configations if required
                     if(length(added_mat) > 0)
                       private$config[[1]][added_mat] <- (c(private$config[[1]][added_mat]) %% 2) + 2
@@ -824,7 +832,7 @@ BC <- R6Class("BC",
                                "   maternal: Only MI and BI SNPs",
                                "   paternal: Only PI and BI SNPs",
                                "   both:     MI, PI and BI SNPs", sep="\n"))
-                  nChrom = length(unique((private$chrom == x)))
+                  nChrom = length(unique(private$chrom))
                   if(is.null(chrom)){
                     chrom <- 1:nChrom
                   } else if(GUSbase::checkVector(chrom, type = "pos_integer", maxv=nChrom))
