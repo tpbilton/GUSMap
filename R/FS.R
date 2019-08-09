@@ -1194,7 +1194,7 @@ Please select one of the following:
                 },
                 #### Diagonostic functions ####
                 # Ratio of alleles for heterozygous genotype calls (observed vs expected)
-                cometPlot = function(filename=NULL, cex=1, maxdepth=500, maxSNPs=1e5, ...){
+                cometPlot = function(filename=NULL, cex=1, maxdepth=500, maxSNPs=1e5, res=res, ...){
                   config <- private$config[[1]]
                   if(any(is.na(config))) config[which(is.na(config))] <- private$config_infer[[1]][which(is.na(config))]
                   freq <- sapply(config, function(x) {
@@ -1202,7 +1202,7 @@ Please select one of the following:
                     else if(x == 2 | x == 4) return(c(0,0.5,0.5))
                     else if(x == 3 | x == 5) return(c(0.5,0.5,0))
                   })
-                  GUSbase::cometPlot(private$ref[[1]], private$alt[[1]], ploid=2, freq=freq, filename=filename, cex=cex, maxdepth=maxdepth, maxSNPs=maxSNPs, ...)
+                  GUSbase::cometPlot(private$ref[[1]], private$alt[[1]], ploid=2, gfreq=freq, filename=filename, cex=cex, maxdepth=maxdepth, maxSNPs=maxSNPs, res=res, ...)
                 },
                 # Ratio of alleles for heterozygous genotype calls (observed vs expected)
                 RRDPlot = function(filename=NULL, maxdepth=500, maxSNPs=1e5, ...){
@@ -1213,7 +1213,7 @@ Please select one of the following:
                     else if(x == 2 | x == 4) return(c(0,0.5,0.5))
                     else if(x == 3 | x == 5) return(c(0.5,0.5,0))
                   })
-                  GUSbase::RRDPlot(private$ref[[1]], private$alt[[1]], ploid=2, freq=freq, filename=filename, maxdepth=maxdepth, maxSNPs=maxSNPs, ...)
+                  GUSbase::RRDPlot(private$ref[[1]], private$alt[[1]], ploid=2, gfreq=freq, filename=filename, maxdepth=maxdepth, maxSNPs=maxSNPs, ...)
                 }
                 ##############################################################
                     ),
