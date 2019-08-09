@@ -509,6 +509,8 @@ BC <- R6Class("BC",
                   unmapped <- sort(unlist(c(private$group$MI[which(!(private$group$MI %in% unlist(newLGlist)))],
                                             private$group$PI[which(!(private$group$PI %in% unlist(newLGlist)))],
                                             private$group_infer$SI[which(!(private$group_infer$SI %in% unlist(newLGlist)))])))
+                  # check for masked SNPs
+                  unmapped <- unmapped[which(!private$masked[unmapped])]
                   
                   if(length(unmapped) == 0)
                     stop("There are no SNPs remaining that are unmapped")
@@ -575,6 +577,7 @@ BC <- R6Class("BC",
                     private$LG_mat <- newLGlist[1:length(private$LG_mat)]
                     private$LG_pat <- newLGlist[length(private$LG_mat) + 1:length(private$LG_pat)]
                   }
+                  self$print(what = "LG-pts")
                   return(invisible())
                 },
                 ## Function for adding the informative SNPs to the LGs
@@ -747,10 +750,16 @@ BC <- R6Class("BC",
                     }
                     
                     ## Sort out the matrix
-                    if(mat == "rf")
+                    if(mat == "rf"){
                       temprf <- private$rf
-                    else if(mat == "LOD")
+                      mycol <- heat.colors(100)
+                      zlim = c(0,0.5)
+                    }
+                    else if(mat == "LOD"){
                       temprf <- private$LOD
+                      mycol <- grDevices::colorRampPalette(rev(c("red","orange","yellow","white")), bias=5)(100)
+                      zlim=c(0,50)
+                    }
                     b <- ncol(temprf) + 1
                     temprf <- cbind(temprf,rep(NA,b-1))
                     temprf <- rbind(temprf,rep(NA,b))
@@ -764,25 +773,33 @@ BC <- R6Class("BC",
                       ## Plot the matrix
                       chrom.ind[which(!b_indx)] <- paste0(chrom.ind[which(!b_indx)]," (", rep(names(LGlist), lapply(LGlist,length)),")") 
                       chrom.ind[which(b_indx)] <- rep("Break",length(LGlist)-1)
-                      hovertext <- matrix(paste(matrix(paste0("row: ",chrom.ind), nrow=nn, ncol=nn), 
-                                                matrix(paste0("col: ",chrom.ind), nrow=nn, ncol=nn, byrow=T), paste0("rf: ",round(temprf,4)), sep="<br>"),
-                                          nrow=nn, ncol=nn)
+                      if(mat == "rf")
+                        hovertext <- matrix(paste(matrix(paste0("row: ",chrom.ind), nrow=nn, ncol=nn), 
+                                                  matrix(paste0("col: ",chrom.ind), nrow=nn, ncol=nn, byrow=T), paste0("rf: ",round(temprf,4)), sep="<br>"),
+                                            nrow=nn, ncol=nn)
+                      else if(mat == "LOD")
+                        hovertext <- matrix(paste(matrix(paste0("row: ",chrom.ind), nrow=nn, ncol=nn), 
+                                                  matrix(paste0("col: ",chrom.ind), nrow=nn, ncol=nn, byrow=T), paste0("LOD: ",round(temprf,4)), sep="<br>"),
+                                            nrow=nn, ncol=nn)
+                      
+                        
                       ax <- list(visible=FALSE)
+                      ax_z <- list(range=zlim)
                       # suppress warnings  
                       storeWarn <- getOption("warn")
                       options(warn = -1) 
                       ## produce the plotly plot
                       if(length(which(b_indx)) == 0){
                         p <- plotly::plot_ly(z=temprf, type="heatmap", showscale=F, hoverinfo="text",
-                                             text=hovertext, colors=heat.colors(100)) %>%
-                          plotly::layout(margin=list(l=0,r=0,t=0,b=0), xaxis=ax, yaxis=ax)
+                                             text=hovertext, colors=mycol) %>%
+                          plotly::layout(margin=list(l=0,r=0,t=0,b=0), xaxis=ax, yaxis=ax, zaxis=ax_z)
                       }
                       else{
                         p <- plotly::plot_ly(z=temprf, type="heatmap", showscale=F, hoverinfo="text",
-                                             text=hovertext, colors=heat.colors(100)) %>% 
+                                             text=hovertext, colors=mycol) %>% 
                           plotly::add_segments(x=which(b_indx)-1,xend=which(b_indx)-1,y=0,yend=nn, line=list(color="black"),  showlegend=F) %>%
                           plotly::add_segments(y=which(b_indx)-1,yend=which(b_indx)-1,x=0,xend=nn, line=list(color="black"),  showlegend=F) %>%
-                          plotly::layout(margin=list(l=0,r=0,t=0,b=0), xaxis=ax, yaxis=ax)
+                          plotly::layout(margin=list(l=0,r=0,t=0,b=0), xaxis=ax, yaxis=ax, zaxis=ax_z)
                       }
                       if(!is.null(filename)){
                         temp <- file.create(paste0(filename,".html"))
@@ -803,12 +820,13 @@ BC <- R6Class("BC",
                         if(!temp)
                           stop("Error in filename. Cannot create png")
                         else
-                          grDevices::png(paste0(filename,".png"), width=nn+1,height=nn+1)
+                          grDevices::png(paste0(filename,".png"), width=nn,height=nn,res=72)
                       }
                       else
                         temp_par <- graphics::par(no.readonly = TRUE)
-                      graphics::par(mar=rep(0,4),oma=c(0,0,0,0), mfrow=c(1,1), xaxt='n',yaxt='n',bty='n',ann=F)
-                      graphics::image(temprf, x=1:nn, y=1:nn, zlim=c(0,0.5), col=heat.colors(100))
+                      graphics::par(mar=rep(0,4))
+                      #graphics::par(mar=rep(0,4), xaxt='n',yaxt='n',bty='n',ann=F)
+                      graphics::image(x=1:nn, y=1:nn, z=temprf, zlim=zlim, col=mycol, axes=F, xlim=c(0,nn), ylim=c(1,nn+1))
                       graphics::abline(v=which(b_indx))
                       graphics::abline(h=which(b_indx))
                       if(!is.null(filename))
