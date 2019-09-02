@@ -646,7 +646,7 @@ Please select one of the following:
                     graphics::plot(MDS$conf[,1],MDS$conf[,2], ylab="Dimension 2", xlab="Dimension 1", type="n")
                     graphics::text(MDS$conf, labels=ind)
                     graphics::lines(pcurve)
-                    graphics::image(private$rf[ind,ind][pcurve$ord,pcurve$ord], axes=F)
+                    graphics::image(private$rf[ind,ind][pcurve$ord,pcurve$ord], axes=F, col=grDevices::heat.colors(100))
                     if(is.null(filename)) graphics::par(temp_par)
                     else grDevices::dev.off()
                     ## Set the new order
@@ -761,12 +761,12 @@ Please select one of the following:
                       ## produce the plotly plot
                       if(length(which(b_indx)) == 0){
                         p <- plotly::plot_ly(z=temprf, type="heatmap", showscale=F, hoverinfo="text",
-                                             text=hovertext, colors=heat.colors(100)) %>%
+                                             text=hovertext, colors=grDevices::heat.colors(100)) %>%
                           plotly::layout(margin=list(l=0,r=0,t=0,b=0), xaxis=ax, yaxis=ax)
                       }
                       else{
                         p <- plotly::plot_ly(z=temprf, type="heatmap", showscale=F, hoverinfo="text",
-                                text=hovertext, colors=heat.colors(100)) %>% 
+                                text=hovertext, colors=grDevices::heat.colors(100)) %>% 
                           plotly::add_segments(x=which(b_indx)-1,xend=which(b_indx)-1,y=0,yend=nn, line=list(color="black"),  showlegend=F) %>%
                           plotly::add_segments(y=which(b_indx)-1,yend=which(b_indx)-1,x=0,xend=nn, line=list(color="black"),  showlegend=F) %>%
                           plotly::layout(margin=list(l=0,r=0,t=0,b=0), xaxis=ax, yaxis=ax)
@@ -795,7 +795,7 @@ Please select one of the following:
                       else
                         temp_par <- graphics::par(no.readonly = TRUE)
                       graphics::par(mar=rep(0,4),oma=c(0,0,0,0), mfrow=c(1,1), xaxt='n',yaxt='n',bty='n',ann=F)
-                      graphics::image(temprf, x=1:nn, y=1:nn, zlim=c(0,0.5), col=heat.colors(100))
+                      graphics::image(temprf, x=1:nn, y=1:nn, zlim=c(0,0.5), col=grDevices::heat.colors(100))
                       graphics::abline(v=which(b_indx))
                       graphics::abline(h=which(b_indx))
                       if(!is.null(filename))
