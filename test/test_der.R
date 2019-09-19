@@ -36,3 +36,5 @@ para[para < -23] <- -23
 tt <- GUSMap:::score_fs_mp_ss_scaled_err(para,ref=ref,alt=alt,bcoef_mat=bcoef_mat,Kab=Kab,
                                          nInd=nInd,nSnps=nSnps,OPGP=list(OPGP),noFam=noFam,
                                          seqErr=seqErr,extra=ep,nThreads=1,multiErr=T)
+
+plot(unlist(MLE_EM4[1:2]),unlist(tt[1:2]));abline(0,1)

@@ -149,7 +149,7 @@ simFS <- function(rVec_f, rVec_m=rVec_f, epsilon=0, config, nInd=100, meanDepth=
         parHap[1:2,] <- parHap[2:1,]
       if(any(parHap[3:4,] == "B") && parHap[3,which(apply(parHap[3:4,],2,function(x) !(all(x=='A'))))[1]] == 'B')
         parHap[3:4,] <- parHap[4:3,]
-      OPGP[[chr]][[fam]] <- parHapToOPGP(parHap)
+      OPGP[[chr]][[fam]] <- as.integer(parHapToOPGP(parHap))
       
       #### Simulate the data sets
       set.seed(seed2 + fam*5 + chr*119)

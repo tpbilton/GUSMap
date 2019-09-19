@@ -240,7 +240,7 @@ SEXP score_fs_scaled_multi_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef
   for(ind = 0; ind < nInd_c; ind++){
     int s1, s2;
     double phi[4][2*nSnps_c-1], phi_prev[4][2*nSnps_c-1];
-    double alphaTilde[4], alphaDot[4], sum, sum_der, w_new, w_prev;
+    double alphaTilde[4], alphaDot[4], sum, sum_der, w_new;
     double delta;
     
     // Compute forward probabilities at snp 1
@@ -248,13 +248,16 @@ SEXP score_fs_scaled_multi_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef
     for(s1 = 0; s1 < 4; s1++){
       alphaDot[s1] = 0.25 * Qentry(pOPGP[0], pKaa[ind], pKab[ind], pKbb[ind], s1+1);
       sum = sum + alphaDot[s1];
-      alphaTilde[s1] = alphaDot[s1];
+    }
+    for(s1 = 0; s1 < 4; s1++){
+      alphaTilde[s1] = alphaDot[s1]/sum;
       // Compute the derivative for ep
-      phi_prev[s1][nSnps_c-1] = 0.25 * der_ep(pOPGP[0], pep[0], pref[ind], palt[ind], s1+1);
+      phi_prev[s1][nSnps_c-1] = 0.25 * der_ep(pOPGP[0], pep[0], pref[ind], palt[ind], s1+1)/sum;
     }
     
     // add contribution to likelihood
-    w_prev = sum;
+    //w_prev = sum;
+    llval += log(sum);
     
     // iterate over the remaining SNPs
     for(snp = 1; snp < nSnps_c; snp++){
@@ -266,56 +269,58 @@ SEXP score_fs_scaled_multi_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef
           sum = sum + Tmat(s1, s2, pr[snp-1]) * alphaTilde[s1];
         }
         delta = Qentry(pOPGP[snp], pKaa[ind + nInd_c*snp], pKab[ind + nInd_c*snp], pKbb[ind + nInd_c*snp], s2+1);
-        alphaDot[s2] = sum * delta/w_prev;
+        alphaDot[s2] = sum * delta;
         // add contribution to new weight
-        w_new = w_new + alphaDot[s2];
-        // Compute the derivatives
+        w_new += alphaDot[s2];
+      }
+      // Compute the derivatives
+      for(s2 = 0; s2 < 4; s2++){
+        delta = Qentry(pOPGP[snp], pKaa[ind + nInd_c*snp], pKab[ind + nInd_c*snp], pKbb[ind + nInd_c*snp], s2+1);
         //rf's
         sum_der = 0;
         for(s1 = 0; s1 < 4; s1++){
           sum_der = sum_der + der_rf(s1, s2, pr[snp-1]) * alphaTilde[s1];
         }
-        phi[s2][snp-1] = sum_der * delta * 1/w_prev;
+        phi[s2][snp-1] = sum_der * delta * 1/w_new;
         for(snp_der = 0; snp_der < snp-1; snp_der++){
           sum_der = 0;
           for(s1 = 0; s1 < 4; s1++){
             sum_der = sum_der + phi_prev[s1][snp_der] * Tmat(s1, s2, pr[snp-1]);
           }
-          phi[s2][snp_der] = sum_der * delta * 1/w_prev;
+          phi[s2][snp_der] = sum_der * delta * 1/w_new;
         }
         //sequencing error parameter
         sum_der = 0;
         for(s1 = 0; s1 < 4; s1++){
           sum_der = sum_der + alphaTilde[s1] * der_ep(pOPGP[snp], pep[snp], pref[ind + nInd_c*snp], palt[ind + nInd_c*snp], s2+1) * Tmat(s1, s2, pr[snp-1]);
         }
-        phi[s2][nSnps_c-1 + snp] = sum_der * 1/w_prev;
+        phi[s2][nSnps_c-1 + snp] = sum_der * 1/w_new;
         for(snp_der = 0; snp_der < snp; snp_der++){
           sum_der = 0;
           for(s1 = 0; s1 < 4; s1++){  
             sum_der = sum_der + phi_prev[s1][snp_der + nSnps_c-1] * Tmat(s1, s2, pr[snp-1]);
           }
-          phi[s2][snp_der + nSnps_c-1] = sum_der * delta * 1/w_prev;
+          phi[s2][snp_der + nSnps_c-1] = sum_der * delta * 1/w_new;
         }
       }
       // Add contribution to the likelihood
-      llval = llval + log(w_prev);
+      llval = llval + log(w_new);
       
       // Scale the forward probability vector
       for(s2 = 0; s2 < 4; s2++){
-        alphaTilde[s2] = alphaDot[s2];
+        alphaTilde[s2] = alphaDot[s2]/w_new;
         // update the derivative vectors
         for(snp_der = 0; snp_der < 2*nSnps_c-1; snp_der++){
           phi_prev[s2][snp_der] = phi[s2][snp_der];
         }
       }
-      w_prev = w_new;
+      //w_prev = w_new;
     }
-    llval = llval + log(w_prev);
     // add contributions to the score vector
     for(snp_der = 0; snp_der < 2*nSnps_c-1; snp_der++){
       sum_der = 0;
       for(s2 = 0; s2 < 4; s2++)
-        sum_der = sum_der + phi[s2][snp_der]/w_prev;
+        sum_der = sum_der + phi[s2][snp_der];
       #pragma omp atomic
       score_c[snp_der] += sum_der;
     }
@@ -397,7 +402,7 @@ SEXP score_fs_scaled_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef_mat, 
   for(ind = 0; ind < nInd_c; ind++){
     int s1, s2;
     double phi[4][nSnps_c], phi_prev[4][nSnps_c];
-    double alphaTilde[4], alphaDot[4], sum, sum_der, w_new, w_prev;
+    double alphaTilde[4], alphaDot[4], sum, sum_der, w_new;
     double delta;
 
     // Compute forward probabilities at snp 1
@@ -405,13 +410,16 @@ SEXP score_fs_scaled_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef_mat, 
     for(s1 = 0; s1 < 4; s1++){
       alphaDot[s1] = 0.25 * Qentry(pOPGP[0], pKaa[ind], pKab[ind], pKbb[ind], s1+1);
       sum = sum + alphaDot[s1];
-      alphaTilde[s1] = alphaDot[s1];
+    }
+    for(s1 = 0; s1 < 4; s1++){
+      alphaTilde[s1] = alphaDot[s1]/sum;
       // Compute the derivative for ep
-      phi_prev[s1][nSnps_c-1] = 0.25 * der_ep(pOPGP[0], ep_c, pref[ind], palt[ind], s1+1);
+      phi_prev[s1][nSnps_c-1] = 0.25 * der_ep(pOPGP[0], ep_c, pref[ind], palt[ind], s1+1)/sum;
     }
 
     // add contribution to likelihood
-    w_prev = sum;
+    //w_prev = sum;
+    llval += log(sum);
 
     // iterate over the remaining SNPs
     for(snp = 1; snp < nSnps_c; snp++){
@@ -423,22 +431,25 @@ SEXP score_fs_scaled_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef_mat, 
           sum = sum + Tmat(s1, s2, pr[snp-1]) * alphaTilde[s1];
         }
         delta = Qentry(pOPGP[snp], pKaa[ind + nInd_c*snp], pKab[ind + nInd_c*snp], pKbb[ind + nInd_c*snp], s2+1);
-        alphaDot[s2] = sum * delta/w_prev;
+        alphaDot[s2] = sum * delta;
         // add contribution to new weight
-        w_new = w_new + alphaDot[s2];
-        // Compute the derivatives
+        w_new += alphaDot[s2];
+      }
+      // Compute the derivatives
+      for(s2 = 0; s2 < 4; s2++){
+        delta = Qentry(pOPGP[snp], pKaa[ind + nInd_c*snp], pKab[ind + nInd_c*snp], pKbb[ind + nInd_c*snp], s2+1);
         //rf's
         sum_der = 0;
         for(s1 = 0; s1 < 4; s1++){
           sum_der = sum_der + der_rf(s1, s2, pr[snp-1]) * alphaTilde[s1];
         }
-        phi[s2][snp-1] = sum_der * delta * 1/w_prev;
+        phi[s2][snp-1] = sum_der * delta * 1/w_new;
         for(snp_der = 0; snp_der < snp-1; snp_der++){
           sum_der = 0;
           for(s1 = 0; s1 < 4; s1++){
             sum_der = sum_der + phi_prev[s1][snp_der] * Tmat(s1, s2, pr[snp-1]);
           }
-          phi[s2][snp_der] = sum_der * delta * 1/w_prev;
+          phi[s2][snp_der] = sum_der * delta * 1/w_new;
         }
         //sequencing error parameter
         sum_der = 0;
@@ -446,35 +457,27 @@ SEXP score_fs_scaled_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef_mat, 
           sum_der = sum_der + ((phi_prev[s1][nSnps_c-1] * delta + alphaTilde[s1] * 
             der_ep(pOPGP[snp], ep_c, pref[ind + nInd_c*snp], palt[ind + nInd_c*snp], s2+1)) * Tmat(s1, s2, pr[snp-1]));
         }
-        phi[s2][nSnps_c-1] = sum_der/w_prev;
+        phi[s2][nSnps_c-1] = sum_der/w_new;
       }
       // Add contribution to the likelihood
-      llval = llval + log(w_prev);
-
+      llval = llval + log(w_new);
       // Scale the forward probability vector
       for(s2 = 0; s2 < 4; s2++){
-        alphaTilde[s2] = alphaDot[s2];
+        alphaTilde[s2] = alphaDot[s2]/w_new;
         // update the derivative vectors
         for(snp_der = 0; snp_der < nSnps_c; snp_der++){
           phi_prev[s2][snp_der] = phi[s2][snp_der];
         }
       }
-      w_prev = w_new;
+      //w_prev = w_new;
     }
-    llval = llval + log(w_prev);
+    //llval = llval + log(w_prev);
     //Rprintf("Likelihood value: %f\n", llval);
     // add contributions to the score vector
-    for(snp_der = 0; snp_der < snp-1; snp_der++){
+    for(snp_der = 0; snp_der < nSnps_c; snp_der++){
       sum_der = 0;
       for(s2 = 0; s2 < 4; s2++)
-        sum_der = sum_der + phi[s2][snp_der]/w_prev;
-      #pragma omp atomic
-      score_c[snp_der] += sum_der;
-    }
-    for(snp_der = nSnps_c-1; snp_der < nSnps_c; snp_der++){
-      sum_der = 0;
-      for(s2 = 0; s2 < 4; s2++)
-        sum_der = sum_der + phi[s2][snp_der]/w_prev;
+        sum_der = sum_der + phi[s2][snp_der]; ///w_prev;
       #pragma omp atomic
       score_c[snp_der] += sum_der;
     }
@@ -500,7 +503,7 @@ SEXP score_fs_scaled_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef_mat, SEXP
   // Initialize variables
   int s1, s2, ind, snp, snp_der, nInd_c, nSnps_c, *pOPGP, *palt, *pref;
   double *pscore, *pr, *pbcoef_mat, *pKab, ep_c, delta;
-  double alphaTilde[4], alphaDot[4], sum, sum_der, w_new, w_prev;
+  double alphaTilde[4], alphaDot[4], sum, sum_der, w_new;
   // Load R input variables into C
   nInd_c = INTEGER(nInd)[0];
   nSnps_c = INTEGER(nSnps)[0];
@@ -544,11 +547,13 @@ SEXP score_fs_scaled_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef_mat, SEXP
     for(s1 = 0; s1 < 4; s1++){
       alphaDot[s1] = 0.25 * Qentry(pOPGP[0], pKaa[ind], pKab[ind], pKbb[ind], s1+1);
       sum = sum + alphaDot[s1];
-      alphaTilde[s1] = alphaDot[s1];
+    }
+    for(s1 = 0; s1 < 4; s1++){
+      alphaTilde[s1] = alphaDot[s1]/sum;
     }
 
     // add contribution to likelihood
-    w_prev = sum;
+    llval += log(sum);
     
     // iterate over the remaining SNPs
     for(snp = 1; snp < nSnps_c; snp++){
@@ -560,44 +565,47 @@ SEXP score_fs_scaled_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef_mat, SEXP
           sum = sum + Tmat(s1, s2, pr[snp-1]) * alphaTilde[s1];
         }
         delta = Qentry(pOPGP[snp], pKaa[ind + nInd_c*snp], pKab[ind + nInd_c*snp], pKbb[ind + nInd_c*snp], s2+1);
-        alphaDot[s2] = sum * delta/w_prev;
-        // add contribution to new weight
-        w_new = w_new + alphaDot[s2];
+        alphaDot[s2] = sum * delta;
+        w_new += alphaDot[s2];
+      }
+      // add contribution to new weight
+      for(s2 = 0; s2 < 4; s2++){
+        delta = Qentry(pOPGP[snp], pKaa[ind + nInd_c*snp], pKab[ind + nInd_c*snp], pKbb[ind + nInd_c*snp], s2+1);
         // Compute the derivatives
         //rf's
         sum_der = 0;
         for(s1 = 0; s1 < 4; s1++){
           sum_der = sum_der + der_rf(s1, s2, pr[snp-1]) * alphaTilde[s1];
         }
-        phi[s2][snp-1] = sum_der * delta * 1/w_prev;
+        phi[s2][snp-1] = sum_der * delta * 1/w_new;
         for(snp_der = 0; snp_der < snp-1; snp_der++){
           sum_der = 0;
           for(s1 = 0; s1 < 4; s1++){
             sum_der = sum_der + phi_prev[s1][snp_der] * Tmat(s1, s2, pr[snp-1]);
           }
-          phi[s2][snp_der] = sum_der * delta * 1/w_prev;
+          phi[s2][snp_der] = sum_der * delta * 1/w_new;
         }
       }
       // Add contribution to the likelihood
-      llval = llval + log(w_prev);
+      llval = llval + log(w_new);
       
       // Scale the forward probability vector
       for(s2 = 0; s2 < 4; s2++){
-        alphaTilde[s2] = alphaDot[s2];
+        alphaTilde[s2] = alphaDot[s2]/w_new;
         // update the derivative vectors
         for(snp_der = 0; snp_der < nSnps_c-1; snp_der++){
           phi_prev[s2][snp_der] = phi[s2][snp_der];
         }
       }
-      w_prev = w_new;
+      //w_prev = w_new;
     }
-    llval = llval + log(w_prev);
+    //llval = llval + log(w_prev);
     //Rprintf("Likelihood value: %f\n", llval);
     // add contributions to the score vector
-    for(snp_der = 0; snp_der < snp-1; snp_der++){
+    for(snp_der = 0; snp_der < nSnps_c-1; snp_der++){
       sum_der = 0;
       for(s2 = 0; s2 < 4; s2++)
-        sum_der = sum_der + phi[s2][snp_der]/w_prev;
+        sum_der = sum_der + phi[s2][snp_der];
       sum_der = sum_der + score_c[snp_der];
       score_c[snp_der] = sum_der;
     }
@@ -684,7 +692,7 @@ SEXP score_fs_ss_scaled_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef_ma
         phi_prev[s1][snp] = 0;
       }
     }
-    double alphaTilde[4], alphaDot[4], sum, sum_der, w_new, w_prev;
+    double alphaTilde[4], alphaDot[4], sum, sum_der, w_new;
     double delta;
     
     // Compute forward probabilities at snp 1
@@ -692,13 +700,16 @@ SEXP score_fs_ss_scaled_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef_ma
     for(s1 = 0; s1 < 4; s1++){
       alphaDot[s1] = 0.25 * Qentry(pOPGP[0], pKaa[ind], pKab[ind], pKbb[ind], s1+1);
       sum = sum + alphaDot[s1];
-      alphaTilde[s1] = alphaDot[s1];
+    }
+    for(s1 = 0; s1 < 4; s1++){
+      alphaTilde[s1] = alphaDot[s1]/sum;
       // Compute the derivative for ep
-      phi_prev[s1][2*nSnps_c-2] = 0.25 * der_ep(pOPGP[0], ep_c, pref[ind], palt[ind], s1+1);
+      phi_prev[s1][2*nSnps_c-2] = 0.25 * der_ep(pOPGP[0], ep_c, pref[ind], palt[ind], s1+1)/sum;
     }
     
     // add contribution to likelihood
-    w_prev = sum;
+    //w_prev = sum;
+    llval += log(sum);
     
     // iterate over the remaining SNPs
     for(snp = 1; snp < nSnps_c; snp++){
@@ -710,17 +721,20 @@ SEXP score_fs_ss_scaled_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef_ma
           sum = sum + Tmat_ss(s1, s2, pr[snp-1], pr[snp-1+nSnps_c-1]) * alphaTilde[s1];
         }
         delta = Qentry(pOPGP[snp], pKaa[ind + nInd_c*snp], pKab[ind + nInd_c*snp], pKbb[ind + nInd_c*snp], s2+1);
-        alphaDot[s2] = sum * delta/w_prev;
+        alphaDot[s2] = sum * delta;
         // add contribution to new weight
         w_new = w_new + alphaDot[s2];
-        // Compute the derivatives
+      }
+      // Compute the derivatives
+      for(s2 = 0; s2 < 4; s2++){
+        delta = Qentry(pOPGP[snp], pKaa[ind + nInd_c*snp], pKab[ind + nInd_c*snp], pKbb[ind + nInd_c*snp], s2+1);
         //rf's
         if(prf_indx[snp-1] == 1){
           sum_der = 0;
           for(s1 = 0; s1 < 4; s1++){
             sum_der = sum_der + der_rf_ss(s1, s2, pr[snp-1], pr[snp-1+nSnps_c-1], 1) * alphaTilde[s1];
           }
-          phi[s2][snp-1] = sum_der * delta * 1/w_prev;
+          phi[s2][snp-1] = sum_der * delta * 1/w_new;
         }
         for(snp_der = 0; snp_der < snp-1; snp_der++){
           if(prf_indx[snp_der] == 1){
@@ -728,7 +742,7 @@ SEXP score_fs_ss_scaled_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef_ma
             for(s1 = 0; s1 < 4; s1++){
               sum_der = sum_der + phi_prev[s1][snp_der] * Tmat_ss(s1, s2, pr[snp-1], pr[snp-1+nSnps_c-1]);
             }
-            phi[s2][snp_der] = sum_der * delta * 1/w_prev;
+            phi[s2][snp_der] = sum_der * delta * 1/w_new;
           }
         }
         if(prf_indx[snp-1+nSnps_c-1] == 1){
@@ -736,7 +750,7 @@ SEXP score_fs_ss_scaled_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef_ma
           for(s1 = 0; s1 < 4; s1++){
             sum_der = sum_der + der_rf_ss(s1, s2, pr[snp-1], pr[snp-1+nSnps_c-1], 0) * alphaTilde[s1];
           }
-          phi[s2][snp-1+nSnps_c-1] = sum_der * delta * 1/w_prev;
+          phi[s2][snp-1+nSnps_c-1] = sum_der * delta * 1/w_new;
         }
         for(snp_der = 0; snp_der < snp-1; snp_der++){
           if(prf_indx[snp_der+nSnps_c-1] == 1){
@@ -744,7 +758,7 @@ SEXP score_fs_ss_scaled_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef_ma
             for(s1 = 0; s1 < 4; s1++){
               sum_der = sum_der + phi_prev[s1][snp_der+nSnps_c-1] * Tmat_ss(s1, s2, pr[snp-1], pr[snp-1+nSnps_c-1]);
             }
-            phi[s2][snp_der+nSnps_c-1] = sum_der * delta * 1/w_prev;
+            phi[s2][snp_der+nSnps_c-1] = sum_der * delta * 1/w_new;
           }
         }
         //sequencing error parameter
@@ -753,28 +767,28 @@ SEXP score_fs_ss_scaled_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef_ma
           sum_der = sum_der + ((phi_prev[s1][2*nSnps_c-2] * delta + alphaTilde[s1] * 
             der_ep(pOPGP[snp], ep_c, pref[ind + nInd_c*snp], palt[ind + nInd_c*snp], s2+1)) * Tmat_ss(s1, s2, pr[snp-1], pr[snp-1+nSnps_c-1]));
         }
-        phi[s2][2*nSnps_c-2] = sum_der/w_prev;
+        phi[s2][2*nSnps_c-2] = sum_der/w_new;
       }
       // Add contribution to the likelihood
-      llval = llval + log(w_prev);
+      llval = llval + log(w_new);
       
       // Scale the forward probability vector
       for(s2 = 0; s2 < 4; s2++){
-        alphaTilde[s2] = alphaDot[s2];
+        alphaTilde[s2] = alphaDot[s2]/w_new;
         // update the derivative vectors
         for(snp_der = 0; snp_der < 2*nSnps_c-1; snp_der++){
           phi_prev[s2][snp_der] = phi[s2][snp_der];
         }
       }
-      w_prev = w_new;
+      //w_prev = w_new;
     }
-    llval = llval + log(w_prev);
+    //llval = llval + log(w_prev);
     //Rprintf("Likelihood value: %f\n", llval);
     // add contributions to the score vector
     for(snp_der = 0; snp_der < 2*nSnps_c-1; snp_der++){
       sum_der = 0;
       for(s2 = 0; s2 < 4; s2++)
-        sum_der = sum_der + phi[s2][snp_der]/w_prev;
+        sum_der = sum_der + phi[s2][snp_der];
       #pragma omp atomic
       score_c[snp_der] += sum_der;
     }
@@ -864,7 +878,7 @@ SEXP score_fs_ss_scaled_multi_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bc
         phi_prev[s1][snp] = 0;
       }
     }
-    double alphaTilde[4], alphaDot[4], sum, sum_der, w_new, w_prev;
+    double alphaTilde[4], alphaDot[4], sum, sum_der, w_new;
     double delta;
     
     // Compute forward probabilities at snp 1
@@ -872,13 +886,16 @@ SEXP score_fs_ss_scaled_multi_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bc
     for(s1 = 0; s1 < 4; s1++){
       alphaDot[s1] = 0.25 * Qentry(pOPGP[0], pKaa[ind], pKab[ind], pKbb[ind], s1+1);
       sum = sum + alphaDot[s1];
-      alphaTilde[s1] = alphaDot[s1];
+    }
+    for(s1 = 0; s1 < 4; s1++){
+      alphaTilde[s1] = alphaDot[s1]/sum;
       // Compute the derivative for ep
-      phi_prev[s1][2*nSnps_c-2] = 0.25 * der_ep(pOPGP[0], pep[0], pref[ind], palt[ind], s1+1);
+      phi_prev[s1][2*nSnps_c-2] = 0.25 * der_ep(pOPGP[0], pep[0], pref[ind], palt[ind], s1+1)/sum;
     }
     
     // add contribution to likelihood
-    w_prev = sum;
+    //w_prev = sum;
+    llval += log(sum);
     
     // iterate over the remaining SNPs
     for(snp = 1; snp < nSnps_c; snp++){
@@ -890,17 +907,20 @@ SEXP score_fs_ss_scaled_multi_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bc
           sum = sum + Tmat_ss(s1, s2, pr[snp-1], pr[snp-1+nSnps_c-1]) * alphaTilde[s1];
         }
         delta = Qentry(pOPGP[snp], pKaa[ind + nInd_c*snp], pKab[ind + nInd_c*snp], pKbb[ind + nInd_c*snp], s2+1);
-        alphaDot[s2] = sum * delta/w_prev;
+        alphaDot[s2] = sum * delta;
         // add contribution to new weight
         w_new = w_new + alphaDot[s2];
-        // Compute the derivatives
+      }
+      // Compute the derivatives
+      for(s2 = 0; s2 < 4; s2++){
+        delta = Qentry(pOPGP[snp], pKaa[ind + nInd_c*snp], pKab[ind + nInd_c*snp], pKbb[ind + nInd_c*snp], s2+1);
         //rf's
         if(prf_indx[snp-1] == 1){
           sum_der = 0;
           for(s1 = 0; s1 < 4; s1++){
             sum_der = sum_der + der_rf_ss(s1, s2, pr[snp-1], pr[snp-1+nSnps_c-1], 1) * alphaTilde[s1];
           }
-          phi[s2][snp-1] = sum_der * delta * 1/w_prev;
+          phi[s2][snp-1] = sum_der * delta * 1/w_new;
         }
         for(snp_der = 0; snp_der < snp-1; snp_der++){
           if(prf_indx[snp_der] == 1){
@@ -908,7 +928,7 @@ SEXP score_fs_ss_scaled_multi_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bc
             for(s1 = 0; s1 < 4; s1++){
               sum_der = sum_der + phi_prev[s1][snp_der] * Tmat_ss(s1, s2, pr[snp-1], pr[snp-1+nSnps_c-1]);
             }
-            phi[s2][snp_der] = sum_der * delta * 1/w_prev;
+            phi[s2][snp_der] = sum_der * delta * 1/w_new;
           }
         }
         if(prf_indx[snp-1+nSnps_c-1] == 1){
@@ -916,7 +936,7 @@ SEXP score_fs_ss_scaled_multi_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bc
           for(s1 = 0; s1 < 4; s1++){
             sum_der = sum_der + der_rf_ss(s1, s2, pr[snp-1], pr[snp-1+nSnps_c-1], 0) * alphaTilde[s1];
           }
-          phi[s2][snp-1+nSnps_c-1] = sum_der * delta * 1/w_prev;
+          phi[s2][snp-1+nSnps_c-1] = sum_der * delta * 1/w_new;
         }
         for(snp_der = 0; snp_der < snp-1; snp_der++){
           if(prf_indx[snp_der+nSnps_c-1] == 1){
@@ -924,7 +944,7 @@ SEXP score_fs_ss_scaled_multi_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bc
             for(s1 = 0; s1 < 4; s1++){
               sum_der = sum_der + phi_prev[s1][snp_der+nSnps_c-1] * Tmat_ss(s1, s2, pr[snp-1], pr[snp-1+nSnps_c-1]);
             }
-            phi[s2][snp_der+nSnps_c-1] = sum_der * delta * 1/w_prev;
+            phi[s2][snp_der+nSnps_c-1] = sum_der * delta * 1/w_new;
           }
         }
         //sequencing error parameter
@@ -932,35 +952,36 @@ SEXP score_fs_ss_scaled_multi_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bc
         for(s1 = 0; s1 < 4; s1++){
           sum_der = sum_der + alphaTilde[s1] * der_ep(pOPGP[snp], pep[snp], pref[ind + nInd_c*snp], palt[ind + nInd_c*snp], s2+1) * Tmat_ss(s1, s2, pr[snp-1], pr[snp-1+nSnps_c-1]);
         }
-        phi[s2][2*nSnps_c-2 + snp] = sum_der * 1/w_prev;
+        phi[s2][2*nSnps_c-2 + snp] = sum_der * 1/w_new;
         for(snp_der = 0; snp_der < snp; snp_der++){
           sum_der = 0;
           for(s1 = 0; s1 < 4; s1++){  
             sum_der = sum_der + phi_prev[s1][snp_der + 2*nSnps_c-2] * Tmat_ss(s1, s2, pr[snp-1], pr[snp-1+nSnps_c-1]);
           }
-          phi[s2][snp_der + 2*nSnps_c-2] = sum_der * delta * 1/w_prev;
+          phi[s2][snp_der + 2*nSnps_c-2] = sum_der * delta * 1/w_new;
         }
       }
       // Add contribution to the likelihood
-      llval = llval + log(w_prev);
+      llval = llval + log(w_new);
       
       // Scale the forward probability vector
       for(s2 = 0; s2 < 4; s2++){
-        alphaTilde[s2] = alphaDot[s2];
+        alphaTilde[s2] = alphaDot[s2]/w_new;
         // update the derivative vectors
         for(snp_der = 0; snp_der < 3*nSnps_c-2; snp_der++){
           phi_prev[s2][snp_der] = phi[s2][snp_der];
         }
       }
-      w_prev = w_new;
+      //w_prev = w_new;
     }
-    llval = llval + log(w_prev);
+    //llval = llval + log(w_prev);
     //Rprintf("Likelihood value: %f\n", llval);
     // add contributions to the score vector
+    // rf paternal
     for(snp_der = 0; snp_der < 3*nSnps_c-2; snp_der++){
       sum_der = 0;
       for(s2 = 0; s2 < 4; s2++)
-        sum_der = sum_der + phi[s2][snp_der]/w_prev;
+        sum_der = sum_der + phi[s2][snp_der];
       #pragma omp atomic
       score_c[snp_der] += sum_der;
     }
