@@ -119,8 +119,8 @@ score_fs_mp_scaled_err <- function(para,ref,alt,bcoef_mat,Kab,OPGP,nInd,nSnps,no
 score_fs_mp_ss_scaled_err <- function(para,ref,alt,bcoef_mat,Kab,OPGP,nInd,nSnps,noFam,ps,ms,npar,seqErr=TRUE,multiErr=FALSE,extra=0,nThreads=1){
   ## untransform the parameters
   r <- matrix(0,ncol=2,nrow=nSnps-1)
-  r[ps,1] <- GUSbase::inv.logit2(para[1:npar[1]])
-  r[ms,2] <- GUSbase::inv.logit2(para[npar[1]+1:npar[2]])
+  if(npar[1] > 0) r[ps,1] <- GUSbase::inv.logit2(para[1:npar[1]])
+  if(npar[2] > 0) r[ms,2] <- GUSbase::inv.logit2(para[npar[1]+1:npar[2]])
   if(seqErr){
     llval = 0
     if(!multiErr){
