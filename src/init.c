@@ -30,6 +30,8 @@ static const R_CallMethodDef callMethods[] = {
   {"score_fs_scaled_c",        (DL_FUNC) &score_fs_scaled_c,        9},
   {"score_fs_scaled_err_c",    (DL_FUNC) &score_fs_scaled_err_c,    10},
   {"score_fs_scaled_multi_err_c",    (DL_FUNC) &score_fs_scaled_multi_err_c,    10},
+  {"score_fs_ss_scaled_err_c", (DL_FUNC) &score_fs_ss_scaled_err_c, 11},
+  {"score_fs_ss_scaled_multi_err_c", (DL_FUNC) &score_fs_ss_scaled_multi_err_c, 11},
   {"EM_HMM",                   (DL_FUNC) &EM_HMM,                   13},
   {"EM_HMM_UP",                (DL_FUNC) &EM_HMM_UP,                12},
   {"EM_HMM_multierr",          (DL_FUNC) &EM_HMM_multierr,          13},
@@ -48,6 +50,8 @@ void R_init_GUSMap(DllInfo *info){
   R_RegisterCCallable("GUSMap","score_fs_scaled_c",             (DL_FUNC) &score_fs_scaled_c);
   R_RegisterCCallable("GUSMap","score_fs_scaled_err_c",         (DL_FUNC) &score_fs_scaled_err_c);
   R_RegisterCCallable("GUSMap","score_fs_scaled_multi_err_c",   (DL_FUNC) &score_fs_scaled_multi_err_c);
+  R_RegisterCCallable("GUSMap","score_fs_ss_scaled_err_c",      (DL_FUNC) &score_fs_ss_scaled_err_c);
+  R_RegisterCCallable("GUSMap","score_fs_ss_scaled_multi_err_c",(DL_FUNC) &score_fs_ss_scaled_multi_err_c);
   R_RegisterCCallable("GUSMap","EM_HMM",                        (DL_FUNC) &EM_HMM);
   R_RegisterCCallable("GUSMap","EM_HMM_UP",                     (DL_FUNC) &EM_HMM_UP);
   R_RegisterCCallable("GUSMap","EM_HMM_multierr",               (DL_FUNC) &EM_HMM_multierr);

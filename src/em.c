@@ -325,7 +325,7 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam, SEXP nIn
         //////////////////////
         // Compute the backward probabilities
         for(s1 = 0; s1 < 4; s1++){
-          betaTilde[s1][nSnps_c-1] = 1/exp(log_w[nSnps_c-1]);
+          betaTilde[s1][nSnps_c-1] = 1; //1/exp(log_w[nSnps_c-1]);
         }
         // iterate over the remaining SNPs
         sum = 0;
@@ -340,23 +340,23 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam, SEXP nIn
           }
           // Scale the backward probability vector
           for(s1 = 0; s1 < 4; s1++){
-            betaTilde[s1][snp] = betaDot[s1]/exp(log_w[snp]);
+            betaTilde[s1][snp] = betaDot[s1]/exp(log_w[snp+1]);
           }
         }
         ///////// E-step:
         for(snp = 0; snp < nSnps_c - 1; snp++){
           for(s1 = 0; s1 < 4; s1++){
-            uProb[s1][snp] = (alphaTilde[s1][snp] * betaTilde[s1][snp])/exp(-log_w[snp]);
+            uProb[s1][snp] = (alphaTilde[s1][snp] * betaTilde[s1][snp]); ///exp(-log_w[snp]);
             for(s2 = 0; s2 < 4; s2++){
-              vProb[s1][s2][snp] = alphaTilde[s1][snp] * Tmat_ss(s1, s2, r_c[snp], r_c[snp+nSnps_c-1]) *
+              vProb[s1][s2][snp] = (alphaTilde[s1][snp] * Tmat_ss(s1, s2, r_c[snp], r_c[snp+nSnps_c-1]) *
                 Qentry(pOPGP[(snp+1)*noFam_c + fam], pAA[indx][snp+1], pAB[indx][snp+1], pBB[indx][snp+1], s2+1)  * 
-                betaTilde[s2][snp+1];
+                betaTilde[s2][snp+1])/exp(log_w[snp+1]);
             }
           }
         }
         snp = nSnps_c - 1;
         for(s1 = 0; s1 < 4; s1++){
-          uProb[s1][snp] = (alphaTilde[s1][snp] * betaTilde[s1][snp])/exp(-log_w[snp]); 
+          uProb[s1][snp] = (alphaTilde[s1][snp] * betaTilde[s1][snp]); ///exp(-log_w[snp]); 
         }
         
         //////// M-step:
@@ -421,7 +421,9 @@ SEXP EM_HMM(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam, SEXP nIn
         r_c[snp+parent*(nSnps_c-1)] = r_new[snp+parent*(nSnps_c-1)];
       }
     }
-    ep_c = sumA/(sumA + sumB);
+    if(seqError_c){
+      ep_c = sumA/(sumA + sumB);
+    }
   }
   
   // Set up the R output object.
@@ -623,7 +625,7 @@ SEXP EM_HMM_multierr(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam,
         //////////////////////
         // Compute the backward probabilities
         for(s1 = 0; s1 < 4; s1++){
-          betaTilde[s1][nSnps_c-1] = 1/exp(log_w[nSnps_c-1]);
+          betaTilde[s1][nSnps_c-1] = 1; ///exp(log_w[nSnps_c-1]);
         }
         // iterate over the remaining SNPs
         sum = 0;
@@ -638,23 +640,23 @@ SEXP EM_HMM_multierr(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam,
           }
           // Scale the backward probability vector
           for(s1 = 0; s1 < 4; s1++){
-            betaTilde[s1][snp] = betaDot[s1]/exp(log_w[snp]);
+            betaTilde[s1][snp] = betaDot[s1]/exp(log_w[snp+1]);
           }
         }
         ///////// E-step:
         for(snp = 0; snp < nSnps_c - 1; snp++){
           for(s1 = 0; s1 < 4; s1++){
-            uProb[s1][snp] = (alphaTilde[s1][snp] * betaTilde[s1][snp])/exp(-log_w[snp]);
+            uProb[s1][snp] = (alphaTilde[s1][snp] * betaTilde[s1][snp]); ///exp(-log_w[snp]);
             for(s2 = 0; s2 < 4; s2++){
-              vProb[s1][s2][snp] = alphaTilde[s1][snp] * Tmat_ss(s1, s2, r_c[snp], r_c[snp+nSnps_c-1]) *
+              vProb[s1][s2][snp] = (alphaTilde[s1][snp] * Tmat_ss(s1, s2, r_c[snp], r_c[snp+nSnps_c-1]) *
                 Qentry(pOPGP[(snp+1)*noFam_c + fam], pAA[indx][snp+1], pAB[indx][snp+1], pBB[indx][snp+1], s2+1)  * 
-                betaTilde[s2][snp+1];
+                betaTilde[s2][snp+1])/exp(log_w[snp+1]);
             }
           }
         }
         snp = nSnps_c - 1;
         for(s1 = 0; s1 < 4; s1++){
-          uProb[s1][snp] = (alphaTilde[s1][snp] * betaTilde[s1][snp])/exp(-log_w[snp]); 
+          uProb[s1][snp] = (alphaTilde[s1][snp] * betaTilde[s1][snp]); ///exp(-log_w[snp]); 
         }
         //////// M-step:
         // The recombination fractions
@@ -721,7 +723,9 @@ SEXP EM_HMM_multierr(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam,
         r_c[snp+parent*(nSnps_c-1)] = r_new[snp+parent*(nSnps_c-1)];
       }
     }
-    ep_c[nSnps_c-1] = sumA[nSnps_c-1]/(sumA[nSnps_c-1] + sumB[nSnps_c-1]);
+    if(seqError_c){
+      ep_c[nSnps_c-1] = sumA[nSnps_c-1]/(sumA[nSnps_c-1] + sumB[nSnps_c-1]);
+    }
   }
   
   // Set up the R output object.
@@ -937,7 +941,7 @@ SEXP EM_HMM_UP(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP config, SEXP noFam, SEX
         //////////////////////
         // Compute the backward probabilities
         for(s1 = 0; s1 < 4; s1++){
-          betaTilde[s1][nSnps_c-1] = 1/exp(log_w[nSnps_c-1]);
+          betaTilde[s1][nSnps_c-1] = 1; ///exp(log_w[nSnps_c-1]);
         }
         // iterate over the remaining SNPs
         sum = 0;
@@ -952,23 +956,23 @@ SEXP EM_HMM_UP(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP config, SEXP noFam, SEX
           }
           // Scale the backward probability vector
           for(s1 = 0; s1 < 4; s1++){
-            betaTilde[s1][snp] = betaDot[s1]/exp(log_w[snp]);
+            betaTilde[s1][snp] = betaDot[s1]/exp(log_w[snp+1]);
           }
         }
         ///////// E-step:
         for(snp = 0; snp < nSnps_c - 1; snp++){
           for(s1 = 0; s1 < 4; s1++){
-            uProb[s1][snp] = (alphaTilde[s1][snp] * betaTilde[s1][snp])/exp(-log_w[snp]);
+            uProb[s1][snp] = (alphaTilde[s1][snp] * betaTilde[s1][snp]); ///exp(-log_w[snp]);
             for(s2 = 0; s2 < 4; s2++){
-              vProb[s1][s2][snp] = alphaTilde[s1][snp] * Tmat_ss(s1, s2, r_c[snp], r_c[snp+nSnps_c-1]) *
+              vProb[s1][s2][snp] = (alphaTilde[s1][snp] * Tmat_ss(s1, s2, r_c[snp], r_c[snp+nSnps_c-1]) *
                 Qentry_up(pconfig[(snp+1)*noFam_c + fam], pAA[indx][snp+1], pAB[indx][snp+1], pBB[indx][snp+1], s2+1)  * 
-                betaTilde[s2][snp+1];
+                betaTilde[s2][snp+1])/exp(log_w[snp+1]);
             }
           }
         }
         snp = nSnps_c - 1;
         for(s1 = 0; s1 < 4; s1++){
-          uProb[s1][snp] = (alphaTilde[s1][snp] * betaTilde[s1][snp])/exp(-log_w[snp]); 
+          uProb[s1][snp] = (alphaTilde[s1][snp] * betaTilde[s1][snp]); ///exp(-log_w[snp]); 
         }
         //////// M-step:
         // The recombination fractions
@@ -1016,7 +1020,9 @@ SEXP EM_HMM_UP(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP config, SEXP noFam, SEX
         r_c[snp+parent*(nSnps_c-1)] = r_new[snp+parent*(nSnps_c-1)];
       }
     }
-    ep_c = sumA/(sumA + sumB);
+    if(seqError_c) {
+      ep_c = sumA/(sumA + sumB);
+    }
   }
   
   // Set up the R output object.

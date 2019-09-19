@@ -869,10 +869,10 @@ Please select one of the following:
                     stop("Argument specifying which matrix to plot (argument 1) must be either 'rf' or 'LOD'")
                   if(!is.character(parent) || length(parent) != 1 || !(parent %in% c("maternal","paternal","both")))
                     stop(paste("parent argument is not a string of length one or is invalid:",
-                         "Please select one of the following:",
-                         "maternal: Add BI SNPs to MI LGs",
-                         "paternal: Add BI SNPs to PI LGs",
-                         "both:     Add BI SNPs to both MI and PI LGs", sep="\n"))
+                               "Please select one of the following:",
+                               "maternal: Add BI SNPs to MI LGs",
+                               "paternal: Add BI SNPs to PI LGs",
+                               "both:     Add BI SNPs to both MI and PI LGs", sep="\n"))
                   
                   nChrom = length(unique(private$chrom))
                   if(is.null(chrom)){
@@ -1216,81 +1216,82 @@ Please select one of the following:
                   GUSbase::RRDPlot(ref=private$ref[[1]], alt=private$alt[[1]], ploid=2, gfreq=freq, file=filename, maxdepth=maxdepth, maxSNPs=maxSNPs, ...)
                 }
                 ##############################################################
-                    ),
-                  private = list(
-                    config_orig  = NULL,
-                    config_infer_orig = NULL,
-                    config       = NULL,
-                    config_infer = NULL,
-                    group        = NULL,
-                    group_infer  = NULL,
-                    masked       = NULL,
-                    noFam        = NULL,
-                    rf           = NULL,
-                    LOD          = NULL,
-                    famInfo      = NULL,
-                    para         = NULL,
-                    LG           = NULL,
-                    LG_map       = NULL,
-                    LG_mat       = NULL,
-                    LG_mat_temp  = NULL,
-                    LG_pat       = NULL,
-                    LG_pat_temp  = NULL,
-                    summaryInfo  = NULL,
-                    ############################################
-                    ## function for mapping BI SNPs to maternal or paternal LGs
-                    mapBISnps = function(unmapped, parent, LODthres, nComp){
-                      if(parent == "maternal")
-                        newLGlist <- private$LG_mat
-                      else if(parent == "paternal")
-                        newLGlist <- private$LG_pat
-                      nLG <- length(newLGlist)
-                      ## Run algorithm for generating the linkage groups
-                      noneMapped = FALSE
-                      count = 0
-                      while(!noneMapped){
-                        noneMapped = TRUE
-                        ## check that there are still SNPs remaining that need to be mapped
-                        if(length(unmapped) == 0)
-                          next
-                        ## run the algorithm to map the SNPs
-                        else{
-                          for(snp in unmapped){
-                            LODvalue = numeric(max(nLG,2))
-                            for(lg in 1:nLG)
-                              LODvalue[lg] <- mean(sort(private$LOD[snp,newLGlist[[lg]]],decreasing=T)[1:nComp],na.rm=T)
-                            if(max(LODvalue) >= LODthres & sort(LODvalue, decreasing = T)[2] < LODthres){
-                              count = count + 1
-                              newLG <- which.max(LODvalue)
-                              newLGlist[[newLG]] <- c(newLGlist[[newLG]], snp)
-                              unmapped <- unmapped[-which(unmapped == snp)]
-                              noneMapped = FALSE
-                            }
-                          }
+              ),
+              private = list(
+                config_orig  = NULL,
+                config_infer_orig = NULL,
+                config       = NULL,
+                config_infer = NULL,
+                group        = NULL,
+                group_infer  = NULL,
+                masked       = NULL,
+                noFam        = NULL,
+                rf           = NULL,
+                LOD          = NULL,
+                famInfo      = NULL,
+                para         = NULL,
+                LG           = NULL,
+                LG_map       = NULL,
+                LG_mat       = NULL,
+                LG_mat_temp  = NULL,
+                LG_pat       = NULL,
+                LG_pat_temp  = NULL,
+                summaryInfo  = NULL,
+                simPara      = NULL,
+                ############################################
+                ## function for mapping BI SNPs to maternal or paternal LGs
+                mapBISnps = function(unmapped, parent, LODthres, nComp){
+                  if(parent == "maternal")
+                    newLGlist <- private$LG_mat
+                  else if(parent == "paternal")
+                    newLGlist <- private$LG_pat
+                  nLG <- length(newLGlist)
+                  ## Run algorithm for generating the linkage groups
+                  noneMapped = FALSE
+                  count = 0
+                  while(!noneMapped){
+                    noneMapped = TRUE
+                    ## check that there are still SNPs remaining that need to be mapped
+                    if(length(unmapped) == 0)
+                      next
+                    ## run the algorithm to map the SNPs
+                    else{
+                      for(snp in unmapped){
+                        LODvalue = numeric(max(nLG,2))
+                        for(lg in 1:nLG)
+                          LODvalue[lg] <- mean(sort(private$LOD[snp,newLGlist[[lg]]],decreasing=T)[1:nComp],na.rm=T)
+                        if(max(LODvalue) >= LODthres & sort(LODvalue, decreasing = T)[2] < LODthres){
+                          count = count + 1
+                          newLG <- which.max(LODvalue)
+                          newLGlist[[newLG]] <- c(newLGlist[[newLG]], snp)
+                          unmapped <- unmapped[-which(unmapped == snp)]
+                          noneMapped = FALSE
                         }
                       }
-                      return(newLGlist)
                     }
-                  ), lock_objects = FALSE
-              )
-              
-              ### Function for extending a vector to length n
-              extendVec <- function(vec, n){
-                if(length(vec) == n)
-                  return(vec)
-                else if (length(vec) < n){
-                  return(vec[1:n])
+                  }
+                  return(newLGlist)
                 }
-                else{
-                  temp <- rep(NA,n)
-                  temp[1:length(vec)] <- vec
-                  return(temp)
-                }
-              }
-              
-              #### Some functions from the kutils package for removing trailing spaces for filenames.
-              dts <- function (name)
-                gsub("/$", "", dms(name))
-              dms <- function(name)
-                gsub("(/)\\1+", "/", name)
+              ), lock_objects = FALSE
+)
+
+### Function for extending a vector to length n
+extendVec <- function(vec, n){
+  if(length(vec) == n)
+    return(vec)
+  else if (length(vec) < n){
+    return(vec[1:n])
+  }
+  else{
+    temp <- rep(NA,n)
+    temp[1:length(vec)] <- vec
+    return(temp)
+  }
+}
+
+#### Some functions from the kutils package for removing trailing spaces for filenames.
+dts <- function (name)
+  gsub("/$", "", dms(name))
+dms <- function(name)
+  gsub("(/)\\1+", "/", name)
               

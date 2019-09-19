@@ -115,8 +115,6 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP, noFam=as.integer(1)
     ## If we want to estimate sex-specific r.f.'s
     if(sexSpec){
       
-      stop("To be implemented")
-      
       # Work out the indices of the r.f. parameters of each sex
       ps <- sort(unique(unlist(lapply(OPGP,function(x) which(x %in% 1:8)))))[-1] - 1
       ms <- sort(unique(unlist(lapply(OPGP,function(x) which(x %in% c(1:4,9:12))))))[-1] - 1
@@ -130,19 +128,22 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP, noFam=as.integer(1)
       else
         para <- init_r
       # sequencing error
-      if(length(ep) != 1 & !is.null(ep))
-        para <- c(para,GUSbase::logit(0.001))
-      else if(!is.null(ep))
-        para <- c(para,GUSbase::logit(ep))
-      
+      if(seqErr){
+        if(multiErr) {
+          if(length(ep) == 1) para <- c(para,GUSbase::logit(rep(ep, nSnps)))
+          else para <- c(para,GUSbase::logit(ep))
+        }
+        else para <- c(para,GUSbase::logit(ep))
+      }
       ## Are we estimating the error parameters?
       seqErr=!is.null(ep)
       
       ## Find MLE
-      optim.MLE <- stats::optim(para,ll_fs_ss_mp_scaled_err,method="BFGS",control=optim.arg,
-                         ref=ref,alt=alt,bcoef_mat=bcoef_mat,Kab=Kab,
-                         nInd=nInd,nSnps=nSnps,OPGP=OPGP,ps=ps,ms=ms,npar=npar,noFam=noFam,
-                         seqErr=!is.null(ep))
+      optim.MLE <- stats::optim(para, fn=score_fs_mp_ss_scaled_err, gr=score_extract,
+                                method="BFGS", control=optim.arg,
+                                ref=ref,alt=alt,bcoef_mat=bcoef_mat,Kab=Kab,
+                                nInd=nInd,nSnps=nSnps,OPGP=OPGP,noFam=noFam,ps=ps,ms=ms,npar=npar,
+                                seqErr=seqErr,extra=ep,nThreads=nThreads,multiErr=multiErr)
     }
     else{
       # Determine the initial values
@@ -162,7 +163,7 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP, noFam=as.integer(1)
       }
       
       ## Find MLE
-      optim.MLE <- stats::optim(para, fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err,
+      optim.MLE <- stats::optim(para, fn=score_fs_mp_scaled_err, gr=score_extract,
                          method="BFGS", control=optim.arg,
                          ref=ref,alt=alt,bcoef_mat=bcoef_mat,Kab=Kab,
                          nInd=nInd,nSnps=nSnps,OPGP=OPGP,noFam=noFam,
@@ -181,7 +182,7 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP, noFam=as.integer(1)
     # work out what to return for the sequencing errors
     if(seqErr){
       if(sexSpec){
-        if(multiErr) epReturn <- list(GUSbase::inv.logit(optim.MLE$par[sum(npar) + 1:(2*nSnps)]))
+        if(multiErr) epReturn <- list(GUSbase::inv.logit(optim.MLE$par[sum(npar) + 1:nSnps]))
         else         epReturn <- list(GUSbase::inv.logit(optim.MLE$par[sum(npar) + 1]))
       } else{
         if(multiErr) epReturn <- list(GUSbase::inv.logit(optim.MLE$par[nSnps:(2*nSnps-1)]))

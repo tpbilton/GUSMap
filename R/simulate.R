@@ -264,7 +264,8 @@ simFS <- function(rVec_f, rVec_m=rVec_f, epsilon=0, config, nInd=100, meanDepth=
   newObj <- FS$new(obj)
   
   newObj$.__enclos_env__$private$updatePrivate(
-    list(group = group, config = config, noFam = noFam, summaryInfo=summaryInfo)
+    list(group = group, config = config, noFam = noFam, summaryInfo=summaryInfo, 
+         simPara=list(OPGP=OPGP,nSnps=nSnps,config=config,meanDepth=meanDepth, nInd=nInd, seed1=seed1, seed2=seed2, ep=epsilon))
   )
   return(newObj)
 }
