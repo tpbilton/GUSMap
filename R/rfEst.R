@@ -174,9 +174,14 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP, noFam=as.integer(1)
       print(optim.MLE)
     }
     # Work out what to return for the recombination fractions
-    if(sexSpec)
-      rfReturn <- list(rf_p=GUSbase::inv.logit2(optim.MLE$par[1:npar[1]]),
-                       rf_m=GUSbase::inv.logit2(optim.MLE$par[npar[1]+1:npar[2]]))
+    if(sexSpec){
+      if(npar[1] > 0) pindx = 1:npar[1]
+      else pindx = numeric(0)
+      if(npar[2] > 0) mindx = npar[1]+1:npar[2]
+      else mindx = numeric(0)
+      rfReturn <- list(rf_p=GUSbase::inv.logit2(optim.MLE$par[pindx]),
+                       rf_m=GUSbase::inv.logit2(optim.MLE$par[mindx]))
+    }
     else
       rfReturn <- list(rf=GUSbase::inv.logit2(optim.MLE$par[1:(nSnps-1)]))
     # work out what to return for the sequencing errors
