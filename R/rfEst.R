@@ -103,7 +103,7 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP, noFam=as.integer(1)
     # Arguments for the optim function
     optim.arg <- list(...)
     if(length(optim.arg) == 0)
-      optim.arg <- list(maxit = 5000, reltol=1e-15)
+      optim.arg <- list(maxit = 20000, reltol=1e-15)
     
     ## Compute the K matrix for heterozygous genotypes
     bcoef_mat <- Kab <- vector(mode="list", length=noFam)
@@ -206,12 +206,12 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP, noFam=as.integer(1)
     if(!is.null(temp.arg$maxit) && is.numeric(temp.arg$maxit) && length(temp.arg$maxit) == 1) 
       EM.arg = c(temp.arg$maxit)
     else
-      EM.arg = c(1000)
+      EM.arg = c(50000)
     if(!is.null(temp.arg$reltol) && is.numeric(temp.arg$reltol) && length(temp.arg$reltol) == 1){
       EM.arg = c(EM.arg,temp.arg$reltol)
     }
     else
-      EM.arg = c(EM.arg,1e-20)
+      EM.arg = c(EM.arg,1e-15)
     
     # Determine the initial values
     if(length(init_r)==1)

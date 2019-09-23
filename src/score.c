@@ -221,7 +221,7 @@ SEXP score_fs_scaled_multi_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef
   int index;
   double pKaa[nSnps_c * nInd_c];
   double pKbb[nSnps_c * nInd_c];
-//  #pragma omp parallel for num_threads(nThreads_c) private(index, snp)
+  #pragma omp parallel for num_threads(nThreads_c) private(index, snp, ind)
   for(ind = 0; ind < nInd_c; ind++){
     for(snp = 0; snp < nSnps_c; snp++){
       index = ind + snp*nInd_c;
@@ -853,7 +853,7 @@ SEXP score_fs_ss_scaled_multi_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bc
   int index;
   double pKaa[nSnps_c * nInd_c];
   double pKbb[nSnps_c * nInd_c];
-  // #pragma omp parallel for num_threads(nThreads_c)
+  #pragma omp parallel for num_threads(nThreads_c) private(index, snp, ind)
   for(ind = 0; ind < nInd_c; ind++){
     for(snp = 0; snp < nSnps_c; snp++){
       index = ind + snp*nInd_c;
