@@ -213,12 +213,6 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP, noFam=as.integer(1)
     else
       EM.arg = c(EM.arg,1e-15)
     
-    # Determine the initial values
-    if(length(init_r)==1)
-      init_r <- rep(init_r,2*(nSnps-1))
-    else if(length(init_r) != nSnps-1)
-      init_r <- rep(0.1,2*(nSnps-1))
-      
     if(sexSpec){
       ps <- sort(unique(unlist(lapply(OPGP,function(x) which(x %in% 1:8)))))[-1] - 1
       ms <- sort(unique(unlist(lapply(OPGP,function(x) which(x %in% c(1:4,9:12))))))[-1] - 1
@@ -226,8 +220,19 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP, noFam=as.integer(1)
       ss_rf <- logical(2*(nSnps-1))
       ss_rf[ps] <- TRUE
       ss_rf[ms + nSnps-1] <- TRUE
+      # Determine the initial values
+      if(length(init_r)==1) init_r <- rep(init_r,sum(npar))
+      else if(length(init_r) != sum(npar))  init_r <- rep(0.01,sum(npar))
+      temp <- rep(0,2*nSnps-1)
+      temp[c(ps,ms + nSnps-1)] <- init_r 
+      init_r = temp
+    } else {
+      ss_rf = 0;
+      # Determine the initial values
+      if(length(init_r)==1)  init_r <- rep(init_r,2*(nSnps-1))
+      else if(length(init_r) != nSnps-1)  init_r <- rep(0.01,2*(nSnps-1))
+      else init_r <- rep(init_r,2)
     }
-    else ss_rf = 0;
     ## convert the data into the right format:
     OPGPmat = do.call(what = "rbind",OPGP)
     ref_mat = do.call(what = "rbind",ref)
