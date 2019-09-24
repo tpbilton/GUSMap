@@ -936,15 +936,17 @@ Please select one of the following:
                     stop("Value for the error parameters needs to be a single numeric value in the interval (0,1) or a NULL object")
                   ## for existing chromosome orders
                   if(!mapped){
+                    list_chrom <- unique(private$chrom)
+                    nchrom <- length(list_chrom)
                     if(!is.null(chrom) && !is.vector(chrom))
                       stop("chromosomes names must be a character vector.")
                     if(is.null(chrom)) # compute distances for all chromosomes
-                      chrom <- unique(private$chrom)
-                    else if(!(any(chrom %in% private$chrom[!private$masked])))
+                      chrom <- list_chrom
+                    else if(!(any(chrom %in% list_chrom)))
                       stop("At least one chromosome not found in the data set.")
                     else
                       chrom <- as.character(chrom) # ensure that the chromsome names are characters
-                    nchrom <- length(unique(private$chrom))
+                    wchrom <- which((list_chrom %in% chrom) & (list_chrom %in% unique(private$chrom[!private$masked])))
                     cat("Computing recombination fractions:\n")
                     if(is.null(private$para))
                       private$para <- list(OPGP=vector(mode = "list",length = nchrom),rf_p=vector(mode = "list",length = nchrom),
@@ -954,9 +956,9 @@ Please select one of the following:
                       private$para <- list(OPGP=vector(mode = "list",length = nchrom),rf_p=vector(mode = "list",length = nchrom),
                                            rf_m=vector(mode = "list",length = nchrom),ep=vector(mode = "list",length = nchrom),
                                            loglik=vector(mode = "list",length = nchrom))
-                    for(i in chrom){
-                      cat("chromosome: ",i,"\n")
-                      indx_chrom <- which((private$chrom == i) & !private$masked)
+                    for(i in wchrom){
+                      cat("chromosome: ",list_chrom[i],"\n")
+                      indx_chrom <- which((private$chrom == list_chrom[i]) & !private$masked)
                       ref_temp <- lapply(private$ref, function(x) x[,indx_chrom])
                       alt_temp <- lapply(private$alt, function(x) x[,indx_chrom])
                       ## estimate OPGP's
@@ -964,9 +966,9 @@ Please select one of the following:
                       for(fam in 1:private$noFam){
                         tempOPGP <- c(tempOPGP,list(as.integer(infer_OPGP_FS(ref_temp[[fam]],alt_temp[[fam]],private$config[[fam]][indx_chrom], method="EM", nThreads=nThreads))))
                         }
-                      private$para$OPGP <- tempOPGP
+                      private$para$OPGP[i] <- tempOPGP
                       ## estimate the rf's
-                      MLE <- rf_est_FS(init_r=init_r, ep=ep, ref=ref_temp, alt=alt_temp, OPGP=private$para$OPGP,
+                      MLE <- rf_est_FS(init_r=init_r, ep=ep, ref=ref_temp, alt=alt_temp, OPGP=private$para$OPGP[i],
                                          sexSpec=sexSpec, seqErr=err, method=method, nThreads=nThreads, multiErr=multiErr)
                       if(sexSpec){
                         private$para$rf_p[i]   <- list(MLE$rf_p)
