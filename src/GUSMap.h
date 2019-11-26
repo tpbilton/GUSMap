@@ -32,7 +32,11 @@ SEXP ll_fs_up_ss_scaled_err_c(SEXP r, SEXP bcoef_mat, SEXP ep, SEXP ref, SEXP al
 SEXP score_fs_scaled_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef_mat, SEXP Kab, SEXP OPGP, SEXP nInd, SEXP nSnps);
 SEXP score_fs_scaled_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef_mat, SEXP Kab, SEXP OPGP, SEXP nInd, SEXP nSnps, SEXP nThreads);
 SEXP score_fs_scaled_multi_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef_mat, SEXP Kab, SEXP OPGP, SEXP nInd, SEXP nSnps, SEXP nThreads);
+SEXP score_fs_ss_scaled_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef_mat, SEXP Kab, SEXP OPGP, SEXP nInd, SEXP nSnps, SEXP nThreads, SEXP rf_indx);
+SEXP score_fs_ss_scaled_multi_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef_mat, SEXP Kab, SEXP OPGP, SEXP nInd, SEXP nSnps, SEXP nThreads, SEXP rf_indx);
 SEXP EM_HMM(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam, SEXP nInd, SEXP nSnps, SEXP sexSpec, SEXP seqError, SEXP para, SEXP ss_rf, SEXP nThreads);
 SEXP EM_HMM_UP(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP config, SEXP noFam, SEXP nInd, SEXP nSnps, SEXP seqError, SEXP para, SEXP ss_rf, SEXP nThreads);
+SEXP EM_HMM_multierr(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam, SEXP nInd, SEXP nSnps, SEXP sexSpec, SEXP seqError, SEXP para, SEXP ss_rf, SEXP nThreads);
+
 
 #endif 

@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap)
-# Copyright 2017-2018 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
+# Copyright 2017-2019 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -96,8 +96,8 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
     stop("There are some missing segregation types in the data.")
   
   ## Set up the Clusters
-  cl <- parallel::makeCluster(nClust)
-  doParallel::registerDoParallel(cl)
+  #cl <- parallel::makeCluster(nClust)
+  doParallel::registerDoParallel(nClust)
 
   cat("\nComputing 2-point recombination fraction estimates ...\n")
   cat("Paternal informative SNPs\n")
@@ -266,7 +266,7 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
     }
     return(rf)
   }
-  parallel::stopCluster(cl) 
+  #parallel::stopCluster(cl) 
   
   ## Build the rf and LOD matrices
   origOrder <- order(c(indx_BI,indx_PI,indx_MI))

@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and linkage MAPping
-# Copyright 2017-2018 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
+# Copyright 2017-2019 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,8 +29,8 @@ infer_OPGP_FS <- function(ref, alt, config, ep=0.001, method="optim", nThreads=1
   
   nSnps <- ncol(ref); nInd <- nrow(ref)
   
-  if(nInd*nSnps > 25000)          # if data set is too large, there are memory issues with R for EM algorithm
-    method = "optim"
+  #if(nInd*nSnps > 25000)          # if data set is too large, there are memory issues with R for EM algorithm
+  #  method = "optim"
   
   ## Index the informative loci
   Isnps <- which(!(config %in% 6:9))
