@@ -12,16 +12,15 @@ The easiest way to install GUSMap in R is using the devtools package.
 
 ```
 install.packages("devtools")
-library(devtools)
-install_github("tpbilton/GUSbase")
-install_github("tpbilton/GUSMap")
+devtools::install_github("tpbilton/GUSbase")
+devtools::install_github("tpbilton/GUSMap")
 ```
 
 Note: Some of the functions are coded in C and therefore an appropriate C compiler is needed for the package to work. For windows OS, Rtools (https://cran.r-project.org/bin/windows/Rtools/) provides a compiler. 
 
 ### Tutorials:
 
-The best way to understand how to sue GUSMap to construct linkage maps is to read through the [Introduction](http://htmlpreview.github.io/?https://github.com/tpbilton/GUSMap/blob/master/inst/doc/Introduction.html) Tutorial contained in the package.
+The best way to understand how to use GUSMap to construct linkage maps is to read through the [Introduction](http://htmlpreview.github.io/?https://github.com/tpbilton/GUSMap/blob/master/inst/doc/Introduction.html) Tutorial contained in the package.
 
 ### Development:
 
