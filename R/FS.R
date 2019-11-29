@@ -537,7 +537,7 @@ FS <- R6::R6Class("FS",
                   if(!is.numeric(nComp) || !is.vector(nComp) || length(nComp) != 1 || nComp < 0 || !is.finite(nComp) ||
                      round(nComp) != nComp)
                     stop("The number of comparsion points (argument 2) needs to be a finite positive integer number.")
-                  
+
                   ## Find the unmapped loci
                   unmapped <- sort(unlist(private$group$BI,private$group_infer$BI))
                   ## Remove masked SNPs
@@ -663,6 +663,7 @@ FS <- R6::R6Class("FS",
                     stop("Unknown mapping function")
                   if(!(weight %in% c("LOD","LOD2","none")))
                     stop("Unknown weighting function")
+
                   if(!is.null(filename) && (!is.vector(filename) || !is.character(filename) || length(filename) != 1))
                     stop("Specified filename is invalid")
                   if(!is.null(filename)){
@@ -700,7 +701,7 @@ FS <- R6::R6Class("FS",
                     graphics::plot(MDS$conf[,1],MDS$conf[,2], ylab="Dimension 2", xlab="Dimension 1", type="n")
                     graphics::text(MDS$conf, labels=ind)
                     graphics::lines(pcurve)
-                    graphics::image(private$rf[ind,ind][pcurve$ord,pcurve$ord], axes=F)
+                    graphics::image(private$rf[ind,ind][pcurve$ord,pcurve$ord], axes=F, col=grDevices::heat.colors(100))
                     if(is.null(filename)) graphics::par(temp_par)
                     else grDevices::dev.off()
                     ## Set the new order
@@ -786,7 +787,7 @@ Please select one of the following:
                       pi_ind <- lapply(LGlist, function(x) x[which(x %in% c(private$group$PI, private$group$BI))])
                       LGlist <- pi_ind[which(unlist(lapply(pi_ind, length))!=0)]
                     }
-                    
+
                     ## Sort out the matrix
                     if(mat == "rf")
                       temprf <- private$rf
@@ -815,12 +816,12 @@ Please select one of the following:
                       ## produce the plotly plot
                       if(length(which(b_indx)) == 0){
                         p <- plotly::plot_ly(z=temprf, type="heatmap", showscale=F, hoverinfo="text",
-                                             text=hovertext, colors=heat.colors(100)) %>%
+                                             text=hovertext, colors=grDevices::heat.colors(100)) %>%
                           plotly::layout(margin=list(l=0,r=0,t=0,b=0), xaxis=ax, yaxis=ax)
                       }
                       else{
                         p <- plotly::plot_ly(z=temprf, type="heatmap", showscale=F, hoverinfo="text",
-                                             text=hovertext, colors=heat.colors(100)) %>% 
+                                text=hovertext, colors=grDevices::heat.colors(100)) %>% 
                           plotly::add_segments(x=which(b_indx)-1,xend=which(b_indx)-1,y=0,yend=nn, line=list(color="black"),  showlegend=F) %>%
                           plotly::add_segments(y=which(b_indx)-1,yend=which(b_indx)-1,x=0,xend=nn, line=list(color="black"),  showlegend=F) %>%
                           plotly::layout(margin=list(l=0,r=0,t=0,b=0), xaxis=ax, yaxis=ax)
@@ -849,7 +850,7 @@ Please select one of the following:
                       else
                         temp_par <- graphics::par(no.readonly = TRUE)
                       graphics::par(mar=rep(0,4),oma=c(0,0,0,0), mfrow=c(1,1), xaxt='n',yaxt='n',bty='n',ann=F)
-                      graphics::image(temprf, x=1:nn, y=1:nn, zlim=c(0,0.5), col=heat.colors(100))
+                      graphics::image(temprf, x=1:nn, y=1:nn, zlim=c(0,0.5), col=grDevices::heat.colors(100))
                       graphics::abline(v=which(b_indx))
                       graphics::abline(h=which(b_indx))
                       if(!is.null(filename))
@@ -879,8 +880,7 @@ Please select one of the following:
                     chrom <- 1:nChrom
                   } else if(GUSbase::checkVector(chrom, type = "pos_integer", maxv=nChrom))
                     stop(paste0("Invalid chromosome number (first argument). Must be an integer number between 0 and ",nChrom,".\n"))
-                  
-                  
+                                    
                   if(is.null(filename))
                     temp_par <- par(no.readonly = TRUE) # save the current plot margins
                   
@@ -994,19 +994,21 @@ Please select one of the following:
                   ## do some checks
                   if( !is.null(init_r) & !is.numeric(init_r) )
                     stop("Starting values for the recombination fraction needs to be a numeric vector or integer or a NULL object")
-                  if( ((length(ep) != 1)  || !is.numeric(ep) || (ep <= 0 | ep >= 1)) )
+                  if( (length(ep) != 1 || !is.numeric(ep) || (ep <= 0 | ep >= 1)) )
                     stop("Value for the error parameters needs to be a single numeric value in the interval (0,1) or a NULL object")
                   ## for existing chromosome orders
                   if(!mapped){
+                    list_chrom <- unique(private$chrom)
+                    nchrom <- length(list_chrom)
                     if(!is.null(chrom) && !is.vector(chrom))
                       stop("chromosomes names must be a character vector.")
                     if(is.null(chrom)) # compute distances for all chromosomes
-                      chrom <- unique(private$chrom)
-                    else if(!(any(chrom %in% private$chrom[!private$masked])))
+                      chrom <- list_chrom
+                    else if(!(any(chrom %in% list_chrom)))
                       stop("At least one chromosome not found in the data set.")
                     else
                       chrom <- as.character(chrom) # ensure that the chromsome names are characters
-                    nchrom <- length(unique(private$chrom))
+                    wchrom <- which((list_chrom %in% chrom) & (list_chrom %in% unique(private$chrom[!private$masked])))
                     cat("Computing recombination fractions:\n")
                     if(is.null(private$para))
                       private$para <- list(OPGP=vector(mode = "list",length = nchrom),rf_p=vector(mode = "list",length = nchrom),
@@ -1016,9 +1018,9 @@ Please select one of the following:
                       private$para <- list(OPGP=vector(mode = "list",length = nchrom),rf_p=vector(mode = "list",length = nchrom),
                                            rf_m=vector(mode = "list",length = nchrom),ep=vector(mode = "list",length = nchrom),
                                            loglik=vector(mode = "list",length = nchrom))
-                    for(i in chrom){
-                      cat("chromosome: ",i,"\n")
-                      indx_chrom <- which((private$chrom == i) & !private$masked)
+                     for(i in wchrom){
+                      cat("chromosome: ",list_chrom[i],"\n")
+                      indx_chrom <- which((private$chrom == list_chrom[i]) & !private$masked)
                       ref_temp <- lapply(private$ref, function(x) x[,indx_chrom])
                       alt_temp <- lapply(private$alt, function(x) x[,indx_chrom])
                       ## estimate OPGP's
@@ -1031,8 +1033,8 @@ Please select one of the following:
                         private$para$OPGP[i] <- tempOPGP
                       }
                       ## estimate the rf's
-                      MLE <- rf_est_FS(init_r=init_r, ep=ep, ref=ref_temp, alt=alt_temp, OPGP=private$para$OPGP[1],
-                                       sexSpec=sexSpec, seqErr=err, method=method, nThreads=nThreads, multiErr=multiErr)
+                      MLE <- rf_est_FS(init_r=init_r, ep=ep, ref=ref_temp, alt=alt_temp, OPGP=private$para$OPGP[i],
+                                         sexSpec=sexSpec, seqErr=err, method=method, nThreads=nThreads, multiErr=multiErr)
                       if(sexSpec){
                         private$para$rf_p[i]   <- list(MLE$rf_p)
                         private$para$rf_m[i]   <- list(MLE$rf_m)
@@ -1295,4 +1297,3 @@ dts <- function (name)
   gsub("/$", "", dms(name))
 dms <- function(name)
   gsub("(/)\\1+", "/", name)
-              
