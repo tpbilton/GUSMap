@@ -76,7 +76,10 @@ plotLG <- function(mat, LG, filename=NULL, names=NULL, chrS=2, lmai=2, chrom=T, 
   
   b <- ncol(mat) + 1
   if(chrom){
-    chrom.ind <- unlist(lapply(LG, function(x) c(x,b)))[-length(unlist(LG))+length(LG)]
+    chrom.ind <- unlist(lapply(LG, function(x) {
+      if(length(x>1)) return(c(x,b))
+      else return(NULL)}
+      ))[-(length(unlist(LG))+length(LG))]
     chrom.ind <- chrom.ind[-length(chrom.ind)]
   }
   else
