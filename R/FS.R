@@ -148,12 +148,12 @@ FS <- R6::R6Class("FS",
                         warning("no maps have been estimated. Use the '$computeMap' function to compute some maps.")
                       else{
                         cat(private$summaryInfo$map[[1]])
-                        cat(private$summaryInfo$map[[2]])
-                        prmatrix(private$summaryInfo$map[[3]], rowlab = rep("",nrow(private$summaryInfo$map[[3]])), quote=F)
-                        if(length(private$summaryInfo$map) == 5){
-                          cat(private$summaryInfo$map[[4]])
-                          prmatrix(private$summaryInfo$map[[5]], rowlab = rep("",nrow(private$summaryInfo$map[[5]])), quote=F)
-                        }
+                        #cat(private$summaryInfo$map[[2]])
+                        prmatrix(private$summaryInfo$map[[2]], rowlab = rep("",nrow(private$summaryInfo$map[[2]])), quote=F)
+                        #if(length(private$summaryInfo$map) == 5){
+                        #  cat(private$summaryInfo$map[[4]])
+                        #  prmatrix(private$summaryInfo$map[[5]], rowlab = rep("",nrow(private$summaryInfo$map[[5]])), quote=F)
+                        #}
                       }
                     }
                   }
