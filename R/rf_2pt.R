@@ -614,7 +614,7 @@ rf_est_FS_2pt <- function(init_r=0.01, ep=0.001, ref, alt, OPGP,
       para <- GUSbase::logit2(init_r)
 
     ## Find MLE
-    optim.MLE <- stats::optim(para, fn=ll_fs_mp_scaled_err, gr=score_fs_mp_scaled_err,
+    optim.MLE <- stats::optim(para, fn=score_fs_mp_scaled_err, gr = score_extract, 
                        method="BFGS", 
                        ref=ref,alt=alt,bcoef_mat=bcoef_mat,Kab=Kab,
                        nInd=nInd,nSnps=nSnps,OPGP=OPGP,noFam=noFam,
