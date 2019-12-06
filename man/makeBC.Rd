@@ -4,9 +4,15 @@
 \alias{makeBC}
 \title{Make a backcross (BC) population}
 \usage{
-makeBC(RAobj, pedfile, family = NULL, MNIF = 1, inferSNPs = FALSE,
-  filter = list(MAF = 0.05, MISS = 0.2, BIN = 100, DEPTH = 5, PVALUE =
-  0.01, MAXDEPTH = 500))
+makeBC(
+  RAobj,
+  pedfile,
+  family = NULL,
+  MNIF = 1,
+  inferSNPs = FALSE,
+  filter = list(MAF = 0.05, MISS = 0.2, BIN = 100, DEPTH = 5, PVALUE = 0.01, MAXDEPTH =
+    500)
+)
 }
 \arguments{
 \item{RAobj}{Object of class RA created via the \code{\link[GUSbase]{readRA}} function.}
@@ -41,6 +47,7 @@ One SNP is then randomly selected from each bin and retained for final analysis.
 This filter is to remove SNPs where the parental information is insufficient to infer segregation type accurately.}
 \item{Segregation test P-value (\code{PVALUE}): }{SNPs are discarded if the p-value from a segregation test is smaller than the threshold (default is 0.01).
  This filters out SNPs where the segregation type has been inferred wrong.}
+\item{Maximum average SNP depth (\code{MAXDEPTH}}{SNPs with an average read depth above the threshold value are discarded.}
 }
 The segregation type of each SNP is inferred based on the genotypes of the parents. The parental genotypes are called homozygous for the 
 reference allele if there is only reference reads seen, heterozygous if at least one read for the reference and alternate allele are seen,

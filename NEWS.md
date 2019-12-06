@@ -1,4 +1,25 @@
 
+# GUSMap 2.0.0
+
+* This verison accompanies the Thesis by Bilton (2019).
+
+## New Features
+
+* Functions relating to a backcross population have been created.
+   
+   * `BC` class for performing linkage mapping in backcross populations analogous to the `FS` class
+   * `makeBC` which creates a backcross population
+   * Added functionality to infer segregation type in cases where the depth on the parental genotypes is too low.
+
+## Improvements
+
+* Optimization of the HMM using `optim` now using first derivatives to improve computational performance and can now handle sex-specific cases and/ro SNP specific error parameters
+* The EM algorithm has also been generalized to handle sex-specific cases and/ro SNP specific error parameters
+
+## Bugs
+
+A number of bugs have been fixed from the previous release.
+
 # GUSMap 1.0.0
 
 This version of GUSMap has been completed restructured from the previous and now includes function for undertakingthe whole linkage mmapping process from filtering the data to creating linkage groups, ordering linakge groups and computing linkage maps.
@@ -61,4 +82,5 @@ This version of GUSMap has been completed restructured from the previous and now
 # References
 
 * Bilton, T.P., Schofield, M.R., Black, M.A., Chagne, D., Wilcox, P.L., Dodds, K.G. (2018). "Accounting for Errors in Low coverage high-throughput sequencing data when constructing genetic maps using biparental outcrossed populations." *Genetics*, *209*(1), 65--76. doi: [10.1534/genetics.117.300627](http://www.genetics.org/content/209/1/65)
+* Bilton, T.P. (2019) Developing statistical methods for genetic analysis of genotypes from genotyping-by-sequencing data. (Unpublished doctoral dissertation). University of Otago, Dunedin, New Zealand.
 * Preedy, K.F., Hackett, C.A. (2016). A rapid marker ordering approach for high-density genetic linkage maps in experimental autotetraploid populations using multidimensional scaling. *Theoretical and Applied Genetics*, *129*(11), 2117-2132. doi: [10.1007/s00122-016-2761-8](https://link.springer.com/article/10.1007%2Fs00122-016-2761-8) 

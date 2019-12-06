@@ -38,7 +38,7 @@ estimating recombination fractions in full-sib families.
 \details{
 This function infers the parental phase (or ordered parental genotype pair (OPGP)) and
 estimates adjacent recombination fractions using the hidden Markov model (HMM) approach as
-described in \insertCite{bilton2018genetics1;textual}{GUSMap}.
+described in \insertCite{bilton2018genetics1;textual}{GUSMap}. 
 
 The optimization of the likelihood for the HMM is performed using either the Expectation-Maximumization (EM) algorithm
 (\code{method="EM"}) or using direct numeric optimization via the \code{\link{optim}} function (\code{method="optim"}).

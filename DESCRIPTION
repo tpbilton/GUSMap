@@ -13,7 +13,7 @@ Description: Package for constructing linkage maps using outcrossed full-sib fam
 License: GPL-3 | file LICENSE
 LazyData: true
 NeedsCompilation: yes
-RoxygenNote: 6.1.1
+RoxygenNote: 7.0.2
 Suggests: knitr,
     rmarkdown
 VignetteBuilder: knitr
