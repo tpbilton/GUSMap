@@ -374,7 +374,7 @@ makeFS <- function(RAobj, pedfile, family=NULL, MNIF=1, inferSNPs=FALSE,
     if(inferSNPs){
       toInfer <- which(indx_temp & is.na(config))
       
-      seg_Infer <- sapply(1:nSnps, function(x){
+      seg_Infer <- sapply(toInfer, function(x){
         d = ref[,x] + alt[,x]
         g = genon[,x]
         K = sum(1/2^(d[which(d != 0)])*0.5)/sum(d != 0)
