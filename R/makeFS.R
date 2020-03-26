@@ -390,6 +390,9 @@ makeFS <- function(RAobj, pedfile, family=NULL, MNIF=1, inferSNPs=FALSE,
         ctest_BI <- suppressWarnings(stats::chisq.test(c(nBB,nAB,nAA), p = exp_prob_BI))
         ctest_SI_1 <- suppressWarnings(stats::chisq.test(c(nBB,nAB,nAA), p = exp_prob_SI))
         ctest_SI_2 <- suppressWarnings(stats::chisq.test(c(nBB,nAB,nAA), p = rev(exp_prob_SI)))
+        ## Check if chisq-test returns NA. If so, don't infer segregation type
+        if(any(is.na(ctest_BI$p.value), is.na(ctest_SI_1$p.value), is.na(ctest_SI_2$p.value)))
+          return(NA)
         ## do tests to see if we can infer type
         if( ctest_BI$p.value > filter$PVALUE & ctest_SI_1$p.value < filter$PVALUE & ctest_SI_2$p.value < filter$PVALUE )
           return(1)
