@@ -1,3 +1,6 @@
+# GUSMap 2.0.1
+
+A few bugs were fixed in this version relating to inferring the segregation of SNPs when the read depth in the parents was insufficient.
 
 # GUSMap 2.0.0
 

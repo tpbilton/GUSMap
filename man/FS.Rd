@@ -103,6 +103,7 @@ Timothy P. Bilton
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-new"></a>}}
+\if{latex}{\out{\hypertarget{method-new}{}}}
 \subsection{Method \code{new()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$new(R6obj)}\if{html}{\out{</div>}}
@@ -111,6 +112,7 @@ Timothy P. Bilton
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-print"></a>}}
+\if{latex}{\out{\hypertarget{method-print}{}}}
 \subsection{Method \code{print()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$print(what = NULL, ...)}\if{html}{\out{</div>}}
@@ -119,6 +121,7 @@ Timothy P. Bilton
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-removeSNP"></a>}}
+\if{latex}{\out{\hypertarget{method-removeSNP}{}}}
 \subsection{Method \code{removeSNP()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$removeSNP(snps, where = NULL)}\if{html}{\out{</div>}}
@@ -127,6 +130,7 @@ Timothy P. Bilton
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-removeLG"></a>}}
+\if{latex}{\out{\hypertarget{method-removeLG}{}}}
 \subsection{Method \code{removeLG()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$removeLG(LG, where = NULL)}\if{html}{\out{</div>}}
@@ -135,6 +139,7 @@ Timothy P. Bilton
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-mergeLG"></a>}}
+\if{latex}{\out{\hypertarget{method-mergeLG}{}}}
 \subsection{Method \code{mergeLG()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$mergeLG(LG, where = NULL, mergeTo = NULL)}\if{html}{\out{</div>}}
@@ -143,6 +148,7 @@ Timothy P. Bilton
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-maskSNP"></a>}}
+\if{latex}{\out{\hypertarget{method-maskSNP}{}}}
 \subsection{Method \code{maskSNP()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$maskSNP(snps)}\if{html}{\out{</div>}}
@@ -151,6 +157,7 @@ Timothy P. Bilton
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-unmaskSNP"></a>}}
+\if{latex}{\out{\hypertarget{method-unmaskSNP}{}}}
 \subsection{Method \code{unmaskSNP()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$unmaskSNP(snps)}\if{html}{\out{</div>}}
@@ -159,6 +166,7 @@ Timothy P. Bilton
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-rf_2pt"></a>}}
+\if{latex}{\out{\hypertarget{method-rf_2pt}{}}}
 \subsection{Method \code{rf_2pt()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$rf_2pt(nClust = 2, err = FALSE)}\if{html}{\out{</div>}}
@@ -167,6 +175,7 @@ Timothy P. Bilton
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-createLG"></a>}}
+\if{latex}{\out{\hypertarget{method-createLG}{}}}
 \subsection{Method \code{createLG()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$createLG(parent = "both", LODthres = 10, nComp = 10)}\if{html}{\out{</div>}}
@@ -175,6 +184,7 @@ Timothy P. Bilton
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-addSNPs"></a>}}
+\if{latex}{\out{\hypertarget{method-addSNPs}{}}}
 \subsection{Method \code{addSNPs()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$addSNPs(LODthres = 10, nComp = 10)}\if{html}{\out{</div>}}
@@ -183,6 +193,7 @@ Timothy P. Bilton
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-addBIsnps"></a>}}
+\if{latex}{\out{\hypertarget{method-addBIsnps}{}}}
 \subsection{Method \code{addBIsnps()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$addBIsnps(LODthres = 10, nComp = 10)}\if{html}{\out{</div>}}
@@ -191,6 +202,7 @@ Timothy P. Bilton
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-orderLG"></a>}}
+\if{latex}{\out{\hypertarget{method-orderLG}{}}}
 \subsection{Method \code{orderLG()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$orderLG(
@@ -206,6 +218,7 @@ Timothy P. Bilton
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-plotLG"></a>}}
+\if{latex}{\out{\hypertarget{method-plotLG}{}}}
 \subsection{Method \code{plotLG()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$plotLG(
@@ -222,6 +235,7 @@ Timothy P. Bilton
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-plotChr"></a>}}
+\if{latex}{\out{\hypertarget{method-plotChr}{}}}
 \subsection{Method \code{plotChr()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$plotChr(
@@ -237,6 +251,7 @@ Timothy P. Bilton
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-plotLM"></a>}}
+\if{latex}{\out{\hypertarget{method-plotLM}{}}}
 \subsection{Method \code{plotLM()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$plotLM(LG = NULL, fun = "haldane", col = "black")}\if{html}{\out{</div>}}
@@ -245,6 +260,7 @@ Timothy P. Bilton
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-plotSyn"></a>}}
+\if{latex}{\out{\hypertarget{method-plotSyn}{}}}
 \subsection{Method \code{plotSyn()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$plotSyn()}\if{html}{\out{</div>}}
@@ -253,6 +269,7 @@ Timothy P. Bilton
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-computeMap"></a>}}
+\if{latex}{\out{\hypertarget{method-computeMap}{}}}
 \subsection{Method \code{computeMap()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$computeMap(
@@ -272,6 +289,7 @@ Timothy P. Bilton
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-writeLM"></a>}}
+\if{latex}{\out{\hypertarget{method-writeLM}{}}}
 \subsection{Method \code{writeLM()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$writeLM(file, direct = "./", LG = NULL, what = NULL)}\if{html}{\out{</div>}}
@@ -280,6 +298,7 @@ Timothy P. Bilton
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-cometPlot"></a>}}
+\if{latex}{\out{\hypertarget{method-cometPlot}{}}}
 \subsection{Method \code{cometPlot()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$cometPlot(
@@ -295,6 +314,7 @@ Timothy P. Bilton
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-RDDPlot"></a>}}
+\if{latex}{\out{\hypertarget{method-RDDPlot}{}}}
 \subsection{Method \code{RDDPlot()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$RDDPlot(filename = NULL, maxdepth = 500, maxSNPs = 1e+05, ...)}\if{html}{\out{</div>}}
@@ -303,6 +323,7 @@ Timothy P. Bilton
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{

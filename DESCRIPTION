@@ -1,6 +1,6 @@
 Package: GUSMap
-Version: 2.0.0
-Date: 2019-11-27
+Version: 2.0.1
+Date: 2020-03-27
 Title: Genotyping Uncertainty with Sequencing Data and Linkage Mapping (GUSMap)
 Authors@R: person("Timothy P.", "Bilton", role = c("aut", "cre"), email = "tbilton@maths.otago.ac.nz")
 Author: Timothy P. Bilton [aut, cre]
@@ -13,7 +13,7 @@ Description: Package for constructing linkage maps using outcrossed full-sib fam
 License: GPL-3 | file LICENSE
 LazyData: true
 NeedsCompilation: yes
-RoxygenNote: 7.0.2
+RoxygenNote: 7.1.0
 Suggests: knitr,
     rmarkdown
 VignetteBuilder: knitr
