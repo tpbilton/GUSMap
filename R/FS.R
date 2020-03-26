@@ -515,8 +515,10 @@ FS <- R6::R6Class("FS",
                     if(length(added_pat_infer) > 0)
                       private$config_infer[[1]][added_pat_infer] <- (c(private$config_infer[[1]][added_pat_infer]) %% 2) + 2
                     ## set the new LGs
-                    private$LG_mat <- newLGlist[1:length(private$LG_mat)]
-                    private$LG_pat <- newLGlist[length(private$LG_mat) + 1:length(private$LG_pat)]
+                    if(!is.null(private$LG_mat))
+                      private$LG_mat <- newLGlist[1:length(private$LG_mat)]
+                    if(!is.null(private$LG_pat))
+                      private$LG_pat <- newLGlist[length(private$LG_mat) + 1:length(private$LG_pat)]
                   }
                   return(invisible())
                 },
