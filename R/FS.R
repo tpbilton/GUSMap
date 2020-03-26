@@ -100,7 +100,7 @@ FS <- R6::R6Class("FS",
                 print = function(what = NULL, ...){
                   if(is.null(what)){
                     what <- c(what, "data")
-                    if(!is.null(private$LG_mat) & !is.null(private$LG_pat))
+                    if(!is.null(private$LG_mat) | !is.null(private$LG_pat))
                       what <- c(what, "LG-pts")
                     if(!is.null(private$LG))
                       what <- c(what, "LG-comb")
