@@ -347,7 +347,7 @@ makeFS <- function(RAobj, pedfile, family=NULL, MNIF=1, inferSNPs=FALSE,
         nAB = sum(g==1, na.rm=T)
         nBB = sum(g==0, na.rm=T)
         ## check that there are sufficient data to perform the chisq test
-        if(sum(nAA+nAB+nBB)/length(g) <= (1-filter$MISS))
+        if(sum(nAA+nAB+nBB)/length(g) < max(1-filter$MISS,1e-6))
           return(NA)
         else if(config[x] == 1){
           exp_prob <- c(0.25 + K,0.5 - 2*K, 0.25 + K)
@@ -382,7 +382,7 @@ makeFS <- function(RAobj, pedfile, family=NULL, MNIF=1, inferSNPs=FALSE,
         nAB = sum(g==1, na.rm=T)
         nBB = sum(g==0, na.rm=T)
         ## check that there are sufficient data to perform the chisq test
-        if(sum(nAA+nAB+nBB)/length(g) <= (1-filter$MISS))
+        if(sum(nAA+nAB+nBB)/length(g) < max(1-filter$MISS,1e-6))
           return(NA)
         ## compute chiseq test for both loci types
         exp_prob_BI <- c(0.25 + K,0.5 - 2*K, 0.25 + K)
