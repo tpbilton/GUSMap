@@ -759,10 +759,22 @@ Please select one of the following:
                   if(private$noFam == 1){
                     ## Work out which LGs list to use
                     if(what == "LG-pts"){
-                      if(is.null(private$LG_pat) || is.null(private$LG_mat))
-                        stop("No linkage groups are available to be plotted. Please use the $createLG function to create some linkage groups")
-                      else
-                        LGlist <- c(private$LG_mat,private$LG_pat)
+                      if(parent == "both"){
+                        if(is.null(private$LG_pat) || is.null(private$LG_mat))
+                          stop("No linkage groups are available to be plotted. Please use the $createLG function to create some linkage groups")
+                        else
+                          LGlist <- c(private$LG_mat,private$LG_pat)
+                      } else if(parent == "maternal"){
+                        if(is.null(private$LG_mat))
+                          stop("No maternal linkage groups are available to be plotted. Please use the $createLG function to create some maternal linkage groups")
+                        else
+                          LGlist <- private$LG_mat
+                      } else{
+                        if(is.null(private$LG_pat))
+                          stop("No paternal linkage groups are available to be plotted. Please use the $createLG function to create some paternal linkage groups")
+                        else
+                          LGlist <- private$LG_pat
+                      }
                     } else if(what == "LG-comb"){
                       if(is.null(private$LG))
                         stop("There are no combined linkage groups with BI SNPs. Use the '$addBIsnps' to create combined linkage groups.")
