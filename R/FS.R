@@ -1196,7 +1196,7 @@ Please select one of the following:
                 },
                 #### Diagonostic functions ####
                 # Ratio of alleles for heterozygous genotype calls (observed vs expected)
-                cometPlot = function(filename=NULL, cex=1, maxdepth=500, maxSNPs=1e5, res=300, difference=F, scaled=T, power=2, ...){
+                cometPlot = function(filename=NULL, cex=1, maxdepth=500, maxSNPs=1e5, res=300, color=NULL, ...){
                   config <- private$config[[1]]
                   if(any(is.na(config))) config[which(is.na(config))] <- private$config_infer[[1]][which(is.na(config))]
                   freq <- sapply(config, function(x) {
@@ -1204,8 +1204,19 @@ Please select one of the following:
                     else if(x == 2 | x == 4) return(c(0,0.5,0.5))
                     else if(x == 3 | x == 5) return(c(0.5,0.5,0))
                   })
-                  GUSbase::cometPlot(ref=private$ref[[1]], alt=private$alt[[1]], ploid=2, gfreq=freq, file=filename, cex=cex, maxdepth=maxdepth, maxSNPs=maxSNPs, res=res, 
-                                     difference=difference, scaled=scaled, power=power, ...)
+                  GUSbase::cometPlot(ref=private$ref[[1]], alt=private$alt[[1]], ploid=2, gfreq=freq, file=filename, cex=cex,
+					 maxdepth=maxdepth, maxSNPs=maxSNPs, res=res, color=color, ...)
+                },
+		rocketPlot = function(ploid=2, filename=NULL, cex=1, maxdepth=500, maxSNPs=1e5, res=300, scaled=TRUE, ...){
+		  config <- private$config[[1]]
+                  if(any(is.na(config))) config[which(is.na(config))] <- private$config_infer[[1]][which(is.na(config))]
+                  freq <- sapply(config, function(x) {
+                    if(x == 1) return(c(0.25,0.5,0.25))
+                    else if(x == 2 | x == 4) return(c(0,0.5,0.5))
+                    else if(x == 3 | x == 5) return(c(0.5,0.5,0))
+                  })
+		  GUSbase::rocketPlot(private$ref[[1]], private$alt[[1]], ploid=2, file=filename, gfreq=gfreq, cex=cex, 
+					maxdepth=maxdepth, maxSNPs=maxSNPs, res=res, scaled=scaled, ...)
                 },
                 # Ratio of alleles for heterozygous genotype calls (observed vs expected)
                 RDDPlot = function(filename=NULL, maxdepth=500, maxSNPs=1e5, ...){
