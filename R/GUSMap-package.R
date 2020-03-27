@@ -29,7 +29,7 @@
 #' @aliases GUSMap
 #' @docType package
 #' @author Timothy P. Bilton, Maintainer: Timothy P. Bilton
-#' <tbilton@@maths.otago.ac.nz>
+#' <tbilton@maths.otago.ac.nz>
 #' @references
 #' \insertAllCited{}
 #' @keywords package
