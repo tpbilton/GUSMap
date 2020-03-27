@@ -100,7 +100,7 @@ FS <- R6::R6Class("FS",
                 print = function(what = NULL, ...){
                   if(is.null(what)){
                     what <- c(what, "data")
-                    if(!is.null(private$LG_mat) & !is.null(private$LG_pat))
+                    if(!is.null(private$LG_mat) | !is.null(private$LG_pat))
                       what <- c(what, "LG-pts")
                     if(!is.null(private$LG))
                       what <- c(what, "LG-comb")
@@ -148,12 +148,12 @@ FS <- R6::R6Class("FS",
                         warning("no maps have been estimated. Use the '$computeMap' function to compute some maps.")
                       else{
                         cat(private$summaryInfo$map[[1]])
-                        cat(private$summaryInfo$map[[2]])
-                        prmatrix(private$summaryInfo$map[[3]], rowlab = rep("",nrow(private$summaryInfo$map[[3]])), quote=F)
-                        if(length(private$summaryInfo$map) == 5){
-                          cat(private$summaryInfo$map[[4]])
-                          prmatrix(private$summaryInfo$map[[5]], rowlab = rep("",nrow(private$summaryInfo$map[[5]])), quote=F)
-                        }
+                        #cat(private$summaryInfo$map[[2]])
+                        prmatrix(private$summaryInfo$map[[2]], rowlab = rep("",nrow(private$summaryInfo$map[[2]])), quote=F)
+                        #if(length(private$summaryInfo$map) == 5){
+                        #  cat(private$summaryInfo$map[[4]])
+                        #  prmatrix(private$summaryInfo$map[[5]], rowlab = rep("",nrow(private$summaryInfo$map[[5]])), quote=F)
+                        #}
                       }
                     }
                   }
@@ -515,8 +515,10 @@ FS <- R6::R6Class("FS",
                     if(length(added_pat_infer) > 0)
                       private$config_infer[[1]][added_pat_infer] <- (c(private$config_infer[[1]][added_pat_infer]) %% 2) + 2
                     ## set the new LGs
-                    private$LG_mat <- newLGlist[1:length(private$LG_mat)]
-                    private$LG_pat <- newLGlist[length(private$LG_mat) + 1:length(private$LG_pat)]
+                    if(!is.null(private$LG_mat))
+                      private$LG_mat <- newLGlist[1:length(private$LG_mat)]
+                    if(!is.null(private$LG_pat))
+                      private$LG_pat <- newLGlist[length(private$LG_mat) + 1:length(private$LG_pat)]
                   }
                   return(invisible())
                 },
@@ -757,15 +759,37 @@ Please select one of the following:
                   if(private$noFam == 1){
                     ## Work out which LGs list to use
                     if(what == "LG-pts"){
-                      if(is.null(private$LG_pat) || is.null(private$LG_mat))
-                        stop("No linkage groups are available to be plotted. Please use the $createLG function to create some linkage groups")
-                      else
-                        LGlist <- c(private$LG_mat,private$LG_pat)
+                      if(parent == "both"){
+                        if(is.null(private$LG_pat) || is.null(private$LG_mat))
+                          stop("No linkage groups are available to be plotted. Please use the $createLG function to create some linkage groups")
+                        else
+                          LGlist <- c(private$LG_mat,private$LG_pat)
+                      } else if(parent == "maternal"){
+                        if(is.null(private$LG_mat))
+                          stop("No maternal linkage groups are available to be plotted. Please use the $createLG function to create some maternal linkage groups")
+                        else
+                          LGlist <- private$LG_mat
+                      } else{
+                        if(is.null(private$LG_pat))
+                          stop("No paternal linkage groups are available to be plotted. Please use the $createLG function to create some paternal linkage groups")
+                        else
+                          LGlist <- private$LG_pat
+                      }
                     } else if(what == "LG-comb"){
                       if(is.null(private$LG))
                         stop("There are no combined linkage groups with BI SNPs. Use the '$addBIsnps' to create combined linkage groups.")
                       else
                         LGlist <- private$LG
+                      ## Check which type of SNPs we are plotting
+                      if(parent == "maternal"){
+                        mi_ind <- lapply(LGlist, function(x) x[which(x %in% c(which(private$config[[1]] %in% c(1,4,5)),
+                                                                              which(private$config_infer[[1]] %in% c(1,4,5))))])
+                        LGlist <- mi_ind[which(unlist(lapply(mi_ind, length))!=0)]
+                      } else if (parent == "paternal"){
+                        pi_ind <- lapply(LGlist, function(x) x[which(x %in% c(which(private$config[[1]] %in% c(1:3)),
+                                                                              which(private$config_infer[[1]] %in% c(1:3))))])
+                        LGlist <- pi_ind[which(unlist(lapply(pi_ind, length))!=0)]
+                      }
                     } else
                       stop("invalid argument 'what'.")
                     ## Work out if we want a subset of the LGs
@@ -778,15 +802,6 @@ Please select one of the following:
                     else
                       names(LGlist) <- 1:length(LGlist)
                     
-                    ## Check which type of SNPs we are plotting
-                    if(parent == "maternal"){
-                      mi_ind <- lapply(LGlist, function(x) x[which(x %in% c(private$group$MI, private$group$BI))])
-                      LGlist <- mi_ind[which(unlist(lapply(mi_ind, length))!=0)]
-                    }
-                    else if (parent == "paternal"){
-                      pi_ind <- lapply(LGlist, function(x) x[which(x %in% c(private$group$PI, private$group$BI))])
-                      LGlist <- pi_ind[which(unlist(lapply(pi_ind, length))!=0)]
-                    }
 
                     ## Sort out the matrix
                     if(mat == "rf")
