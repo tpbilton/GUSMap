@@ -541,7 +541,7 @@ FS <- R6::R6Class("FS",
                     stop("The number of comparsion points (argument 2) needs to be a finite positive integer number.")
 
                   ## Find the unmapped loci
-                  unmapped <- sort(unlist(private$group$BI,private$group_infer$BI))
+                  unmapped <- sort(unlist(c(private$group$BI,private$group_infer$BI)))
                   ## Remove masked SNPs
                   unmapped <- unmapped[which(!private$masked[unmapped])]
                   ## check that there are SNPs to map
@@ -1230,7 +1230,7 @@ Please select one of the following:
                     else if(x == 2 | x == 4) return(c(0,0.5,0.5))
                     else if(x == 3 | x == 5) return(c(0.5,0.5,0))
                   })
-		  GUSbase::rocketPlot(private$ref[[1]], private$alt[[1]], ploid=2, file=filename, gfreq=gfreq, cex=cex, 
+		  GUSbase::rocketPlot(private$ref[[1]], private$alt[[1]], ploid=2, file=filename, gfreq=freq, cex=cex, 
 					maxdepth=maxdepth, maxSNPs=maxSNPs, res=res, scaled=scaled, ...)
                 },
                 # Ratio of alleles for heterozygous genotype calls (observed vs expected)
