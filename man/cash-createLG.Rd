@@ -35,7 +35,8 @@ to a linkage group.
 
 The performance of the linkage group algorithm depends on the value of \code{LODthres} and \code{nComp}. The user is
 advised to experiment with different values and examine the matrix of recombination fraction estimates (using the \code{\link{$plotLG}}
-function).
+function). 
+
 
 Notes: 
 \itemize{

@@ -347,7 +347,7 @@ makeFS <- function(RAobj, pedfile, family=NULL, MNIF=1, inferSNPs=FALSE,
         nAB = sum(g==1, na.rm=T)
         nBB = sum(g==0, na.rm=T)
         ## check that there are sufficient data to perform the chisq test
-        if(sum(nAA+nAB+nBB)/length(g) <= (1-filter$MISS))
+        if(sum(nAA+nAB+nBB)/length(g) < max(1-filter$MISS,1e-6))
           return(NA)
         else if(config[x] == 1){
           exp_prob <- c(0.25 + K,0.5 - 2*K, 0.25 + K)
@@ -374,7 +374,7 @@ makeFS <- function(RAobj, pedfile, family=NULL, MNIF=1, inferSNPs=FALSE,
     if(inferSNPs){
       toInfer <- which(indx_temp & is.na(config))
       
-      seg_Infer <- sapply(1:nSnps, function(x){
+      seg_Infer <- sapply(toInfer, function(x){
         d = ref[,x] + alt[,x]
         g = genon[,x]
         K = sum(1/2^(d[which(d != 0)])*0.5)/sum(d != 0)
@@ -382,7 +382,7 @@ makeFS <- function(RAobj, pedfile, family=NULL, MNIF=1, inferSNPs=FALSE,
         nAB = sum(g==1, na.rm=T)
         nBB = sum(g==0, na.rm=T)
         ## check that there are sufficient data to perform the chisq test
-        if(sum(nAA+nAB+nBB)/length(g) <= (1-filter$MISS))
+        if(sum(nAA+nAB+nBB)/length(g) < max(1-filter$MISS,1e-6))
           return(NA)
         ## compute chiseq test for both loci types
         exp_prob_BI <- c(0.25 + K,0.5 - 2*K, 0.25 + K)
@@ -390,6 +390,9 @@ makeFS <- function(RAobj, pedfile, family=NULL, MNIF=1, inferSNPs=FALSE,
         ctest_BI <- suppressWarnings(stats::chisq.test(c(nBB,nAB,nAA), p = exp_prob_BI))
         ctest_SI_1 <- suppressWarnings(stats::chisq.test(c(nBB,nAB,nAA), p = exp_prob_SI))
         ctest_SI_2 <- suppressWarnings(stats::chisq.test(c(nBB,nAB,nAA), p = rev(exp_prob_SI)))
+        ## Check if chisq-test returns NA. If so, don't infer segregation type
+        if(any(is.na(ctest_BI$p.value), is.na(ctest_SI_1$p.value), is.na(ctest_SI_2$p.value)))
+          return(NA)
         ## do tests to see if we can infer type
         if( ctest_BI$p.value > filter$PVALUE & ctest_SI_1$p.value < filter$PVALUE & ctest_SI_2$p.value < filter$PVALUE )
           return(1)

@@ -100,7 +100,7 @@ FS <- R6::R6Class("FS",
                 print = function(what = NULL, ...){
                   if(is.null(what)){
                     what <- c(what, "data")
-                    if(!is.null(private$LG_mat) & !is.null(private$LG_pat))
+                    if(!is.null(private$LG_mat) | !is.null(private$LG_pat))
                       what <- c(what, "LG-pts")
                     if(!is.null(private$LG))
                       what <- c(what, "LG-comb")
@@ -515,8 +515,10 @@ FS <- R6::R6Class("FS",
                     if(length(added_pat_infer) > 0)
                       private$config_infer[[1]][added_pat_infer] <- (c(private$config_infer[[1]][added_pat_infer]) %% 2) + 2
                     ## set the new LGs
-                    private$LG_mat <- newLGlist[1:length(private$LG_mat)]
-                    private$LG_pat <- newLGlist[length(private$LG_mat) + 1:length(private$LG_pat)]
+                    if(!is.null(private$LG_mat))
+                      private$LG_mat <- newLGlist[1:length(private$LG_mat)]
+                    if(!is.null(private$LG_pat))
+                      private$LG_pat <- newLGlist[length(private$LG_mat) + 1:length(private$LG_pat)]
                   }
                   return(invisible())
                 },
@@ -539,7 +541,7 @@ FS <- R6::R6Class("FS",
                     stop("The number of comparsion points (argument 2) needs to be a finite positive integer number.")
 
                   ## Find the unmapped loci
-                  unmapped <- sort(unlist(private$group$BI,private$group_infer$BI))
+                  unmapped <- sort(unlist(c(private$group$BI,private$group_infer$BI)))
                   ## Remove masked SNPs
                   unmapped <- unmapped[which(!private$masked[unmapped])]
                   ## check that there are SNPs to map
@@ -757,15 +759,37 @@ Please select one of the following:
                   if(private$noFam == 1){
                     ## Work out which LGs list to use
                     if(what == "LG-pts"){
-                      if(is.null(private$LG_pat) || is.null(private$LG_mat))
-                        stop("No linkage groups are available to be plotted. Please use the $createLG function to create some linkage groups")
-                      else
-                        LGlist <- c(private$LG_mat,private$LG_pat)
+                      if(parent == "both"){
+                        if(is.null(private$LG_pat) || is.null(private$LG_mat))
+                          stop("No linkage groups are available to be plotted. Please use the $createLG function to create some linkage groups")
+                        else
+                          LGlist <- c(private$LG_mat,private$LG_pat)
+                      } else if(parent == "maternal"){
+                        if(is.null(private$LG_mat))
+                          stop("No maternal linkage groups are available to be plotted. Please use the $createLG function to create some maternal linkage groups")
+                        else
+                          LGlist <- private$LG_mat
+                      } else{
+                        if(is.null(private$LG_pat))
+                          stop("No paternal linkage groups are available to be plotted. Please use the $createLG function to create some paternal linkage groups")
+                        else
+                          LGlist <- private$LG_pat
+                      }
                     } else if(what == "LG-comb"){
                       if(is.null(private$LG))
                         stop("There are no combined linkage groups with BI SNPs. Use the '$addBIsnps' to create combined linkage groups.")
                       else
                         LGlist <- private$LG
+                      ## Check which type of SNPs we are plotting
+                      if(parent == "maternal"){
+                        mi_ind <- lapply(LGlist, function(x) x[which(x %in% c(which(private$config[[1]] %in% c(1,4,5)),
+                                                                              which(private$config_infer[[1]] %in% c(1,4,5))))])
+                        LGlist <- mi_ind[which(unlist(lapply(mi_ind, length))!=0)]
+                      } else if (parent == "paternal"){
+                        pi_ind <- lapply(LGlist, function(x) x[which(x %in% c(which(private$config[[1]] %in% c(1:3)),
+                                                                              which(private$config_infer[[1]] %in% c(1:3))))])
+                        LGlist <- pi_ind[which(unlist(lapply(pi_ind, length))!=0)]
+                      }
                     } else
                       stop("invalid argument 'what'.")
                     ## Work out if we want a subset of the LGs
@@ -778,15 +802,6 @@ Please select one of the following:
                     else
                       names(LGlist) <- 1:length(LGlist)
                     
-                    ## Check which type of SNPs we are plotting
-                    if(parent == "maternal"){
-                      mi_ind <- lapply(LGlist, function(x) x[which(x %in% c(private$group$MI, private$group$BI))])
-                      LGlist <- mi_ind[which(unlist(lapply(mi_ind, length))!=0)]
-                    }
-                    else if (parent == "paternal"){
-                      pi_ind <- lapply(LGlist, function(x) x[which(x %in% c(private$group$PI, private$group$BI))])
-                      LGlist <- pi_ind[which(unlist(lapply(pi_ind, length))!=0)]
-                    }
 
                     ## Sort out the matrix
                     if(mat == "rf")
@@ -1196,7 +1211,7 @@ Please select one of the following:
                 },
                 #### Diagonostic functions ####
                 # Ratio of alleles for heterozygous genotype calls (observed vs expected)
-                cometPlot = function(filename=NULL, cex=1, maxdepth=500, maxSNPs=1e5, res=300, ind=FALSE, ncores=1, ...){
+                cometPlot = function(filename=NULL, cex=1, maxdepth=500, maxSNPs=1e5, res=300, color=NULL, ind=FALSE, ncores=1, ...){
                   config <- private$config[[1]]
                   if(any(is.na(config))) config[which(is.na(config))] <- private$config_infer[[1]][which(is.na(config))]
                   freq <- sapply(config, function(x) {
@@ -1205,7 +1220,18 @@ Please select one of the following:
                     else if(x == 3 | x == 5) return(c(0.5,0.5,0))
                   })
                   GUSbase::cometPlot(ref=private$ref[[1]], alt=private$alt[[1]], ploid=2, gfreq=freq, file=filename, cex=cex, 
-                                     maxdepth=maxdepth, maxSNPs=maxSNPs, res=res, ind=ind, ncores = ncores, indID=private$indID, ...)
+                                     maxdepth=maxdepth, maxSNPs=maxSNPs, res=res, ind=ind, ncores = ncores, indID=private$indID, color=color, ...)
+                },
+		            rocketPlot = function(ploid=2, filename=NULL, cex=1, maxdepth=500, maxSNPs=1e5, res=300, scaled=TRUE, ...){
+		              config <- private$config[[1]]
+                    if(any(is.na(config))) config[which(is.na(config))] <- private$config_infer[[1]][which(is.na(config))]
+                    freq <- sapply(config, function(x) {
+                      if(x == 1) return(c(0.25,0.5,0.25))
+                      else if(x == 2 | x == 4) return(c(0,0.5,0.5))
+                      else if(x == 3 | x == 5) return(c(0.5,0.5,0))
+                    })
+		              GUSbase::rocketPlot(private$ref[[1]], private$alt[[1]], ploid=2, file=filename, gfreq=freq, cex=cex, 
+					                            maxdepth=maxdepth, maxSNPs=maxSNPs, res=res, scaled=scaled, ...)
                 },
                 # Ratio of alleles for heterozygous genotype calls (observed vs expected)
                 RDDPlot = function(filename=NULL, maxdepth=500, maxSNPs=1e5, ...){
