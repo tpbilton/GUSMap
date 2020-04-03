@@ -75,8 +75,8 @@
 #' @export
 
 ### R6 class for creating a data format for full-sib families
-BC <- R6Class("BC",
-              inherit = RA,
+BC <- R6::R6Class("GUSMap::BC",
+              inherit = GUSbase::RA,
               public = list(
                 ## initialize function
                 initialize = function(R6obj){
