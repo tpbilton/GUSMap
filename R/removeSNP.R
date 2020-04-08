@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap)
-# Copyright 2017-2018 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
+# Copyright 2017-2020 Timothy P. Bilton <timothy.bilton@agresearch.co.nz>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,18 +16,25 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
 #'
-#' FS method: Remove SNP from Linkage Group
+#' BC and FS method: Remove SNP from Linkage Group
 #' 
-#' Method for removing SNPs from linkage groups in an FS object.
+#' Method for removing SNPs from linkage groups in an BC or FS object.
 #' 
 #' For a linkage analysis in GUSMap, there may be a need to delete linkage groups from the
 #' list of created linkage groups. The indices of the linkage groups corresponds to the number
 #' given in the output for the FS object. More than one linkage group can be deleted at once.
 #' 
 #' Note: When the linkage group(s) are deleted, the indices of the remaining linkage groups 
-#' changes. Print the FS object to investiage what these after running this function.
-#' 
-#' When \code{where = "LG-pts"}, SNPs will be removed from the set of pseudo-testcross 
+#' changes. Print the BC or FS object to investiage what these are after running this function.
+#'
+#' \code{BC} obsject: When \code{where = "LG-pts"}, SNPs will be removed from the set of pseudo-testcross 
+#' linkage groups created via the \code{\link{$createLG}} function. On the other hand, if 
+#' \code{where = "LG-bi"}, then SNPs from the set of pseudo-testcross linkage groups with BI SNPs added
+#' created from the \code{\link{$addBIsnps}} function will be removed.
+#' When \code{where = NULL}, SNPs will be removed from the set of pseudo-testcross linkage groups with BI SNPs added if available,
+#' otherwise they will be removed from the set of pseudo-testcross linkage groups.
+#'
+#' \code{FS} obsject: When \code{where = "LG-pts"}, SNPs will be removed from the set of pseudo-testcross 
 #' linkage groups created via the \code{\link{$createLG}} function. On the other hand, if 
 #' \code{where = "LG-comb"}, then SNPs from the set of combined linkage groups 
 #' created from the \code{\link{$addBIsnps}} function will be removed.
@@ -35,13 +42,14 @@
 #' otherwise they will be removed from the set of pseudo-testcross linkage groups.
 #' 
 #' @usage
+#' BCobj$removeSNP(snps, where = NULL)
 #' FSobj$removeSNP(snps, where = NULL)
 #' 
 #' @param snps An integer vector giving the indices of the SNP to be removed.
 #' @param where Character vector specifying which set of linkage groups to remove SNPs from (see details).
 #' @author Timothy P. Bilton
 #' @name $removeSNP
-#' @seealso \code{\link{FS}}
+#' @seealso \code{\link{BC}}, \code{\link{FS}}
 #' @examples 
 #' ## Simulate some sequencing data
 #' set.seed(6745)

@@ -1,3 +1,16 @@
+# GUSMap 2.1.0
+
+## New Features 
+* Completed updated of new `BC` class for linkage mapping using a pseudo-testcross approach. Similar to the FS class but with some differences to handle back-cross types of analyses.
+* Additional argument `inferSNPs` to the `makeFS` function. If `TRUE`, the segregation type of SNPs with unknown segregation is inferred from the progeny genotype information.
+* New function `addSNPs` to the FS object for adding additional SNPs to the linkage groups (including the SI SNPs inferred when `inferSNPs = TRUE`)
+
+## Updates
+* Updated functions in FS object to handle the new versions of the cometPlot in the GUSbase package.
+* Version bugs have also been fixed.
+* Added additional filter to the `makeFS` function
+* Documentation has been updated and a new vignette has been created for the new `BC` class.
+
 # GUSMap 2.0.1
 
 A few bugs were fixed in this version relating to inferring the segregation of SNPs when the read depth in the parents was insufficient.

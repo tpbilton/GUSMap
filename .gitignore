@@ -8,3 +8,4 @@ src/*.dll
 config.status
 config.log
 src/Makevars
+*.dll

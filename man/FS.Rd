@@ -5,8 +5,8 @@
 \title{FS object}
 \usage{
 ## Create FS object
-FSobj <- makeFS(RAobj, pedfile, family=NULL, 
-                filter=list(MAF=0.05, MISS=0.2, BIN=100, DEPTH=5, PVALUE=0.01))
+FSobj <- makeFS(RAobj, pedfile, family=NULL, inferSNPs = FALSE,
+                filter=list(MAF=0.05, MISS=0.2, BIN=100, DEPTH=5, PVALUE=0.01, MAXDEPTH=500))
 
 ## Functions (Methods) of an FS object
 FSobj$addBIsnps(LODthres = 10, nComp = 10)
@@ -39,6 +39,7 @@ for analyzing the data. Information in an FS object are specific to full-sib fam
 \describe{
 \item{\code{\link{$addBIsnps}}}{Add Both-Informative (BI) snps to the maternal and/or
 paternal linkage groups and merge the parental linkage groups.}
+\item{\code{\link{$addSNPs}}}{Add MI, PI and/or SI SNPs to the existing linkage groups}
 \item{\code{\link{$createLG}}}{Create linkage group(s).}
 \item{\code{\link{$computeMap}}}{Compute linkage maps for a given marker order.}
 \item{\code{\link{$maskSNP}}}{Mask SNP(s) in the dataset.}
@@ -87,6 +88,7 @@ Timothy P. Bilton
 \item \href{#method-computeMap}{\code{FS$computeMap()}}
 \item \href{#method-writeLM}{\code{FS$writeLM()}}
 \item \href{#method-cometPlot}{\code{FS$cometPlot()}}
+\item \href{#method-rocketPlot}{\code{FS$rocketPlot()}}
 \item \href{#method-RDDPlot}{\code{FS$RDDPlot()}}
 \item \href{#method-clone}{\code{FS$clone()}}
 }
@@ -95,7 +97,7 @@ Timothy P. Bilton
 \out{<details open ><summary>Inherited methods</summary>}
 \itemize{
 \item \out{<span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="extractVar">}\href{../../GUSbase/html/RA.html#method-extractVar}{\code{GUSbase::RA$extractVar()}}\out{</span>}
-\item \out{<span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="rocketPlot">}\href{../../GUSbase/html/RA.html#method-rocketPlot}{\code{GUSbase::RA$rocketPlot()}}\out{</span>}
+\item \out{<span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="mergeSamples">}\href{../../GUSbase/html/RA.html#method-mergeSamples}{\code{GUSbase::RA$mergeSamples()}}\out{</span>}
 \item \out{<span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="writeRA">}\href{../../GUSbase/html/RA.html#method-writeRA}{\code{GUSbase::RA$writeRA()}}\out{</span>}
 \item \out{<span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="writeVCF">}\href{../../GUSbase/html/RA.html#method-writeVCF}{\code{GUSbase::RA$writeVCF()}}\out{</span>}
 }
@@ -307,6 +309,27 @@ Timothy P. Bilton
   maxdepth = 500,
   maxSNPs = 1e+05,
   res = 300,
+  color = NULL,
+  ind = FALSE,
+  ncores = 1,
+  ...
+)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-rocketPlot"></a>}}
+\if{latex}{\out{\hypertarget{method-rocketPlot}{}}}
+\subsection{Method \code{rocketPlot()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{FS$rocketPlot(
+  ploid = 2,
+  filename = NULL,
+  cex = 1,
+  maxdepth = 500,
+  maxSNPs = 1e+05,
+  res = 300,
+  scaled = TRUE,
   ...
 )}\if{html}{\out{</div>}}
 }

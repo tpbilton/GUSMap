@@ -1,10 +1,10 @@
 Package: GUSMap
-Version: 2.0.1
-Date: 2020-03-27
+Version: 2.1.0
+Date: 2020-04-08
 Title: Genotyping Uncertainty with Sequencing Data and Linkage Mapping (GUSMap)
-Authors@R: person("Timothy P.", "Bilton", role = c("aut", "cre"), email = "tbilton@maths.otago.ac.nz")
+Authors@R: person("Timothy P.", "Bilton", role = c("aut", "cre"), email = "timothy.bilton@agresearch.co.nz")
 Author: Timothy P. Bilton [aut, cre]
-Maintainer: Timothy P. Bilton <tbilton@maths.otago.ac.nz>
+Maintainer: Timothy P. Bilton <timothy.bilton@agresearch.co.nz>
 Depends: R (>= 3.3.0), GUSbase, plotly
 Imports: R6, smacof, princurve (>= 2.0), Rdpack, data.table, stats, grDevices, graphics, utils, parallel, doParallel, iterators, foreach 
 RdMacros: Rdpack

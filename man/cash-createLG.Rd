@@ -2,8 +2,9 @@
 % Please edit documentation in R/createLG.R
 \name{$createLG}
 \alias{$createLG}
-\title{FS method: Create linkage groups}
+\title{BC and FS method: Create linkage groups}
 \usage{
+BCobj$createLG(parent = "both", LODthres = 10, nComp = 10)
 FSobj$createLG(parent = "both", LODthres = 10, nComp = 10)
 }
 \arguments{
@@ -44,6 +45,8 @@ Notes:
 run beforehand.
 \item A MI linkage group is one which only contains MI SNPs and a PI linkage group is one with only PI SNPs. These 
 linkage groups are referred to as the "puesdo-testcross linkage groups".
+\item Only MI and PI SNPs are used to construct linkage groups. The SI SNPs inferred in the {\code{\link{makeBC}}} or 
+{\code{\link{makeFS}}} function when the argument {\code{inferSNPs = TRUE}} are not used in the {\code{\link{$createLG}}} function.
 }
 }
 \examples{
@@ -58,7 +61,7 @@ F1data$rf_2pt(nClust=1)
 F1data$createLG()
 }
 \seealso{
-\code{\link{FS}}
+\code{\link{BC}}, \code{\link{FS}}
 }
 \author{
 Timothy P. Bilton

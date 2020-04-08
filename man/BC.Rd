@@ -5,24 +5,25 @@
 \title{BC object}
 \usage{
 ## Create FS object
-BCobj <- makeBC(RAobj, pedfile, family=NULL, 
-                filter=list(MAF=0.05, MISS=0.2, BIN=100, DEPTH=5, PVALUE=0.01))
+BCobj <- makeBC(RAobj, pedfile, family=NULL, inferSNPs=FALSE,
+                filter=list(MAF=0.05, MISS=0.2, BIN=100, DEPTH=5, PVALUE=0.01, MAXDEPTH=500))
 
 ## Functions (Methods) of an BC object
 BCobj$addBIsnps(parent = "both", LODthres = 10, nComp = 10)
-BCobj$computeMap(chrom=NULL, init_r=0.01, ep=0.001, method="optim", err=T, mapped=T, nThreads=1)
-BCobj$createLG(parent = "both", LODthres = 10, nComp = 10)
+BCobj$addSNPs(LODthres = 10, nComp = 10)
+BCobj$computeMap(chrom = NULL, init_r = 0.01, ep = 0.001, method = NULL, err = T, mapped = T, nThreads = 1, rfthres = 0.1)
+BCobj$createLG(parent = "both", LODthres = 10, nComp = 10, reset = FALSE)
 BCobj$maskSNP(snps)
 BCobj$mergeLG(LG, where = NULL, mergeTo = NULL)
-BCobj$orderLG(chrom = NULL, mapfun = "haldane", weight="LOD2", ndim=30, spar = NULL)
-BCobj$plotChr(parent = "maternal", mat="rf", filename=NULL, chrS=2, lmai=2)
-BCobj$plotLG(parent  = "maternal", LG=NULL, mat="rf", filename=NULL, interactive=TRUE, what = NULL)
-BCobj$plotLM(LG = NULL, fun="haldane", col="black")
+BCobj$orderLG(chrom = NULL, mapfun = "haldane", weight = "LOD2", ndim = 30, spar = NULL)
+BCobj$plotChr(parent = "maternal", mat = "rf", filename = NULL, chrS = 2, lmai = 0.25)
+BCobj$plotLG(parent  = "both", LG = NULL, mat = "rf", filename = NULL, interactive = FALSE, what = NULL)
+BCobj$plotLM(LG = NULL, fun = "haldane", col = "black")
 BCobj$plotSyn()
 BCobj$print(what = NULL, ...)
 BCobj$removeLG(LG, where = NULL)
 BCobj$removeSNP(snps, where = NULL)
-BCobj$rf_2pt(nClust = 2, err=FALSE)
+BCobj$rf_2pt(nClust = 2, err = FALSE)
 BCobj$unmaskSNP(snps)
 BCobj$writeLM(file, direct = "./", LG = NULL, what = NULL)
 }
@@ -39,6 +40,7 @@ for analyzing the data. Information in an BC object are specific to backcross fa
 \describe{
 \item{\code{\link{$addBIsnps}}}{Add Both-Informative (BI) snps to the maternal and/or
 paternal linkage groups.}
+\item{\code{\link{$addSNPs}}}{Add MI, PI and/or SI SNPs to the existing linkage groups}
 \item{\code{\link{$createLG}}}{Create linkage group(s).}
 \item{\code{\link{$computeMap}}}{Compute linkage maps for a given marker order.}
 \item{\code{\link{$maskSNP}}}{Mask SNP(s) in the dataset.}
@@ -85,17 +87,18 @@ Timothy P. Bilton
 \item \href{#method-plotLM}{\code{BC$plotLM()}}
 \item \href{#method-plotSyn}{\code{BC$plotSyn()}}
 \item \href{#method-computeMap}{\code{BC$computeMap()}}
+\item \href{#method-cometPlot}{\code{BC$cometPlot()}}
+\item \href{#method-rocketPlot}{\code{BC$rocketPlot()}}
+\item \href{#method-RDDPlot}{\code{BC$RDDPlot()}}
 \item \href{#method-writeLM}{\code{BC$writeLM()}}
 \item \href{#method-clone}{\code{BC$clone()}}
 }
 }
 \if{html}{
-\out{<details ><summary>Inherited methods</summary>}
+\out{<details open ><summary>Inherited methods</summary>}
 \itemize{
-\item \out{<span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="cometPlot">}\href{../../GUSbase/html/RA.html#method-cometPlot}{\code{GUSbase::RA$cometPlot()}}\out{</span>}
 \item \out{<span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="extractVar">}\href{../../GUSbase/html/RA.html#method-extractVar}{\code{GUSbase::RA$extractVar()}}\out{</span>}
-\item \out{<span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="RDDPlot">}\href{../../GUSbase/html/RA.html#method-RDDPlot}{\code{GUSbase::RA$RDDPlot()}}\out{</span>}
-\item \out{<span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="rocketPlot">}\href{../../GUSbase/html/RA.html#method-rocketPlot}{\code{GUSbase::RA$rocketPlot()}}\out{</span>}
+\item \out{<span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="mergeSamples">}\href{../../GUSbase/html/RA.html#method-mergeSamples}{\code{GUSbase::RA$mergeSamples()}}\out{</span>}
 \item \out{<span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="writeRA">}\href{../../GUSbase/html/RA.html#method-writeRA}{\code{GUSbase::RA$writeRA()}}\out{</span>}
 \item \out{<span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="writeVCF">}\href{../../GUSbase/html/RA.html#method-writeVCF}{\code{GUSbase::RA$writeVCF()}}\out{</span>}
 }
@@ -178,7 +181,7 @@ Timothy P. Bilton
 \if{latex}{\out{\hypertarget{method-createLG}{}}}
 \subsection{Method \code{createLG()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{BC$createLG(parent = "both", LODthres = 10, nComp = 10)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{BC$createLG(parent = "both", LODthres = 10, nComp = 10, reset = FALSE)}\if{html}{\out{</div>}}
 }
 
 }
@@ -222,11 +225,11 @@ Timothy P. Bilton
 \subsection{Method \code{plotLG()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{BC$plotLG(
-  parent = "maternal",
+  parent = "bothl",
   LG = NULL,
   mat = "rf",
   filename = NULL,
-  interactive = TRUE,
+  interactive = FALSE,
   what = NULL,
   ...
 )}\if{html}{\out{</div>}}
@@ -244,7 +247,7 @@ Timothy P. Bilton
   mat = c("rf"),
   filename = NULL,
   chrS = 2,
-  lmai = 2
+  lmai = 0.25
 )}\if{html}{\out{</div>}}
 }
 
@@ -277,13 +280,60 @@ Timothy P. Bilton
   chrom = NULL,
   init_r = 0.001,
   ep = 0.001,
-  method = "optim",
+  method = NULL,
   err = TRUE,
   multiErr = FALSE,
   mapped = TRUE,
   nThreads = 1,
-  inferOPGP = FALSE
+  inferOPGP = TRUE,
+  rfthres = 0.1
 )}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-cometPlot"></a>}}
+\if{latex}{\out{\hypertarget{method-cometPlot}{}}}
+\subsection{Method \code{cometPlot()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{BC$cometPlot(
+  filename = NULL,
+  cex = 1,
+  maxdepth = 500,
+  maxSNPs = 1e+05,
+  res = 300,
+  color = NULL,
+  ind = FALSE,
+  ncores = 1,
+  ...
+)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-rocketPlot"></a>}}
+\if{latex}{\out{\hypertarget{method-rocketPlot}{}}}
+\subsection{Method \code{rocketPlot()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{BC$rocketPlot(
+  ploid = 2,
+  filename = NULL,
+  cex = 1,
+  maxdepth = 500,
+  maxSNPs = 1e+05,
+  res = 300,
+  scaled = TRUE,
+  ...
+)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-RDDPlot"></a>}}
+\if{latex}{\out{\hypertarget{method-RDDPlot}{}}}
+\subsection{Method \code{RDDPlot()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{BC$RDDPlot(filename = NULL, maxdepth = 500, maxSNPs = 1e+05, ...)}\if{html}{\out{</div>}}
 }
 
 }

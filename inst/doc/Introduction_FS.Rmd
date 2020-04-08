@@ -1,5 +1,5 @@
 ---
-title: "Introduction to GUSMap"
+title: "Introduction to GUSMap (Full-sib family)"
 author: "Timothy P. Bilton"
 date: "`r Sys.Date()`"
 output: 
@@ -107,9 +107,9 @@ In the following sections, we shall discuss how each of these steps are performe
 
 Construction of a 'full-sib' family (e.g., F1 population) object is achieved using the `makeFS` function.
 ```{r makeFS, eval=T}
-mySpecies <- makeFS(RAobj = RAdata, pedfile = vcffile$ped, 
+mySpecies <- makeFS(RAobj = RAdata, pedfile = vcffile$ped, inferSNPs = FALSE,
                       filter = list(MAF = 0.05, MISS = 0.5,
-                        BIN = 100, DEPTH = 5, PVALUE = 0.01))
+                        BIN = 100, DEPTH = 5, PVALUE = 0.01, MAXDEPTH=500))
 ```
 
 The `makeFS` function takes an `RA` object and pedigree file, creates a full-sib population and performs filtering on the data. 
@@ -122,10 +122,11 @@ For this tutorial, we use the existing pedigree file stored in the package. The 
 There are five different types of filtering available in GUSMap:
 
 * Minor allele frequency (`MAF`): SNPs are removed if the MAF is below the threshold since in full-sib families, the expected allele frequency are 0.5 for BI SNPs and 0.75 (or 0.25) for PI and MI SNPs.
-* Percentage of missing data (`MISS`): SNPs are removed if the number of individuals without a single read for a given SNP is less than the threshold. 
+* Percentage of missing data (`MISS`): SNPs are removed if the number of individuals without a single read for a given SNP is less than the threshold.
 * SNP binning distance (`BIN`): SNPs are binned together if the distance (in base pairs) between them is less than the threshold value. One SNP is then selected at random from each bin. This filtering is to ensure that there is only a single SNP on each sequence.
 * Parental depth (`DEPTH`): SNPs are removed if the read depth of each parent is below the threshold value. This filtering is performed since low read depth can result in parental heterozygous genotypes to be seen as homozygous resulting in incorrectly inferred segregation type.  
 * Segregation test (`PVALUE`): A segregation test is performed to removed any SNPs in which the segregation type has been incorrectly inferred (e.g., parental genotypes called wrongly).
+* Maximum average SNP depth (`MAXDEPTH`): SNPs with an average depth above 500 are discarded. SNPs with really high depth compared to the rest of the SNPs often are repeative regions or simply probamatic. It is often best to discard these SNPs. 
 
 Again, more details of these various filter types is available in the package documentation of the `makeFS` function.
 
@@ -224,6 +225,18 @@ Since linkage groups 2 and 7 are from different parental lines, the `mergeTo` ar
 
 **Note:** At this stage there is no undo functionality in GUSMap. So, once you have removed a SNP or linkage group, or merge two linkage groups, you cannot reverse what you have done. However, in the case where you want to undo edits to your linkage group, then the best thing is to recreate the linkage groups using the `$createLG` function and proceed as you were doing before (and hence it helps to save you code in a script).
 
+##### Adding more SNPs to existing linkage groups
+
+Additional MI and PI SNPs (not currently in a linkage group) and the SI SNPs (which are not used in the `$createLG` function) can be added to the linkage groups using the `$addSNPs` function. 
+```{r addSNPs, eval=FALSE}
+mySpecies$addSNPs(LODthres = 10, nComp = 10)
+```
+
+SNPs are added to the existing groups in a similar fashion as in the `$createLG` function. A couple of points to note: 
+
+* The algorithm used in `$addSNPs` is similar to the algorithm used for creating the paternal and maternal linkage groups (see the package documentation via `?$addSNPs` for more details), and so the arguments `LODthres` and `nComp` have the same functionality as in the `$createLG` function.
+* The SI SNPs that are inferred from progeny genetypes when `inferSNPs=TRUE` in the `makeBC` function are only ever added to the analysis using the `$addSNPs`.
+
 ##### Adding Both-Informative SNPs
 
 When the pseudo-testcross linkage groups have been tidied up, we can proceed to map the BI SNPs to the linkage groups and merge these linkage groups across the two parental lines. 
@@ -273,7 +286,7 @@ mySpecies$removeSNP(c(
 )
 ```
 
-### Compute Linakge Maps
+### Compute Linkage Maps
 
 Now that we have finished ordering and tidying up the combined linkage groups, we proceed to compute the linkage maps using the `$computeMap` function.
 ```{r computeMap}

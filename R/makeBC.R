@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap)
-# Copyright 2017-2019 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
+# Copyright 2017-2020 Timothy P. Bilton <timothy.bilton@agresearch.co.nz>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -67,6 +67,8 @@
 #' @param RAobj Object of class RA created via the \code{\link[GUSbase]{readRA}} function.
 #' @param pedfile Character string giving the file name (relative to the current directory) of the pedigree file.
 #' @param family Vector of character strings giving the families to retain in the BC object. This allows a pedigree file with more than one family to be supplied.
+#' @param inferSNPs Logical value indicating whether to infer the segregation type of SNPs using the progeny information only
+#' in cases where the segregation typecould not be inferred from the parental genotypes.
 #' @param filter Named list of thresholds for various filtering criteria.
 #' See below for details.
 #'  
@@ -412,10 +414,10 @@ makeBC <- function(RAobj, pedfile, family=NULL, MNIF=1, inferSNPs=FALSE,
       config_infer[toInfer] <- seg_Infer
     }
  
-    chrom <- FSobj$.__enclos_env__$private$chrom
-    chrom[indx_temp | (is.na(config) & is.na(config_infer))] <- NA
-    pos <- FSobj$.__enclos_env__$private$pos
-    pos[indx_temp | (is.na(config) & is.na(config_infer))] <- NA
+    chrom <- BCobj$.__enclos_env__$private$chrom
+    chrom[!indx_temp | (is.na(config) & is.na(config_infer))] <- NA
+    pos <- BCobj$.__enclos_env__$private$pos
+    pos[!indx_temp | (is.na(config) & is.na(config_infer))] <- NA
     ## Extract one SNP from each read.
     set.seed(36475)
     if(filter$BIN > 0){
@@ -507,33 +509,33 @@ makeBC <- function(RAobj, pedfile, family=NULL, MNIF=1, inferSNPs=FALSE,
       summaryInfo$data <- paste0(c(
         "Single Family Linkage analysis:\n\n",
         "Data Summary:\n",
-        "Data file:\t", RAobj$.__enclos_env__$private$infilename,"\n",
-        "Mean Depth:\t", round(mean(temp),4),"\n",
-        "Mean Call Rate:\t",round(sum(temp!=0)/length(temp),4),"\n",
+        "Data file:\t\t", RAobj$.__enclos_env__$private$infilename,"\n",
+        "Mean Depth:\t\t", round(mean(temp),2),"\n",
+        "Mean Call Rate:\t\t",round(sum(temp!=0)/length(temp),2),"\n",
         "Number of ...\n",
-        "  Progeny:\t",unlist(nInd),"\n",
-        "  MI SNPs:\t",length(group$MI),"\n",
-        "  PI SNPs:\t",length(group$PI),"\n",
-        "  BI SNPs:\t",length(group$BI),"\n",
-        "  Total SNPs:\t",length(unlist(group)),"\n\n"))
+        "  Progeny:\t\t",unlist(nInd),"\n",
+        "  MI SNPs:\t\t",length(group$MI),"\n",
+        "  PI SNPs:\t\t",length(group$PI),"\n",
+        "  BI SNPs:\t\t",length(group$BI),"\n",
+        "  Total SNPs:\t\t",length(unlist(group)),"\n\n"))
     } else{
       summaryInfo$data <- paste0(c(
         "Single Family Linkage analysis:\n\n",
         "Data Summary:\n",
-        "Data file:\t", RAobj$.__enclos_env__$private$infilename,"\n",
-        "Mean Depth:\t", round(mean(temp),4),"\n",
-        "Mean Call Rate:\t",round(sum(temp!=0)/length(temp),4),"\n",
+        "Data file:\t\t", RAobj$.__enclos_env__$private$infilename,"\n",
+        "Mean Depth:\t\t", round(mean(temp),2),"\n",
+        "Mean Call Rate:\t\t",round(sum(temp!=0)/length(temp),2),"\n",
         "Number of ...\n",
-        "  Progeny:\t",unlist(nInd),"\n",
+        "  Progeny:\t\t",unlist(nInd),"\n",
         "  SNPs with known segregation\n",
-        "    MI SNPs:\t",length(group$MI),"\n",
-        "    PI SNPs:\t",length(group$PI),"\n",
-        "    BI SNPs:\t",length(group$BI),"\n",
-        "    Total SNPs:",length(unlist(group)),"\n",
+        "    MI SNPs:\t\t",length(group$MI),"\n",
+        "    PI SNPs:\t\t",length(group$PI),"\n",
+        "    BI SNPs:\t\t",length(group$BI),"\n",
+        "    Total SNPs:\t\t",length(unlist(group)),"\n",
         "  SNPs with inferred segregation\n",
-        "    SI SNPs:\t",length(group_infer$SI),"\n",
-        "    BI SNPs:\t",length(group_infer$BI),"\n",
-        "    Total SNPs:",length(unlist(group_infer)),"\n\n"))
+        "    SI SNPs:\t\t",length(group_infer$SI),"\n",
+        "    BI SNPs:\t\t",length(group_infer$BI),"\n",
+        "    Total SNPs:\t\t",length(unlist(group_infer)),"\n\n"))
     }
   }
   else{
@@ -590,15 +592,15 @@ makeBC <- function(RAobj, pedfile, family=NULL, MNIF=1, inferSNPs=FALSE,
     summaryInfo$data <- paste0(c(
       "Multiple Family Linkage analysis:\n\n",
       "Data Summary:\n",
-      "Data file:\t", RAobj$.__enclos_env__$private$infilename,"\n",
-      "Mean Depth:\t", round(mean(temp),4),"\n",
-      "Mean Call Rate:\t",round(sum(temp!=0)/length(temp),4),"\n",
+      "Data file:\t\t", RAobj$.__enclos_env__$private$infilename,"\n",
+      "Mean Depth:\t\t", round(mean(temp),2),"\n",
+      "Mean Call Rate:\t",round(sum(temp!=0)/length(temp),2),"\n",
       "Number of ...\n",
-      "  Progeny:\t",sum(unlist(nInd)),"\n",
-      "  MI SNPs:\t",length(group$MI),"\n",
-      "  PI SNPs:\t",length(group$PI),"\n",
-      "  BI SNPs:\t",length(group$BI),"\n",
-      "  Total SNPs:\t",length(unlist(group)),"\n\n"))
+      "  Progeny:\t\t",sum(unlist(nInd)),"\n",
+      "  MI SNPs:\t\t",length(group$MI),"\n",
+      "  PI SNPs:\t\t",length(group$PI),"\n",
+      "  BI SNPs:\t\t",length(group$BI),"\n",
+      "  Total SNPs:\t\t",length(unlist(group)),"\n\n"))
     
     group_infer <- NULL
     config_infer_all <- NULL

@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap)
-# Copyright 2017-2019 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
+# Copyright 2017-2020 Timothy P. Bilton <timothy.bilton@agresearch.co.nz>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,24 +21,25 @@
 #' 
 #' @usage
 #' ## Create FS object
-#' BCobj <- makeBC(RAobj, pedfile, family=NULL, 
-#'                 filter=list(MAF=0.05, MISS=0.2, BIN=100, DEPTH=5, PVALUE=0.01))
+#' BCobj <- makeBC(RAobj, pedfile, family=NULL, inferSNPs=FALSE,
+#'                 filter=list(MAF=0.05, MISS=0.2, BIN=100, DEPTH=5, PVALUE=0.01, MAXDEPTH=500))
 #'
 #' ## Functions (Methods) of an BC object
 #' BCobj$addBIsnps(parent = "both", LODthres = 10, nComp = 10)
-#' BCobj$computeMap(chrom=NULL, init_r=0.01, ep=0.001, method="optim", err=T, mapped=T, nThreads=1)
-#' BCobj$createLG(parent = "both", LODthres = 10, nComp = 10)
+#' BCobj$addSNPs(LODthres = 10, nComp = 10)
+#' BCobj$computeMap(chrom = NULL, init_r = 0.01, ep = 0.001, method = NULL, err = T, mapped = T, nThreads = 1, rfthres = 0.1)
+#' BCobj$createLG(parent = "both", LODthres = 10, nComp = 10, reset = FALSE)
 #' BCobj$maskSNP(snps)
 #' BCobj$mergeLG(LG, where = NULL, mergeTo = NULL)
-#' BCobj$orderLG(chrom = NULL, mapfun = "haldane", weight="LOD2", ndim=30, spar = NULL)
-#' BCobj$plotChr(parent = "maternal", mat="rf", filename=NULL, chrS=2, lmai=2)
-#' BCobj$plotLG(parent  = "maternal", LG=NULL, mat="rf", filename=NULL, interactive=TRUE, what = NULL)
-#' BCobj$plotLM(LG = NULL, fun="haldane", col="black")
+#' BCobj$orderLG(chrom = NULL, mapfun = "haldane", weight = "LOD2", ndim = 30, spar = NULL)
+#' BCobj$plotChr(parent = "maternal", mat = "rf", filename = NULL, chrS = 2, lmai = 0.25)
+#' BCobj$plotLG(parent  = "both", LG = NULL, mat = "rf", filename = NULL, interactive = FALSE, what = NULL)
+#' BCobj$plotLM(LG = NULL, fun = "haldane", col = "black")
 #' BCobj$plotSyn()
 #' BCobj$print(what = NULL, ...)
 #' BCobj$removeLG(LG, where = NULL)
 #' BCobj$removeSNP(snps, where = NULL)
-#' BCobj$rf_2pt(nClust = 2, err=FALSE)
+#' BCobj$rf_2pt(nClust = 2, err = FALSE)
 #' BCobj$unmaskSNP(snps)
 #' BCobj$writeLM(file, direct = "./", LG = NULL, what = NULL)
 #' 
@@ -51,6 +52,7 @@
 #' \describe{
 #' \item{\code{\link{$addBIsnps}}}{Add Both-Informative (BI) snps to the maternal and/or
 #' paternal linkage groups.}
+#' \item{\code{\link{$addSNPs}}}{Add MI, PI and/or SI SNPs to the existing linkage groups}
 #' \item{\code{\link{$createLG}}}{Create linkage group(s).}
 #' \item{\code{\link{$computeMap}}}{Compute linkage maps for a given marker order.}
 #' \item{\code{\link{$maskSNP}}}{Mask SNP(s) in the dataset.}
@@ -75,7 +77,7 @@
 #' @export
 
 ### R6 class for creating a data format for full-sib families
-BC <- R6::R6Class("GUSMap::BC",
+BC <- R6::R6Class("BC",
               inherit = GUSbase::RA,
               public = list(
                 ## initialize function
@@ -451,7 +453,7 @@ BC <- R6::R6Class("GUSMap::BC",
                   return(invisible(NULL))
                 },
                 ## Function for creating linkage groups
-                createLG = function(parent="both", LODthres=10, nComp=10){
+                createLG = function(parent="both", LODthres=10, nComp=10, reset=FALSE){
                   ## Do some checks
                   if(is.null(private$rf) || is.null(private$LOD))
                     stop("Recombination fractions and LOD scores have not been computed.\n  Use $rf_2pt() to compute the recombination fractions and LOD scores.")
@@ -466,15 +468,21 @@ BC <- R6::R6Class("GUSMap::BC",
                   if(!is.numeric(nComp) || !is.vector(nComp) || length(nComp) != 1 || is.na(nComp) || nComp < 0 || !is.finite(nComp) ||
                      round(nComp) != nComp)
                     stop("The number of comparsion points (argument 3) needs to be a finite integer number.")
+                  if(!is.vector(reset) || !is.logical(reset) || length(reset) != 1 || is.na(reset))
+                    stop("Argument `reset` is invalid. Should be a logical value.")
                   
                   ## Reset the groups 
-                  #private$group$BI <- which(private$config_orig[[1]] == 1)
-                  #private$group$PI <- which(private$config_orig[[1]] %in% c(2,3))
-                  #private$group$MI <- which(private$config_orig[[1]] %in% c(4,5))
-                  #private$group_infer$BI <- which(private$config_infer_orig[[1]] == 1) 
-                  #private$group_infer$SI <- which(private$config_infer_orig[[1]] %in% c(4,5))
-                  private$config <- private$config_orig
-                  private$config_infer <- private$config_infer_orig
+                  if(reset){
+                    private$config <- private$config_orig
+                    private$config_infer <- private$config_infer_orig
+                    private$LG_mat = private$LG_pat = private$LG_mat_bi = private$LG_pat_bi = NULL
+                  } else if(parent == "maternal") {
+                    private$LG_mat = private$LG_mat_bi = NULL
+                  } else if(parent == "paternal"){
+                    private$LG_pat = private$LG_pat_bi = NULL
+                  } else if(parent == "both") {
+                    private$LG_mat = private$LG_pat = private$LG_mat_bi = private$LG_pat_bi = NULL
+                  }
                   
                   ## Create the groups
                   if(parent == "maternal" || parent == "both")
@@ -562,20 +570,22 @@ BC <- R6::R6Class("GUSMap::BC",
                     } else added_mat_infer <- numeric(0)
                     if(length(private$LG_pat) > 0){
                       added_pat_infer <- added[which( (added %in% unlist(newLGlist[length(private$LG_mat) + 1:length(private$LG_pat)])) &
-                                                       (added %in% private$group_infer$SI))]
+                                                        (added %in% private$group_infer$SI))]
                     } else added_pat_infer <- numeric(0)
                     ## update configations if required
                     if(length(added_mat) > 0)
-                      private$config[[1]][added_mat] <- (c(private$config[[1]][added_mat]) %% 2) + 2
+                      private$config[[1]][added_mat] <- (c(private$config[[1]][added_mat]) %% 2) + 4
                     if(length(added_pat) > 0)
-                      private$config[[1]][added_pat] <- (c(private$config[[1]][added_pat]) %% 2) + 4
+                      private$config[[1]][added_pat] <- (c(private$config[[1]][added_pat]) %% 2) + 2
                     if(length(added_mat_infer) > 0)
                       private$config_infer[[1]][added_mat_infer] <- (c(private$config_infer[[1]][added_mat_infer]) %% 2) + 4
                     if(length(added_pat_infer) > 0)
                       private$config_infer[[1]][added_pat_infer] <- (c(private$config_infer[[1]][added_pat_infer]) %% 2) + 2
                     ## set the new LGs
-                    private$LG_mat <- newLGlist[1:length(private$LG_mat)]
-                    private$LG_pat <- newLGlist[length(private$LG_mat) + 1:length(private$LG_pat)]
+                    if(!is.null(private$LG_mat))
+                      private$LG_mat <- newLGlist[1:length(private$LG_mat)]
+                    if(!is.null(private$LG_pat))
+                      private$LG_pat <- newLGlist[length(private$LG_mat) + 1:length(private$LG_pat)]
                   }
                   self$print(what = "LG-pts")
                   return(invisible())
@@ -680,7 +690,8 @@ BC <- R6::R6Class("GUSMap::BC",
                     graphics::plot(MDS$conf[,1],MDS$conf[,2], ylab="Dimension 2", xlab="Dimension 1", type="n")
                     graphics::text(MDS$conf, labels=ind)
                     graphics::lines(pcurve)
-                    graphics::image(private$rf[ind,ind][pcurve$ord,pcurve$ord], axes=F)
+                    graphics::image(private$rf[ind,ind][pcurve$ord,pcurve$ord], axes=F, 
+                                    col=grDevices::colorRampPalette(c("white", "yellow", "orange", "red"))(200))
                     if(is.null(filename)) graphics::par(temp_par)
                     else grDevices::dev.off()
                     ## Set the new order
@@ -688,11 +699,16 @@ BC <- R6::R6Class("GUSMap::BC",
                       private$LG_mat_bi[[lg]] <- ind[pcurve$ord]
                     else if (lg %in% patgroups)
                       private$LG_pat_bi[[lg - nmat]] <- ind[pcurve$ord]
-                    }
+                  }
+                  ## Acknowledge paper we are using algorithm from
+                  cat("Using the MDS scaling algorithm to order SNPs.\n",
+                      "Please cite:\n",
+                      "\tPreedy & Hackett (2016). Theor Appl Genet. 129:2117-2132\n",sep="")
+                  
                   return(invisible(NULL))
                 },
                 ## Function for plotting linkage groups
-                plotLG = function(parent = "maternal", LG=NULL, mat="rf", filename=NULL, interactive=TRUE, what = NULL, ...){
+                plotLG = function(parent = "bothl", LG=NULL, mat="rf", filename=NULL, interactive=FALSE, what = NULL, ...){
                   ## do some checks
                   if(!is.vector(mat) || !is.character(mat) || length(mat) != 1 || !(mat %in% c('rf','LOD')))
                     stop("Argument specifying which matrix to plot (argument 1) must be either 'rf' or 'LOD'")
@@ -719,35 +735,54 @@ BC <- R6::R6Class("GUSMap::BC",
                     ## Work out which LGs list to use
                     if(what == "LG-pts"){
                       if(is.null(private$LG_pat) && is.null(private$LG_mat))
-                        stop("No linkage groups are available to be plotted. Please use the $createLG function to create some linkage groups")
-                      else
-                        LGlist <- c(private$LG_mat,private$LG_pat)
+                        stop("No linkage groups are available to be plotted. Please use the `$createLG` function to create some linkage groups")
+                      else{
+                        if(parent == "maternal"){
+                          LGlist = private$LG_mat
+                          if(length(LGlist) == 0)
+                            stop("No maternal linkage groups to plot")
+                          LGnum = 1:length(private$LG_mat)
+                        } else if(parent == "paternal"){
+                          LGlist = private$LG_pat
+                          if(length(LGlist) == 0)
+                            stop("No paternal linkage groups to plot")
+                          LGnum = length(private$LG_mat) + 1:length(private$LG_pat)
+                        } else if (parent == "both"){
+                          LGlist <- c(private$LG_mat,private$LG_pat)
+                          LGnum = 1:length(LGlist)
+                        }
+                      }
                     } else if(what == "LG-bi"){
                       if(is.null(private$LG_mat_bi) && is.null(private$LG_pat_bi))
                         stop("There are no combined linkage groups with BI SNPs. Use the '$addBIsnps' to create combined linkage groups.")
-                      else
-                        LGlist <- c(private$LG_mat_bi,private$LG_pat_bi)
+                      else{
+                        if(parent == "maternal"){
+                          LGlist = private$LG_mat_bi
+                          if(length(LGlist) == 0)
+                            stop("No maternal linkage groups to plot")
+                          LGnum = 1:length(private$LG_mat_bi)
+                        } else if(parent == "paternal"){
+                          LGlist = private$LG_pat_bi
+                          if(length(LGlist) == 0)
+                            stop("No paternal linkage groups to plot")
+                          LGnum = length(private$LG_mat_bi) + 1:length(private$LG_pat_bi)
+                        } else if (parent == "both"){
+                          LGlist <- c(private$LG_mat_bi,private$LG_pat_bi)
+                          LGnum = 1:length(LGlist)
+                        }
+                      }
                     } else
-                      stop("invalid argument 'what'.")
+                      stop("invalid argument 'what'")
                     ## Work out if we want a subset of the LGs
                     if(!is.null(LG)){
-                      if(isValue(LG, type="pos_integer", minv=1, maxv=length(LGlist)))
-                        stop(paste0("At least one linkage group number does not exist. Indices must be between 1 and",length(LGlist),"\n"))
-                      LGlist <- LGlist[LG]
+                      if(isValue(LG, type="pos_integer", minv=min(LGnum), maxv=max(LGnum)))
+                        stop(paste0("At least one linkage group number does not exist. Indices must be between ",
+                                    min(LGnum)," and ",max(LGnum)," for ",parent," LGs\n"))
+                      LGlist <- LGlist[which(LG %in% LGnum)]
                       names(LGlist) <- LG
                     }
                     else
-                      names(LGlist) <- 1:length(LGlist)
-                    
-                    ## Check which type of SNPs we are plotting
-                    if(parent == "maternal"){
-                      mi_ind <- lapply(LGlist, function(x) x[which(x %in% c(private$group$MI, private$group$BI))])
-                      LGlist <- mi_ind[which(unlist(lapply(mi_ind, length))!=0)]
-                    }
-                    else if (parent == "paternal"){
-                      pi_ind <- lapply(LGlist, function(x) x[which(x %in% c(private$group$PI, private$group$BI))])
-                      LGlist <- pi_ind[which(unlist(lapply(pi_ind, length))!=0)]
-                    }
+                      names(LGlist) <- LGnum
                     
                     ## Sort out the matrix
                     if(mat == "rf"){
@@ -840,7 +875,7 @@ BC <- R6::R6Class("GUSMap::BC",
                   return(invisible())
                 },
                 ## Function for plotting chromosome in their original ordering
-                plotChr = function(chrom=NULL, parent = "maternal", mat=c("rf"), filename=NULL, chrS=2, lmai=2){
+                plotChr = function(chrom=NULL, parent = "maternal", mat=c("rf"), filename=NULL, chrS=2, lmai=0.25){
                   ## do some checks
                   if(!is.vector(mat) || !is.character(mat) || length(mat) != 1 || !(mat %in% c('rf','LOD')))
                     stop("Argument specifying which matrix to plot (argument 1) must be either 'rf' or 'LOD'")
@@ -891,10 +926,10 @@ BC <- R6::R6Class("GUSMap::BC",
                   nLGs = length(private$LG_map)
                   if(is.null(LG))
                     LG <- 1:nLGs
-                  if(isValue(LG, type="pos_integer", minv=1, maxv=nLGs))
+                  if(GUSbase::checkVector(LG, type="pos_integer", minv=1, maxv=nLGs))
                     stop(paste0("The LG indices must be an integer vector between 1 and the number of linkage groups which is ",nLGs))
-                  matlg <- which(!unlist(lapply(private$para$rf_m[LG], function(x) any(is.na(x)))))
-                  patlg <- which(!unlist(lapply(private$para$rf_p[LG], function(x) any(is.na(x)))))
+                  matlg <- which(unlist(lapply(private$para$OPGP[LG], function(x) all(x %in% c(1:4,9:12)))))
+                  patlg <- which(unlist(lapply(private$para$OPGP[LG], function(x) all(x %in% c(1:8)))))
                   LG = c(matlg,patlg)
                   nLGs = length(LG)
                   if(nLGs == 0)
@@ -905,21 +940,21 @@ BC <- R6::R6Class("GUSMap::BC",
                   if(!is.vector(is.character(col)) || !is.character(col))
                     stop("Input argument for colors of the linkage maps is invalid.")
                   else{
-                    tc <- unname(sapply(col, function(y) tryCatch(is.matrix(col2rgb(y)), error = function(e) FALSE)))
+                    tc <- unname(sapply(col, function(y) tryCatch(is.matrix(grDevices::col2rgb(y)), error = function(e) FALSE)))
                     if(any(!tc))
                       stop("At least one color in the color list is undefined")
                     else
-                      col = rgb(t(col2rgb(col)), max=255)
+                      col = grDevices::rgb(t(grDevices::col2rgb(col)), max=255)
                     if(length(col) == 1)
                       col <- rep(col,nLGs)
                     else if(length(col) != nLGs)
                       stop("Number of colors specified does not equal the number of linkage groups")
                   }
-                  temp_par <- par(no.readonly = TRUE) # save the current plot margins
+                  temp_par <- graphics::par(no.readonly = TRUE) # save the current plot margins
                   
                   ellipseEq_pos <- function(x) c2 + sqrt(b^2*(1-round((x-c1)^2/a^2,7)))
                   ellipseEq_neg <- function(x) c2 - sqrt(b^2*(1-round((x-c1)^2/a^2,7)))
-                  mapDist = lapply(c(private$para$rf_m[matlg],private$para$rf_p[patlg]),mfun, fun=fun, centi=TRUE)
+                  mapDist = lapply(c(private$para$rf[LG]),mfun, fun=fun, centi=TRUE)
                   yCoor = max(unlist(lapply(mapDist,sum)))
                   graphics::par(mar=rep(2,4), mfrow=c(1,1))
                   graphics::plot(NULL,NULL, ylim=c(yCoor+0.01*yCoor,-0.01*yCoor),xlim=c(0,0.25*(nLGs+1)), xaxt='n',bty='n',xlab="",ylab="")
@@ -927,14 +962,14 @@ BC <- R6::R6Class("GUSMap::BC",
                   ## plot each map for each linkage group
                   for(lg in 1:nLGs){
                     cent = 0.25*lg
-                    segments(cent-err,c(0,cumsum(mapDist[[lg]])),cent+err,c(0,cumsum(mapDist[[lg]])),col=col[lg])
-                    segments(cent-err,-0.01*yCoor,cent-err,sum(mapDist[[lg]])+0.01*yCoor,col=col[lg])
-                    segments(cent+err,-0.01*yCoor,cent+err,sum(mapDist[[lg]])+0.01*yCoor,col=col[lg])
+                    graphics::segments(cent-err,c(0,cumsum(mapDist[[lg]])),cent+err,c(0,cumsum(mapDist[[lg]])),col=col[lg])
+                    graphics::segments(cent-err,-0.01*yCoor,cent-err,sum(mapDist[[lg]])+0.01*yCoor,col=col[lg])
+                    graphics::segments(cent+err,-0.01*yCoor,cent+err,sum(mapDist[[lg]])+0.01*yCoor,col=col[lg])
                     ## Plot the curves at the ends
                     a=err; b=0.02*yCoor; c1=cent; c2=-0.01*yCoor;
-                    curve(ellipseEq_neg, from=cent-err,to=cent+err,add=T,col=col[lg])
+                    graphics::curve(ellipseEq_neg, from=cent-err,to=cent+err,add=T,col=col[lg])
                     c2=sum(mapDist[[lg]])+0.01*yCoor;
-                    curve(ellipseEq_pos, from=cent-err,to=cent+err,add=T,col=col[lg])
+                    graphics::curve(ellipseEq_pos, from=cent-err,to=cent+err,add=T,col=col[lg])
                   }
                   graphics::par(temp_par) # reset the plot margins
                   #if(!is.null(names))
@@ -967,8 +1002,8 @@ BC <- R6::R6Class("GUSMap::BC",
                   graphics::par(temp_par) # reset the plot margins
                 }, 
                 ## Function for computing the rf's for each chromosome 
-                computeMap = function(parent = "both", chrom=NULL, init_r=0.001, ep=0.001, method="optim", err=TRUE, multiErr=FALSE, 
-                                      mapped=TRUE, nThreads=1, inferOPGP=FALSE){
+                computeMap = function(parent = "both", chrom=NULL, init_r=0.001, ep=0.001, method=NULL, err=TRUE, multiErr=FALSE, 
+                                      mapped=TRUE, nThreads=1, inferOPGP=TRUE, rfthres=0.1){
                   ## do some checks
                   if(!is.character(parent) || length(parent) != 1 || !(parent %in% c("maternal","paternal","both")))
                     stop(paste("parent argument is not a string of length one or is invalid:",
@@ -976,10 +1011,26 @@ BC <- R6::R6Class("GUSMap::BC",
                               "   maternal: Only MI and BI SNPs",
                               "   paternal: Only PI and BI SNPs",
                               "   both:     MI, PI and BI SNPs", sep="\n"))
-                  if( !is.null(init_r) & !is.numeric(init_r) )
+                  if( !is.null(init_r) & (GUSbase::checkVector(init_r, type="pos_numeric", minv = 0, maxv=0.4) || length(init_r) != 1))
                     stop("Starting values for the recombination fraction needs to be a numeric vector or integer or a NULL object")
                   if( ((length(ep) != 1)  || !is.numeric(ep) || (ep <= 0 | ep >= 1)) )
                     stop("Value for the error parameters needs to be a single numeric value in the interval (0,1) or a NULL object")
+                  if(!is.null(method) && (!is.vector(method) || !is.character(method) || 
+                                          length(method) != 1 || !(method %in% c("optim", "EM"))))
+                    stop("Argument `method` is invalid. Must be NULL, 'optim' or 'EM'")
+                  if(!is.logical(err) || length(err) != 1 || is.na(err))
+                    stop("Argument `err` is invalid. Must be a logical value")
+                  if(!is.logical(multiErr) || length(multiErr) != 1 || is.na(multiErr))
+                    stop("Argument `multiErr` is invalid. Must be a logical value")
+                  if(!is.logical(inferOPGP) || length(inferOPGP) != 1 || is.na(inferOPGP))
+                    stop("Argument `inferOPGP` is invalid. Must be a logical value")                  
+                  if(!is.logical(mapped) || length(mapped) != 1 || is.na(mapped))
+                    stop("Argument `mapped` is invalid. Must be a logical value")                  
+                  if(GUSbase::checkVector(nThreads, type="pos_integer", minv=1) || length(nThreads) != 1)
+                    stop("Argument `nThreads` is invalid. Must be a positive integer")
+                  if(GUSbase::checkVector(rfthres, type="pos_numeric", minv=0, maxv = 0.5) || length(rfthres) != 1)
+                    stop("Argument `rfthres` is invalid. Must be a positive integer")
+                  
                   ## for existing chromosome orders
                   if(!mapped){
                     stop("yet to be implemented")
@@ -1035,26 +1086,39 @@ BC <- R6::R6Class("GUSMap::BC",
                     else matlg <- NULL
                     if(!is.null(private$LG_pat_bi)) patlg <- length(private$LG_mat_bi) + 1:length(private$LG_pat_bi)
                     else patlg <- NULL
+                    nmatlg = length(matlg)
+                    npatlg = length(patlg)
                     ## Check the input
-                    if((length(LGlist) == 0) && length(is.null(LGlist) == 0))
+                    if((length(LGlist) == 0))
                       stop("Linkage groups have not been ordered. Use the $orderLG function to order SNPs")
-                    nchrom <- length(LGlist)
-                    if(is.null(chrom)) # compute distances for all chromosomes
-                      chrom <- 1:nchrom
-                    else if(!is.vector(chrom) || chrom < 0 || chrom > length(LGlist) || round(chrom) != chrom)
-                      stop("Linkage group input must be an integer vector between 1 and the number of linkage groups")
+                    if(is.null(chrom)){ # compute distances for all chromosomes
+                      if(parent == "maternal") chrom = matlg
+                      else if (parent == "paternal") chrom = patlg 
+                      else if (parent == "both") chrom = 1:length(LGlist)
+                    } else if(parent == "both"){
+                      if(GUSbase::checkVector(chrom, type="pos_integer", minv=1, maxv = length(LGlist)))
+                        stop(paste0("Linkage group input must be an integer vector between 1 and ",length(LGlist),
+                                    " (the total number of linkage groups)"))
+                    } else if (parent == "maternal"){
+                      if(GUSbase::checkVector(chrom, type="pos_integer", minv=min(matlg), maxv = max(matlg)))
+                        stop(paste0("Linkage group input must be an integer vector between ",min(matlg)," and ", max(matlg),
+                                    " for maternal linkage groups"))
+                    } else if (parent == "paternal"){
+                      if(GUSbase::checkVector(chrom, type="pos_integer", minv=min(patlg), maxv = max(patlg)))
+                        stop(paste0("Linkage group input must be an integer vector between ",min(patlg)," and ", max(patlg),
+                                    " for paternal linkage groups"))
+                    }
+                    
                     ## Compute rf's
                     cat("Computing recombination fractions:\n")
-                    if(is.null(private$para))
-                      private$para <- list(OPGP=replicate(nchrom, NA, simplify=FALSE),rf_p=replicate(nchrom, NA, simplify=FALSE),
-                                           rf_m=replicate(nchrom, NA, simplify=FALSE),ep=replicate(nchrom, NA, simplify=FALSE),
-                                           loglik=replicate(nchrom, NA, simplify=FALSE))
-                    else if(length(private$para$rf_p) != length(LGlist))
-                      private$para <- list(OPGP=replicate(nchrom, NA, simplify=FALSE),rf_p=replicate(nchrom, NA, simplify=FALSE),
-                                           rf_m=replicate(nchrom, NA, simplify=FALSE),ep=replicate(nchrom, NA, simplify=FALSE),
-                                           loglik=replicate(nchrom, NA, simplify=FALSE))
-                    if(is.null(private$LG_map))
-                      private$LG_map <- vector(mode="list", length = nchrom)
+                    if(is.null(private$para) || any(lapply(private$para, length) != length(LGlist)))
+                      private$para <- list(OPGP=replicate(length(LGlist), NA, simplify=FALSE),
+                                           rf=replicate(length(LGlist), NA, simplify=FALSE),
+                                           ep=replicate(length(LGlist), NA, simplify=FALSE),
+                                           loglik=replicate(length(LGlist), NA, simplify=FALSE))
+                    #else if(length(private$para$rf_p) != length(LGlist))
+                    if(is.null(private$LG_map) || length(private$LG_map) != length(LGlist))
+                      private$LG_map <- vector(mode="list", length = length(LGlist))
                     for(i in chrom){
                       cat("Linkage Group: ",i,"\n")
                       indx_chrom <- LGlist[[i]]
@@ -1066,6 +1130,7 @@ BC <- R6::R6Class("GUSMap::BC",
                         config_temp[[fam]][tempIndx] <- private$config_infer[[fam]][indx_chrom[tempIndx]]
                       }
                       
+                      ## if maternal linkage group
                       ## estimate OPGP's
                       curOPGP <- private$para$OPGP[i]
                       if(inferOPGP || !is.list(curOPGP) || length(curOPGP[[1]]) != length(indx_chrom)){
@@ -1076,25 +1141,41 @@ BC <- R6::R6Class("GUSMap::BC",
                         private$para$OPGP[i] <- tempOPGP
                       }
                       ## estimate the rf's
-                      MLE <- rf_est_FS(init_r=init_r, ep=ep, ref=ref_temp, alt=alt_temp, OPGP=private$para$OPGP[i],
-                                       sexSpec=F, seqErr=err, method=method, nThreads=nThreads, multiErr=multiErr)
-                      if(i %in% matlg)
-                        private$para$rf_m[i]   <- list(MLE$rf)
-                      else if(i %in% patlg)
-                        private$para$rf_p[i]   <- list(MLE$rf)
-                      else stop("Bug in code")
+                      if(!is.null(method))
+                        MLE <- rf_est_FS(init_r=MLE_init$rf, ep=MLE_init$ep, ref=ref_temp, alt=alt_temp, OPGP=private$para$OPGP[i],
+                                         sexSpec=F, seqErr=err, method=method, nThreads=nThreads, multiErr=multiErr)
+                      else{
+                        MLE_init <- rf_est_FS(init_r=init_r, ep=ep, ref=ref_temp, alt=alt_temp, OPGP=private$para$OPGP[i],
+                                              sexSpec=F, seqErr=err, method="EM", nThreads=nThreads, multiErr=multiErr, maxit=20)
+                        MLE <- rf_est_FS(init_r=MLE_init$rf, ep=MLE_init$ep, ref=ref_temp, alt=alt_temp, OPGP=private$para$OPGP[i],
+                                         sexSpec=F, seqErr=err, method="optim", nThreads=nThreads, multiErr=multiErr)
+                      }
+                      
+                      private$para$rf[i]   <- list(MLE$rf)
                       private$para$ep[i]       <- list(MLE$ep)
                       private$para$loglik[i]   <- list(MLE$loglik)
                       private$LG_map[[i]]      <- LGlist[[i]]
+                      ### Check for SNPs with really large rf values
+                      highrf = which(MLE$rf > rfthres)
+                      if(length(highrf) > 0){
+                        snp1 = indx_chrom[highrf]
+                        snp2 = indx_chrom[highrf+1]
+                        junk = sapply(1:length(highrf),function(x) {
+                          cat("RF-",x," is ",highrf[x]," (between SNPs ",snp1[x]," and ",snp2[x],")\n", sep="")
+                          return(invisible())
+                        })
+                      }
                     }
-                    ## Create summary of results:
-                    templist <- list("Linkage Map Summaries:\n")
-                    ## maternal
+                  }
+                  ## Create summary of results:
+                  templist <- list("Linkage Map Summaries:\n")
+                  ## maternal
+                  if(!is.null(matlg)){
                     MI <- unlist(lapply(private$LG_map[matlg], function(x) sum(c(private$config[[1]][x],private$config_infer[[1]][x]) %in% c(4,5), na.rm=T)))
                     BI <- unlist(lapply(private$LG_map[matlg], function(x) sum(c(private$config[[1]][x],private$config_infer[[1]][x]) == 1, na.rm=T)))
                     TOTAL <- unlist(lapply(private$LG_map[matlg], length))
                     tab1 <- cbind(LG=matlg,MI,BI,TOTAL)
-                    DIST <- extendVec(unlist(lapply(private$para$rf_m[matlg], function(x) round(sum(mfun(x, fun="haldane", centiM = T)),2))), nrow(tab1))
+                    DIST <- extendVec(unlist(lapply(private$para$rf[matlg], function(x) round(sum(mfun(x, fun="haldane", centiM = T)),2))), nrow(tab1))
                     ERR <- extendVec(round(unlist(lapply(private$para$ep[matlg],mean)),5), nrow(tab1))
                     tab1 <- cbind(tab1,DIST,ERR)
                     tab1 <- stats::addmargins(tab1, margin = 1)
@@ -1102,12 +1183,14 @@ BC <- R6::R6Class("GUSMap::BC",
                     tab1[nrow(tab1), 1] <- "TOTAL"
                     tab1[nrow(tab1),6] <- ""
                     templist <- c(templist,list("\nMaternal LGs:\n"), list(tab1))
-                    ## paternal
+                  }
+                  ## paternal
+                  if(!is.null(patlg)){
                     PI <- unlist(lapply(private$LG_map[patlg], function(x) sum(c(private$config[[1]][x],private$config_infer[[1]][x]) %in% c(2,3), na.rm=T)))
                     BI <- unlist(lapply(private$LG_map[patlg], function(x) sum(c(private$config[[1]][x],private$config_infer[[1]][x]) == 1, na.rm=T)))
                     TOTAL <- unlist(lapply(private$LG_map[patlg], length))
                     tab2 <- cbind(LG=patlg,PI,BI,TOTAL)
-                    DIST <- extendVec(unlist(lapply(private$para$rf_p[patlg], function(x) round(sum(mfun(x, fun="haldane", centiM = T)),2))), nrow(tab2))
+                    DIST <- extendVec(unlist(lapply(private$para$rf[patlg], function(x) round(sum(mfun(x, fun="haldane", centiM = T)),2))), nrow(tab2))
                     ERR <- extendVec(round(unlist(lapply(private$para$ep[patlg],mean)),5), nrow(tab2))
                     tab2 <- cbind(tab2,DIST,ERR)
                     tab2 <- stats::addmargins(tab2, margin = 1)
@@ -1115,21 +1198,49 @@ BC <- R6::R6Class("GUSMap::BC",
                     tab2[nrow(tab2), 1] <- "TOTAL"
                     tab2[nrow(tab2),6] <- ""
                     templist <- c(templist,list("\nPaternal LGs:\n"), list(tab2))
-                    private$summaryInfo$map <- templist
-                    self$print(what = "map")
-                    return(invisible(NULL))
                   }
+                  private$summaryInfo$map <- templist
+                  self$print(what = "map")
+                  return(invisible(NULL))
                 },
                 ## Ratio of alleles for heterozygous genotype calls (observed vs expected)
                 # Slightly different than the one in RA class
-                #cometPlot = function(model="random", alpha=NULL, filename="HeteroPlot", cex=1, maxdepth=500){
-                #  ref <- alt <- NULL
-                #  for(fam in 1:private$noFam){
-                #    ref <- rbind(ref,private$ref[[fam]])
-                #    alt <- rbind(alt,private$alt[[fam]])
-                #  }
-                #  cometPlot(ref, alt, model=model, alpha=alpha, filename=filename, cex=cex, maxdepth=maxdepth)
-                #},
+                cometPlot = function(filename=NULL, cex=1, maxdepth=500, maxSNPs=1e5, res=300, color=NULL, ind=FALSE, ncores=1, ...){
+                  config <- private$config[[1]]
+                  if(any(is.na(config))) config[which(is.na(config))] <- private$config_infer[[1]][which(is.na(config))]
+                  freq <- sapply(config, function(x) {
+                    if(x == 1) return(c(0.25,0.5,0.25))
+                    else if(x == 2 | x == 4) return(c(0,0.5,0.5))
+                    else if(x == 3 | x == 5) return(c(0.5,0.5,0))
+                  })
+                  GUSbase::cometPlot(ref=private$ref[[1]], alt=private$alt[[1]], ploid=2, gfreq=freq, file=filename, cex=cex, 
+                                     maxdepth=maxdepth, maxSNPs=maxSNPs, res=res, ind=ind, ncores = ncores, indID=private$indID, color=color, ...)
+                  return(invisible())
+                },
+                rocketPlot = function(ploid=2, filename=NULL, cex=1, maxdepth=500, maxSNPs=1e5, res=300, scaled=TRUE, ...){
+                  config <- private$config[[1]]
+                  if(any(is.na(config))) config[which(is.na(config))] <- private$config_infer[[1]][which(is.na(config))]
+                  freq <- sapply(config, function(x) {
+                    if(x == 1) return(c(0.25,0.5,0.25))
+                    else if(x == 2 | x == 4) return(c(0,0.5,0.5))
+                    else if(x == 3 | x == 5) return(c(0.5,0.5,0))
+                  })
+                  GUSbase::rocketPlot(private$ref[[1]], private$alt[[1]], ploid=2, file=filename, gfreq=freq, cex=cex, 
+                                      maxdepth=maxdepth, maxSNPs=maxSNPs, res=res, scaled=scaled, ...)
+                  return(invisible())
+                },
+                # Ratio of alleles for heterozygous genotype calls (observed vs expected)
+                RDDPlot = function(filename=NULL, maxdepth=500, maxSNPs=1e5, ...){
+                  config <- private$config[[1]]
+                  if(any(is.na(config))) config[which(is.na(config))] <- private$config_infer[[1]][which(is.na(config))]
+                  freq <- sapply(config, function(x) {
+                    if(x == 1) return(c(0.25,0.5,0.25))
+                    else if(x == 2 | x == 4) return(c(0,0.5,0.5))
+                    else if(x == 3 | x == 5) return(c(0.5,0.5,0))
+                  })
+                  GUSbase::RDDPlot(ref=private$ref[[1]], alt=private$alt[[1]], ploid=2, gfreq=freq, file=filename, maxdepth=maxdepth, maxSNPs=maxSNPs, ...)
+                  return(invisible())
+                },
                 #### Write output
                 writeLM = function(file, direct = "./", LG = NULL, what = NULL){
                   ## do some checks
@@ -1173,12 +1284,12 @@ BC <- R6::R6Class("GUSMap::BC",
                       segType <- (c("BI","PI","PI","MI","MI","U"))[config_temp[unlist(LGlist)]]
                       temp <- private$ref[[1]][,unlist(LGlist)] > 0 | private$alt[[1]][,unlist(LGlist)] > 0
                       callrate <- colMeans(temp)
-                      matgroups <- which(unlist(lapply(private$para$rf_p[LG], function(x) all(is.na(x)))))
-                      patgroups <- which(unlist(lapply(private$para$rf_m[LG], function(x) all(is.na(x)))))
-                      rf_m <- c(unlist(lapply(private$para$rf_m[LG], function(y) {if(!is.na(y[1])) return(format(round(cumsum(c(0,y)),6),digits=6,scientific=F))} )),
+                      matgroups <- which(unlist(lapply(private$para$OPGP[LG], function(x) all(x %in% c(1:4,9:12)))))
+                      patgroups <- which(unlist(lapply(private$para$OPGP[LG], function(x) all(x %in% c(1:8)))))
+                      rf_m <- c(unlist(lapply(private$para$rf[matgroups], function(y) {if(!is.na(y[1])) return(format(round(cumsum(c(0,y)),6),digits=6,scientific=F))} )),
                                 rep(0,length(unlist(unlist(LGlist[patgroups])))))
                       rf_p <- c(rep(0,length(unlist(unlist(LGlist[matgroups])))),
-                                unlist(lapply(private$para$rf_p[LG], function(y) {if(!is.na(y[1])) return(format(round(cumsum(c(0,y)),6),digits=6,scientific=F))} )))
+                                unlist(lapply(private$para$rf[patgroups], function(y) {if(!is.na(y[1])) return(format(round(cumsum(c(0,y)),6),digits=6,scientific=F))} )))
                       ep <- format(rep(round(unlist(private$para$ep[LG]),8), unlist(lapply(LGlist, length))),digits=8,scientific=F)
                       out <- list(LG=LGno, LG_POS=LGindx, CHROM=chrom, POS=pos, TYPE=segType, RF_PAT=rf_p, RF_MAT=rf_m,
                                   ERR=ep, MEAN_DEPTH=depth, CALLRATE=callrate)

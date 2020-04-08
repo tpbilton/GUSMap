@@ -2,8 +2,9 @@
 % Please edit documentation in R/removeSNP.R
 \name{$removeSNP}
 \alias{$removeSNP}
-\title{FS method: Remove SNP from Linkage Group}
+\title{BC and FS method: Remove SNP from Linkage Group}
 \usage{
+BCobj$removeSNP(snps, where = NULL)
 FSobj$removeSNP(snps, where = NULL)
 }
 \arguments{
@@ -12,7 +13,7 @@ FSobj$removeSNP(snps, where = NULL)
 \item{where}{Character vector specifying which set of linkage groups to remove SNPs from (see details).}
 }
 \description{
-Method for removing SNPs from linkage groups in an FS object.
+Method for removing SNPs from linkage groups in an BC or FS object.
 }
 \details{
 For a linkage analysis in GUSMap, there may be a need to delete linkage groups from the
@@ -20,9 +21,16 @@ list of created linkage groups. The indices of the linkage groups corresponds to
 given in the output for the FS object. More than one linkage group can be deleted at once.
 
 Note: When the linkage group(s) are deleted, the indices of the remaining linkage groups 
-changes. Print the FS object to investiage what these after running this function.
+changes. Print the BC or FS object to investiage what these are after running this function.
 
-When \code{where = "LG-pts"}, SNPs will be removed from the set of pseudo-testcross 
+\code{BC} obsject: When \code{where = "LG-pts"}, SNPs will be removed from the set of pseudo-testcross 
+linkage groups created via the \code{\link{$createLG}} function. On the other hand, if 
+\code{where = "LG-bi"}, then SNPs from the set of pseudo-testcross linkage groups with BI SNPs added
+created from the \code{\link{$addBIsnps}} function will be removed.
+When \code{where = NULL}, SNPs will be removed from the set of pseudo-testcross linkage groups with BI SNPs added if available,
+otherwise they will be removed from the set of pseudo-testcross linkage groups.
+
+\code{FS} obsject: When \code{where = "LG-pts"}, SNPs will be removed from the set of pseudo-testcross 
 linkage groups created via the \code{\link{$createLG}} function. On the other hand, if 
 \code{where = "LG-comb"}, then SNPs from the set of combined linkage groups 
 created from the \code{\link{$addBIsnps}} function will be removed.
@@ -43,7 +51,7 @@ F1data$createLG()
 F1data$removeSNP(snps = c(3,7,15,20))
 }
 \seealso{
-\code{\link{FS}}
+\code{\link{BC}}, \code{\link{FS}}
 }
 \author{
 Timothy P. Bilton

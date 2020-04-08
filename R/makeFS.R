@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap)
-# Copyright 2017-2019 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
+# Copyright 2017-2020 Timothy P. Bilton <timothy.bilton@agresearch.co.nz>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -67,6 +67,8 @@
 #' @param RAobj Object of class RA created via the \code{\link[GUSbase]{readRA}} function.
 #' @param pedfile Character string giving the file name (relative to the current directory) of the pedigree file.
 #' @param family Vector of character strings giving the families to retain in the FS object. This allows a pedigree file with more than one family to be supplied.
+#' @param inferSNPs Logical value indicating whether to infer the segregation type of SNPs using the progeny information only
+#' in cases where the segregation typecould not be inferred from the parental genotypes.
 #' @param filter Named list of thresholds for various filtering criteria.
 #' See below for details.
 #'  

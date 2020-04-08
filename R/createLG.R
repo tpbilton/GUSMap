@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap)
-# Copyright 2017-2018 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
+# Copyright 2017-2020 Timothy P. Bilton <timothy.bilton@agresearch.co.nz>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
-#' FS method: Create linkage groups
+#' BC and FS method: Create linkage groups
 #' 
 #' Method for creating maternal and paternal linkage groups using the computed LOD scores.
 #' 
@@ -43,9 +43,12 @@
 #' run beforehand.
 #' \item A MI linkage group is one which only contains MI SNPs and a PI linkage group is one with only PI SNPs. These 
 #' linkage groups are referred to as the "puesdo-testcross linkage groups".
+#' \item Only MI and PI SNPs are used to construct linkage groups. The SI SNPs inferred in the {\code{\link{makeBC}}} or 
+#' {\code{\link{makeFS}}} function when the argument {\code{inferSNPs = TRUE}} are not used in the {\code{\link{$createLG}}} function.
 #' }
 #' 
 #' @usage
+#' BCobj$createLG(parent = "both", LODthres = 10, nComp = 10)
 #' FSobj$createLG(parent = "both", LODthres = 10, nComp = 10)
 #' 
 #' @param parent A character vector specifying whether to create linakge groups using the maternal-informative (MI)
@@ -57,7 +60,7 @@
 #' 
 #' @name $createLG
 #' @author Timothy P. Bilton
-#' @seealso \code{\link{FS}}
+#' @seealso \code{\link{BC}}, \code{\link{FS}}
 #' @examples 
 #' ## Simulate some sequencing data
 #' set.seed(6745)

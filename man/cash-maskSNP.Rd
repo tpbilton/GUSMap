@@ -3,10 +3,12 @@
 \name{$maskSNP}
 \alias{$maskSNP}
 \alias{$unmaskSNP}
-\title{FS method: Mask and unmask SNPs}
+\title{BC and FS method: Mask and unmask SNPs}
 \usage{
+BC$obj$maskSNP(snps)
 FS$obj$maskSNP(snps)
 
+BC$obj$unmaskSNP(snps)
 FS$obj$unmaskSNP(snps)
 }
 \arguments{
@@ -41,7 +43,7 @@ F1data$unmaskSNP(c(5,8))
 
 }
 \seealso{
-\code{\link{FS}}
+\code{\link{BC}}, \code{\link{FS}}
 }
 \author{
 Timothy P. Bilton

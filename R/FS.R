@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap)
-# Copyright 2017-2019 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
+# Copyright 2017-2020 Timothy P. Bilton <timothy.bilton@agresearch.co.nz>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,8 +21,8 @@
 #' 
 #' @usage
 #' ## Create FS object
-#' FSobj <- makeFS(RAobj, pedfile, family=NULL, 
-#'                 filter=list(MAF=0.05, MISS=0.2, BIN=100, DEPTH=5, PVALUE=0.01))
+#' FSobj <- makeFS(RAobj, pedfile, family=NULL, inferSNPs = FALSE,
+#'                 filter=list(MAF=0.05, MISS=0.2, BIN=100, DEPTH=5, PVALUE=0.01, MAXDEPTH=500))
 #'
 #' ## Functions (Methods) of an FS object
 #' FSobj$addBIsnps(LODthres = 10, nComp = 10)
@@ -51,6 +51,7 @@
 #' \describe{
 #' \item{\code{\link{$addBIsnps}}}{Add Both-Informative (BI) snps to the maternal and/or
 #' paternal linkage groups and merge the parental linkage groups.}
+#' \item{\code{\link{$addSNPs}}}{Add MI, PI and/or SI SNPs to the existing linkage groups}
 #' \item{\code{\link{$createLG}}}{Create linkage group(s).}
 #' \item{\code{\link{$computeMap}}}{Compute linkage maps for a given marker order.}
 #' \item{\code{\link{$maskSNP}}}{Mask SNP(s) in the dataset.}
@@ -453,6 +454,9 @@ FS <- R6::R6Class("FS",
                                             private$group$PI[which(!(private$group$PI %in% unlist(newLGlist)))],
                                             private$group_infer$SI[which(!(private$group_infer$SI %in% unlist(newLGlist)))])))
                   
+                  # check for masked SNPs
+                  unmapped <- unmapped[which(!private$masked[unmapped])]
+                  
                   if(length(unmapped) == 0)
                     stop("There are no SNPs remaining that are unmapped")
                   
@@ -507,9 +511,9 @@ FS <- R6::R6Class("FS",
                     } else added_pat_infer <- numeric(0)
                     ## update configations if required
                     if(length(added_mat) > 0)
-                      private$config[[1]][added_mat] <- (c(private$config[[1]][added_mat]) %% 2) + 2
+                      private$config[[1]][added_mat] <- (c(private$config[[1]][added_mat]) %% 2) + 4
                     if(length(added_pat) > 0)
-                      private$config[[1]][added_pat] <- (c(private$config[[1]][added_pat]) %% 2) + 4
+                      private$config[[1]][added_pat] <- (c(private$config[[1]][added_pat]) %% 2) + 2
                     if(length(added_mat_infer) > 0)
                       private$config_infer[[1]][added_mat_infer] <- (c(private$config_infer[[1]][added_mat_infer]) %% 2) + 4
                     if(length(added_pat_infer) > 0)
@@ -520,6 +524,7 @@ FS <- R6::R6Class("FS",
                     if(!is.null(private$LG_pat))
                       private$LG_pat <- newLGlist[length(private$LG_mat) + 1:length(private$LG_pat)]
                   }
+                  self$print(what = "LG-pts")
                   return(invisible())
                 },
                 ## Function for adding the informative SNPs to the LGs
@@ -703,7 +708,8 @@ FS <- R6::R6Class("FS",
                     graphics::plot(MDS$conf[,1],MDS$conf[,2], ylab="Dimension 2", xlab="Dimension 1", type="n")
                     graphics::text(MDS$conf, labels=ind)
                     graphics::lines(pcurve)
-                    graphics::image(private$rf[ind,ind][pcurve$ord,pcurve$ord], axes=F, col=grDevices::heat.colors(100))
+                    graphics::image(private$rf[ind,ind][pcurve$ord,pcurve$ord], axes=F,
+                                    col=grDevices::colorRampPalette(c("white", "yellow", "orange", "red"))(200))
                     if(is.null(filename)) graphics::par(temp_par)
                     else grDevices::dev.off()
                     ## Set the new order
@@ -1221,6 +1227,7 @@ Please select one of the following:
                   })
                   GUSbase::cometPlot(ref=private$ref[[1]], alt=private$alt[[1]], ploid=2, gfreq=freq, file=filename, cex=cex, 
                                      maxdepth=maxdepth, maxSNPs=maxSNPs, res=res, ind=ind, ncores = ncores, indID=private$indID, color=color, ...)
+                  return(invisible())
                 },
 		            rocketPlot = function(ploid=2, filename=NULL, cex=1, maxdepth=500, maxSNPs=1e5, res=300, scaled=TRUE, ...){
 		              config <- private$config[[1]]
@@ -1232,6 +1239,7 @@ Please select one of the following:
                     })
 		              GUSbase::rocketPlot(private$ref[[1]], private$alt[[1]], ploid=2, file=filename, gfreq=freq, cex=cex, 
 					                            maxdepth=maxdepth, maxSNPs=maxSNPs, res=res, scaled=scaled, ...)
+		              return(invisible())
                 },
                 # Ratio of alleles for heterozygous genotype calls (observed vs expected)
                 RDDPlot = function(filename=NULL, maxdepth=500, maxSNPs=1e5, ...){
@@ -1243,6 +1251,7 @@ Please select one of the following:
                     else if(x == 3 | x == 5) return(c(0.5,0.5,0))
                   })
                   GUSbase::RDDPlot(ref=private$ref[[1]], alt=private$alt[[1]], ploid=2, gfreq=freq, file=filename, maxdepth=maxdepth, maxSNPs=maxSNPs, ...)
+                  return(invisible())
                 }
                 ##############################################################
               ),

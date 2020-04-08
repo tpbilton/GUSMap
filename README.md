@@ -20,7 +20,10 @@ Note: Some of the functions are coded in C and therefore an appropriate C compil
 
 ### Tutorials:
 
-The best way to understand how to use GUSMap to construct linkage maps is to read through the [Introduction](http://htmlpreview.github.io/?https://github.com/tpbilton/GUSMap/blob/master/inst/doc/Introduction.html) Tutorial contained in the package.
+There are two different types of analysis possible in GUSMap, each with a tutorial explaining to use GUSMap to construct linkage maps.
+
+* A back-cross (BC) population. See the [BC Introduction](http://htmlpreview.github.io/?https://github.com/tpbilton/GUSMap/blob/master/inst/doc/Introduction_BC.html) tutorial.
+* A full-sib family. See the [FS Introduction](http://htmlpreview.github.io/?https://github.com/tpbilton/GUSMap/blob/master/inst/doc/Introduction_FS.html) tutorial.
 
 ### Development:
 

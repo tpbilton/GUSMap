@@ -21,6 +21,9 @@ makeFS(
 
 \item{family}{Vector of character strings giving the families to retain in the FS object. This allows a pedigree file with more than one family to be supplied.}
 
+\item{inferSNPs}{Logical value indicating whether to infer the segregation type of SNPs using the progeny information only
+in cases where the segregation typecould not be inferred from the parental genotypes.}
+
 \item{filter}{Named list of thresholds for various filtering criteria.
 See below for details.}
 }

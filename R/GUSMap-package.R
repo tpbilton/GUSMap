@@ -23,13 +23,13 @@
 #' sequencing methods \insertCite{@see @bilton2018genetics1}{GUSMap}.
 #'
 #' \tabular{ll}{ Package: \tab GUSMap\cr Type: \tab Package\cr Version: \tab
-#' 2.0.1\cr Date: \tab 2020-03-27\cr License: \tab GPL 3\cr }
+#' 2.1.0\cr Date: \tab 2020-04-08\cr License: \tab GPL 3\cr }
 #'
 #' @name GUSMap-package
 #' @aliases GUSMap
 #' @docType package
 #' @author Timothy P. Bilton, Maintainer: Timothy P. Bilton
-#' <tbilton@maths.otago.ac.nz>
+#' <timothy.bilton@agresearch.co.nz>
 #' @references
 #' \insertAllCited{}
 #' @keywords package
