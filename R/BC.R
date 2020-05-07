@@ -476,6 +476,7 @@ BC <- R6::R6Class("BC",
                     private$config <- private$config_orig
                     private$config_infer <- private$config_infer_orig
                     private$LG_mat = private$LG_pat = private$LG_mat_bi = private$LG_pat_bi = NULL
+                    private$summaryInfo <- private$summaryInfo$data
                   } else if(parent == "maternal") {
                     private$LG_mat = private$LG_mat_bi = NULL
                   } else if(parent == "paternal"){
@@ -1161,7 +1162,7 @@ BC <- R6::R6Class("BC",
                         snp1 = indx_chrom[highrf]
                         snp2 = indx_chrom[highrf+1]
                         junk = sapply(1:length(highrf),function(x) {
-                          cat("RF-",x," is ",highrf[x]," (between SNPs ",snp1[x]," and ",snp2[x],")\n", sep="")
+                          cat("RF-", highrf[x]," is ", round(MLE$rf[x],4)," (between SNPs ",snp1[x]," and ",snp2[x],")\n", sep="")
                           return(invisible())
                         })
                       }

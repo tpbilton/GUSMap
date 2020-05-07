@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and linkage MAPping
-# Copyright 2017-2019 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
+# Copyright 2017-2020 Timothy P. Bilton <timothy.bilton@agresear.co.nz>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -115,5 +115,14 @@ parHapToOPGP <- function(parHap, major="A", minor="B"){
   }) 
 )}
 
+## Function for converting OPGPs to Parental haplotypes
+OPGPtoParHap <- function(OPGP){
+  parHap <- matrix("A", nrow=4, ncol=length(OPGP))
+  parHap[1,which(OPGP %in% c(2,4,6,8,11,12,15,16))] <- "B"
+  parHap[2,which(OPGP %in% c(1,3,5,7,11,12,15,16))] <- "B"
+  parHap[3,which(OPGP %in% c(3,4,7,8,10,12,14,16))] <- "B"
+  parHap[4,which(OPGP %in% c(1,2,7,8,9,11,14,16))] <- "B"
+  return(parHap)
+}
 
 

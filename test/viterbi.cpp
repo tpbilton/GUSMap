@@ -1,7 +1,7 @@
 /*
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap)
-# Copyright 2017-2019 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
+# Copyright 2017-2020 Timothy P. Bilton <timothy.bilton@agresearch.co.nz>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -198,7 +198,7 @@ NumericMatrix viterbi_fs_err(NumericVector rf, NumericVector ep, int nInd, int n
     }
     
     inferState = which_max(etaTemp);
-    Rcpp::Rcout << "snp :" << snp << " - etaTemp :" << which_max(etaTemp) << std::endl;
+    //Rcpp::Rcout << "snp :" << snp << " - etaTemp :" << which_max(etaTemp) << std::endl;
     states(ind, nSnps - 1) = inferState;
     // Now compute the most likely states in reverse
     for(snp = nSnps - 2; snp > -1; snp--){
