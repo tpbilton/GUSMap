@@ -18,6 +18,8 @@
 #########################################################################
 */
 
+#ifndef PROBFUN_H
+#define PROBFUN_H
 
 double Qentry(int OPGP,double Kaa,double Kab, double Kbb,int elem);
 double Qentry_up(int config,double Kaa,double Kab, double Kbb,int elem);
@@ -25,3 +27,4 @@ double Tmat_ss(int s1, int s2, double r_f, double r_m);
 double Tmat(int s1, int s2, double rval);
 unsigned long binomial(unsigned long a, unsigned long b);
 
+#endif

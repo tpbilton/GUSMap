@@ -18,8 +18,8 @@
 #########################################################################
 */
 
-#include <math.h>
 #include <Rcpp.h>
+#include <math.h>
 using namespace Rcpp;
 using namespace std;
 //#include "probFun.h"
@@ -125,13 +125,13 @@ double Tmat(int s1, int s2, double rval){
 ///////////////////////////////////////////////////////////////
 
 // [[Rcpp::export]]
-NumericMatrix viterbi_fs_err(NumericVector rf, NumericVector ep, int nInd, int nSnps,
-                             IntegerMatrix ref, IntegerMatrix alt, IntegerVector OPGP){
+Rcpp::NumericMatrix viterbi_fs_err(Rcpp::NumericVector rf, Rcpp::NumericVector ep, int nInd, int nSnps,
+                                   Rcpp::IntegerMatrix ref, Rcpp::IntegerMatrix alt, Rcpp::IntegerVector OPGP){
   
   // Compute the emission matrix
-  NumericMatrix pAA(nInd, nSnps);
-  NumericMatrix pAB(nInd, nSnps);
-  NumericMatrix pBB(nInd, nSnps);
+  Rcpp::NumericMatrix pAA(nInd, nSnps);
+  Rcpp::NumericMatrix pAB(nInd, nSnps);
+  Rcpp::NumericMatrix pBB(nInd, nSnps);
   int ind, snp, a, b;
   for(ind = 0; ind < nInd; ind++){
     for(snp = 0; snp < nSnps; snp++){
@@ -145,9 +145,9 @@ NumericMatrix viterbi_fs_err(NumericVector rf, NumericVector ep, int nInd, int n
   
   // run the viterbi algorithm
   int s1, s2, inferState;
-  NumericMatrix eta(4, nSnps);
-  NumericMatrix states(nInd, nSnps);
-  NumericVector etaTemp(4);
+  Rcpp::NumericMatrix eta(4, nSnps);
+  Rcpp::NumericMatrix states(nInd, nSnps);
+  Rcpp::NumericVector etaTemp(4);
   double tempV, thres = -1e20;
   //Rcpp::Rcout << " - thres :" << thres << std::endl;
   for(ind = 0; ind < nInd; ind++){

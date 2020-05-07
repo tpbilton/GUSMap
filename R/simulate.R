@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and linkage MAPping
-# Copyright 2017-2019 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
+# Copyright 2017-2020 Timothy P. Bilton <timothy.bilton@agresearch.co.nz>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -264,7 +264,7 @@ simFS <- function(rVec_f, rVec_m=rVec_f, epsilon=0, config, nInd=100, meanDepth=
   newObj <- FS$new(obj)
   
   newObj$.__enclos_env__$private$updatePrivate(
-    list(group = group, config = config, noFam = noFam, summaryInfo=summaryInfo, 
+    list(group = group, config = config, noFam = noFam, summaryInfo=summaryInfo, config_orig=config, 
          simPara=list(OPGP=OPGP,nSnps=nSnps,config=config,meanDepth=meanDepth, nInd=nInd, seed1=seed1, seed2=seed2, ep=epsilon))
   )
   return(newObj)

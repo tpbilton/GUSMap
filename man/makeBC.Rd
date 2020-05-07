@@ -4,9 +4,15 @@
 \alias{makeBC}
 \title{Make a backcross (BC) population}
 \usage{
-makeBC(RAobj, pedfile, family = NULL, MNIF = 1, inferSNPs = FALSE,
-  filter = list(MAF = 0.05, MISS = 0.2, BIN = 100, DEPTH = 5, PVALUE = 0.01,
-  MAXDEPTH = 500))
+makeBC(
+  RAobj,
+  pedfile,
+  family = NULL,
+  MNIF = 1,
+  inferSNPs = FALSE,
+  filter = list(MAF = 0.05, MISS = 0.2, BIN = 100, DEPTH = 5, PVALUE = 0.01, MAXDEPTH =
+    500)
+)
 }
 \arguments{
 \item{RAobj}{Object of class RA created via the \code{\link[GUSbase]{readRA}} function.}

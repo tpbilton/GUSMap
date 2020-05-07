@@ -4,9 +4,19 @@
 \alias{simFS}
 \title{Simulation sequencing data for full-sib families.}
 \usage{
-simFS(rVec_f, rVec_m = rVec_f, epsilon = 0, config, nInd = 100,
-  meanDepth = 5, thres = NULL, rd_dist = "Neg_Binom", seed1 = 1,
-  seed2 = 1, MNIF = 1)
+simFS(
+  rVec_f,
+  rVec_m = rVec_f,
+  epsilon = 0,
+  config,
+  nInd = 100,
+  meanDepth = 5,
+  thres = NULL,
+  rd_dist = "Neg_Binom",
+  seed1 = 1,
+  seed2 = 1,
+  MNIF = 1
+)
 }
 \arguments{
 \item{rVec_f, rVec_m}{Numeric vector of true paternal and maternal

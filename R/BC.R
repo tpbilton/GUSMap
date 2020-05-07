@@ -1243,7 +1243,7 @@ BC <- R6::R6Class("BC",
                   return(invisible())
                 },
                 #### Write output
-                writeLM = function(file, direct = "./", LG = NULL, what = NULL){
+                writeLM = function(file, direct = "./", LG = NULL, what = NULL, inferGeno = TRUE){
                   ## do some checks
                   if(private$noFam == 1){
                     if(!is.vector(file) || !is.character(file) || length(file) != 1)
@@ -1271,8 +1271,39 @@ BC <- R6::R6Class("BC",
                         stop("LGs to write to file is invalid.")
                       else
                         LGlist <- private$LG_map[LG]
+                      if(!is.vector(inferGeno) || length(inferGeno) != 1 || !is.logical(inferGeno) || is.na(inferGeno))
+                        stop("Argument `inferGeno` is invalid. Should be a logical value")
                       if(length(unlist(LGlist)) == 0)
                         stop("No maps have been computed for the specified linkage groups.")
+                      ## Infer genotypes if required
+                      if(inferGeno){
+                        nInd = unlist(private$nInd)
+                        OPGPs = private$para$OPGP[LG]
+                        matgroups <- which(unlist(lapply(OPGPs[LG], function(x) all(x %in% c(1:4,9:12)))))
+                        patgroups <- which(unlist(lapply(OPGPs[LG], function(x) all(x %in% c(1:8)))))
+                        geno = list()
+                        for(lg in 1:length(LG)){
+                          snps = LGlist[[lg]]
+                          if(length(snps) == 0)
+                            next
+                          else{
+                            nSnps = length(snps)
+                            ref = private$ref[[1]][,snps]
+                            alt = private$alt[[1]][,snps]
+                            # output from viterbi_fs_err: 0 = 00, 1 = 10, 2 = 01, 3 = 11 (mat/pat)
+                            ms = viterbi_fs_err(private$para$rf[[lg]], 
+                                                rep(private$para$ep[[lg]], length.out=nSnps),
+                                                nInd, nSnps, ref, alt,
+                                                OPGPs[[lg]])
+                            ## 1 = on paternal chrosome, 0 = maternal chromsome
+                            infer_pat = (ms > 2) + 1
+                            infer_mat = apply(ms, 2, function(x) x %in% c(1,3)) + 1
+                            parHap = OPGPtoParHap(OPGPs[[lg]])
+                            geno_temp = sapply(1:nInd, function(x) rbind(parHap[cbind(infer_mat[x,]+2,1:nSnps)], parHap[cbind(infer_pat[x,],1:nSnps)]), simplify = FALSE)
+                            geno[[lg]] = t(do.call("rbind", geno_temp))
+                          }
+                        }
+                      }
                       ## compute the information to go in file
                       nLG = length(LGlist)
                       LGno <- rep(LG, unlist(lapply(LGlist, length)))
@@ -1292,8 +1323,16 @@ BC <- R6::R6Class("BC",
                       rf_p <- c(rep(0,length(unlist(unlist(LGlist[matgroups])))),
                                 unlist(lapply(private$para$rf[patgroups], function(y) {if(!is.na(y[1])) return(format(round(cumsum(c(0,y)),6),digits=6,scientific=F))} )))
                       ep <- format(rep(round(unlist(private$para$ep[LG]),8), unlist(lapply(LGlist, length))),digits=8,scientific=F)
-                      out <- list(LG=LGno, LG_POS=LGindx, CHROM=chrom, POS=pos, TYPE=segType, RF_PAT=rf_p, RF_MAT=rf_m,
-                                  ERR=ep, MEAN_DEPTH=depth, CALLRATE=callrate)
+                      ## add geno information if required
+                      if(inferGeno){
+                        temp = do.call("rbind", geno)
+                        temp2 = split(temp, rep(1:ncol(temp), each = nrow(temp)))
+                        names(temp2) = paste0(c("MAT_","PAT_"), rep(private$indID[[1]], rep(2,nInd)))
+                        out <- c(list(LG=LGno, LG_POS=LGindx, CHROM=chrom, POS=pos, TYPE=segType, RF_PAT=rf_p, RF_MAT=rf_m,
+                                      ERR=ep, MEAN_DEPTH=depth, CALLRATE=callrate), temp2)
+                      } else 
+                        out <- list(LG=LGno, LG_POS=LGindx, CHROM=chrom, POS=pos, TYPE=segType, RF_PAT=rf_p, RF_MAT=rf_m,
+                                    ERR=ep, MEAN_DEPTH=depth, CALLRATE=callrate)
                       ## write out file
                       data.table::fwrite(out, file = outfile, sep="\t", nThread = 1)  
                       cat(paste0("Linkage analysis results written to file:\nFilename:\t",filename,"\n")) 
@@ -1328,7 +1367,7 @@ BC <- R6::R6Class("BC",
                   }
                 }
                 ##############################################################
-                    ),
+              ),
               private = list(
                 config_orig  = NULL,
                 config_infer_orig = NULL,
