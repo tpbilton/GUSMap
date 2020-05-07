@@ -6,7 +6,7 @@ Authors@R: person("Timothy P.", "Bilton", role = c("aut", "cre"), email = "timot
 Author: Timothy P. Bilton [aut, cre]
 Maintainer: Timothy P. Bilton <timothy.bilton@agresearch.co.nz>
 Depends: R (>= 3.3.0), GUSbase, plotly
-Imports: R6, smacof, princurve (>= 2.0), Rdpack, data.table, stats, grDevices, graphics, utils, parallel, doParallel, iterators, foreach 
+Imports: R6, smacof, princurve (>= 2.0), Rdpack, data.table, stats, grDevices, graphics, utils, parallel, doParallel, iterators, foreach, Rcpp 
 RdMacros: Rdpack
 LinkingTo: Rcpp
 Description: Package for constructing linkage maps using outcrossed full-sib family populations that have been sequenced using next generation multiplexing sequencing methods.

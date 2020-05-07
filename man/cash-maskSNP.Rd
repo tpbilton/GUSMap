@@ -24,7 +24,7 @@ the \code{\link{$maskSNP}} function, which masks SNPs.
 Once a SNP is masked, it will be ignored in the functions \code{\link{$createLG}},
 \code{\link{$addBIsnps}}, \code{\link{$computeMap}}. Note, however, that if a SNP is
 already included in a linkage group, masking a SNP will not remove it (To remove SNPs from
-a linkage group, one needs to use the \code{\link{$removeSNP}} function). 
+a linkage group, one needs to use the \code{\link{$removeSNP}} function).
 
 The \code{\link{$unmaskSNP}} function just unmasks any SNPs which have been masked using 
 \code{\link{$maskSNP}}.

@@ -27,8 +27,7 @@ Method for plotting 2-point recombination fraction and LOD score estimates when 
 }
 \details{
 This function plots the heatmap of the matrix of 2-point recombination fraction estimates (or 2-point LOD scores)
-as computed from the \code{\link{$rf_2pt}} function when the SNPs are ordered according to the genomic assembly (as given in the VCF file). 
-
+as computed from the \code{\link{$rf_2pt}} function when the SNPs are ordered according to the genomic assembly (as given in the VCF file).
 
 Note:
 }

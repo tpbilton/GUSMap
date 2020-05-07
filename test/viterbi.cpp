@@ -25,9 +25,6 @@ using namespace std;
 //#include "probFun.h"
 
 
-// //' @export
-
-
 /////////////////////////////////////////////////////////////////////////
 // Function for extracting entries of the emission probability matrix
 // when the OPGPs are known

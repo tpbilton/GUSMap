@@ -31,7 +31,7 @@ Method for plotting 2-point recombination fraction and LOD score estimates when 
 }
 \details{
 This function plots the heatmap of the matrix of 2-point recombination fraction estimates (or 2-point LOD scores)
-as computed from the \code{\link{$rf_2pt}} function. 
+as computed from the \code{\link{$rf_2pt}} function.
 
 The interactive plot (\code{interactive = TRUE}) is produced via the \code{\link[plotly]{plot_ly}} function. Note, however,
 that the interactive plot only works for a relatively small number of SNPs (about 1000 is maximum).

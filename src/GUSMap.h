@@ -17,7 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
  */
-
+/*
 #include <R.h>
 #include <Rinternals.h>
 #include <Rdefines.h>
@@ -26,7 +26,7 @@
 #define _GUSMap
 
 
-SEXP ll_fs_scaled_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef_mat, SEXP Kab, SEXP OPGP, SEXP nInd, SEXP nSnps, SEXP nThreads);
+//SEXP ll_fs_scaled_err_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef_mat, SEXP Kab, SEXP OPGP, SEXP nInd, SEXP nSnps, SEXP nThreads);
 SEXP ll_fs_ss_scaled_err_c(SEXP r, SEXP Kaa, SEXP Kab, SEXP Kbb, SEXP OPGP, SEXP nInd, SEXP nSnps);
 SEXP ll_fs_up_ss_scaled_err_c(SEXP r, SEXP bcoef_mat, SEXP ep, SEXP ref, SEXP alt, SEXP Kab, SEXP config, SEXP nInd, SEXP nSnps, SEXP nThreads);
 SEXP score_fs_scaled_c(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP bcoef_mat, SEXP Kab, SEXP OPGP, SEXP nInd, SEXP nSnps);
@@ -40,3 +40,4 @@ SEXP EM_HMM_multierr(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP OPGP, SEXP noFam,
 
 
 #endif 
+*/

@@ -44,7 +44,7 @@ in common (provided there are any).
 }
 The performance of the linkage group algorithm depends on the value of \code{LODthres} and \code{nComp}. The user is
 advised to experiment with different values and examine the matrix of recombination fractions (using the \code{\link{$plotLG}}
-function). 
+function).
 
 Note: The linkage groups produced from this function are referred to as the "combined linkage groups" and are stored separately
 to the "pseudo-testcross linkage groups" produced by \code{\link{$createLG}} function. This means that combined linkage groups

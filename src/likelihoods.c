@@ -23,6 +23,8 @@
 #include <Rmath.h>
 #include <math.h>
 #include "probFun.h"
+#include "GUSMap.h"
+
 #ifdef _OPENMP
     #include <omp.h>
 #else
