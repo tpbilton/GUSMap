@@ -1192,10 +1192,10 @@ Please select one of the following:
                       if(is.null(LG)){
                         LGlist <- private$LG
                         LG <- 1:length(private$LG)
-                      } else if(isValue(LG, type="pos_integer", minv=1, maxv=length(private$LG)))
+                      } else if(GUSbase::checkVector(LG, type="pos_integer", minv=1, maxv=length(private$LG)))
                         stop("LGs to write to file is invalid.")
                       else
-                        LGlist <- private$LG_map[LG]
+                        LGlist <- private$LG[LG]
                       ## compute the information to go in file
                       nLG = length(LGlist)
                       LGno <- rep(LG, unlist(lapply(LGlist, length)))

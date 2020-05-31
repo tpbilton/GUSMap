@@ -163,7 +163,7 @@ makeFS <- function(RAobj, pedfile, family=NULL, MNIF=1, inferSNPs=FALSE,
       stop("Family missing from the pedigree file. Please check the family ID suppied or the pedigree file.")
   }
   if(length(family)>1)
-    stop("Multiple are yet to be implemented")
+    stop("Multiple families are yet to be implemented")
   ## Create each family
   for(fam in family){
     progIndx <- which(ped$Family == fam)

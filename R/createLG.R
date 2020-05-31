@@ -96,16 +96,19 @@ createLG <- function(group, LOD, parent, LODthres, nComp, masked){
   
   ## check that the parent argument is correct
   if(!is.character(parent) || length(parent) != 1 || 
-     !(parent %in% c("maternal","paternal")))
+     !(parent %in% c("maternal", "paternal", "both")))
     stop("parent argument is not a string of of length one or is incorrect:
          Please select one of the following:
          maternal: Only MI SNPs
-         paternal: Only PI SNPs")
+         paternal: Only PI SNPs
+         both: Only BI SNPs")
   
   if(parent == "maternal")
     unmapped <- sort(group$MI[which(group$MI %in% which(!masked))])
   else if(parent == "paternal")
     unmapped <- sort(group$PI[which(group$PI %in% which(!masked))])
+  else if(parent == "both")
+    unmapped <- sort(group$BI[which(group$BI %in% which(!masked))])
   
   if(length(unmapped) < 2)
     stop("There are no SNPs available to create linkage groups with.")

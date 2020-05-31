@@ -2,9 +2,11 @@
 
 export(BC)
 export(FS)
+export(IC)
 export(Manuka11)
 export(makeBC)
 export(makeFS)
+export(makeIC)
 export(simFS)
 import(foreach)
 import(plotly)

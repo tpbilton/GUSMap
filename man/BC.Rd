@@ -225,7 +225,7 @@ Timothy P. Bilton
 \subsection{Method \code{plotLG()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{BC$plotLG(
-  parent = "bothl",
+  parent = "both",
   LG = NULL,
   mat = "rf",
   filename = NULL,
@@ -342,7 +342,7 @@ Timothy P. Bilton
 \if{latex}{\out{\hypertarget{method-writeLM}{}}}
 \subsection{Method \code{writeLM()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{BC$writeLM(file, direct = "./", LG = NULL, what = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{BC$writeLM(file, direct = "./", LG = NULL, what = NULL, inferGeno = TRUE)}\if{html}{\out{</div>}}
 }
 
 }

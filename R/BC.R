@@ -194,7 +194,7 @@ BC <- R6::R6Class("BC",
                   }
                   if(where == "LG-pts"){
                     if (is.null(private$LG_mat) & is.null(private$LG_pat))
-                      stop("Linakge groups have not been formed. Use the '$createLG' function to create linkage groups.")
+                      stop("All linkage groups have been removed. Use the '$createLG' function to create linkage groups.")
                     else{
                       ## remove SNP from the maternal linkage groups
                       for(lg in 1:length(private$LG_mat)){
@@ -709,7 +709,7 @@ BC <- R6::R6Class("BC",
                   return(invisible(NULL))
                 },
                 ## Function for plotting linkage groups
-                plotLG = function(parent = "bothl", LG=NULL, mat="rf", filename=NULL, interactive=FALSE, what = NULL, ...){
+                plotLG = function(parent = "both", LG=NULL, mat="rf", filename=NULL, interactive=FALSE, what = NULL, ...){
                   ## do some checks
                   if(!is.vector(mat) || !is.character(mat) || length(mat) != 1 || !(mat %in% c('rf','LOD')))
                     stop("Argument specifying which matrix to plot (argument 1) must be either 'rf' or 'LOD'")
@@ -1296,7 +1296,7 @@ BC <- R6::R6Class("BC",
                                                 nInd, nSnps, ref, alt,
                                                 OPGPs[[lg]])
                             ## 1 = on paternal chrosome, 0 = maternal chromsome
-                            infer_pat = (ms > 2) + 1
+                            infer_pat = (ms > 1) + 1
                             infer_mat = apply(ms, 2, function(x) x %in% c(1,3)) + 1
                             parHap = OPGPtoParHap(OPGPs[[lg]])
                             geno_temp = sapply(1:nInd, function(x) rbind(parHap[cbind(infer_mat[x,]+2,1:nSnps)], parHap[cbind(infer_pat[x,],1:nSnps)]), simplify = FALSE)
