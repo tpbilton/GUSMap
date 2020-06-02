@@ -1,0 +1,347 @@
+---
+title: "Introduction to GUSMap (FS class)"
+subtitle: "Full-sib families"
+author: "Timothy P. Bilton"
+date: "`r Sys.Date()`"
+output: 
+  rmarkdown::html_vignette:
+    fig_caption: yes
+vignette: >
+  %\VignetteIndexEntry{Introduction to GUSMap (FS class)}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+bibliography: "../inst/REFERENCES.bib"
+biblio-style: "apalike"
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set( collapse = TRUE, comment = "#>", eval=TRUE)
+library(GUSMap)
+```
+
+In this tutorial, we will describe how to use GUSMap to perform linkage mapping and explain some of the functionality available. 
+
+For this tutorial, we will use a simulated data set of a full-sib family (F1 population) consisting of 100 offspring, 3 chromosomes and 1000 SNPs to illustrate GUSMap. The file location to the VCF file (and associated pedigree file) for the data set can be extracted using the `simDS` function.
+
+```{r simDS, eval = T}
+vcffile <- simDS() # extract filename
+vcffile            # filename stored in object vcffile
+```
+
+Some important up front comments regarding GUSMap:
+
+1. Having high read depth on the parents (e.g., sequencing more than once) can be hugely helpful to correctly infer the segregation type of more SNPs. However, for the progeny, it is of more value (and cost-efficient) to have more individuals in the family at lower depth than sequence fewer at higher depth. However, we recommend that it is best to ensure that the average depth for a given individual is at least 2. 
+2. GUSMap is designed for low coverage sequencing data which means that there is no need to pre-filter the data in terms of read depth. Furthermore, GUSMap includes standard filtering steps in terms of minor allele frequency (MAF), missing data and a segregation test (including a few other filters) which means one only needs to input a raw Variant Call Format (VCF) file obtained after the SNP calling processes into GUSMap.
+
+In addition, some terms that we will use throughout this tutorial are:
+
+* Maternal informative (MI) SNPs: SNPs where the maternal parent is heterozygous and the paternal parent is homozygous.
+* Paternal informative (PI) SNPs: SNPs where the paternal parent is heterozygous and the maternal maternal is homozygous.
+* Both informative (BI) SNPs: SNPs where both parents are heterozygous.
+* Semi informative (SI) SNPs: SNPs that are heterozygous in one parent and homozygous in the other but it is unclear which parent is homozygous (e.g., an SI could be an MI or PI SNP but we don't know which).
+
+More details of this terminology and the mathematics underpinning the estimation of recombination fractions in GUSMap can be found in @bilton2018genetics1.
+
+## Loading Data
+
+At present, GUSMap can read in data stored in a Variant Call Format (VCF) file, provided that there is some form of allelic depth information (e.g., the number of reads for the reference and alternate alleles). This is done using the `VCFtoRA` function which takes in the name of a VCF file and converts it into what we call a reference/alternate (RA) file.
+
+```{r loadData, eval=T}
+# convert VCF file to an RA file
+rafile <- VCFtoRA(infilename = vcffile$vcf, direct = "./", makePed=TRUE)
+```
+
+The arguments of the `VCFtoRA` function are:
+
+1. `infilename`: The name of the VCF file. 
+2. `direct`: Specifies which directory to write the RA file to (relative to the current working directory).
+3. `makePed`: Specifies whether or not to initialize a pedigree file. Pedigree files are important for creating a full-sib family object and will be discussed later. 
+
+Currently, `VCFtoRA` requires one of the fields **AD**, **AO and RO**, or **DP4** to be present in the VCF file to extract allelic depth information. One other thing to note is that `VCFtoRA` returns the file location of the created RA file.
+```{r rafile, eval=T}
+rafile # file path of RA file
+```
+
+The RA file created is a tab-delimited file with columns, **CHROM** (the chromosome name taken from the "#CHROM" column in the VCF file), **POS** (the position of the SNP taken from the "POS" column in the VCF file), and **SAMPLES** which consists of the sampleIDs used in the VCF (columns 10 and above in the VCF file). For example, the first five columns and first four rows of the RA file for the simulated data set are:
+
+|CHROM	|POS	   |P1_1  |P2_1 |P1_2 |
+|:------|:-------|:-----|:----|:----|
+|1	    |866499	 |25,0  |0,2  |9,0  |
+|1	    |2070050 |8,0   |4,9  |9,0  |
+|1	    |2232468 |1,0	  |0,1  |2,0  |
+|1	    |3459263 |12,13 |0,0  |0,1  |
+
+The entry in the first row and the third column is "25,0" which means that there are 25 reads for the reference allele and no reads for the alternate allele at the SNP on chromosome 1 with position 866499 in sample P1_1. In addition, the fourth row of the third column is "12,13" which menas that there are 12 reads for the reference allele and 13 reads for the alternate allele at the SNP on chromosome 1 with position 3459263 in sample P1_1. 
+
+An RA file can then be loaded into R using the `readRA` function.
+```{r readRA, eval=T}
+RAdata <- readRA(rafile = rafile, sampthres = 0.01, excsamp = NULL)
+```
+
+The arguments of the `readRA` function are:
+
+1. `rafile`: Name of the RA file to be read in.
+2. `sampthres`: Specifies the minimum sample depth of an individual before it is removed.
+3. `excsamp`: Specifies IDs of any samples in the RA data set to be discarded (for problematic samples to be removed). The input for `excsamp` must correspond to the sample IDs in the RA file.
+
+The RA data is now stored as an `RA` object.
+```{r class_RAdata, eval=T}
+class(RAdata)
+```
+
+Summary information of the RA object can be displayed by printing the object.
+```{r RAdata, eval=T}
+RAdata
+```
+
+## Linkage mapping with GUSMap
+
+In this section, we will discuss linkage mapping using GUSMap for a full-sib family. The main steps to the process are:
+
+1. Create a full-sib family and perform appropriate filtering
+2. Constructing linkage groups
+3. Ordering markers across each linkage group
+4. Computing maps for the ordered linkage groups
+
+In the following sections, we shall discuss how each of these steps are performed in GUSMap for a full-sib family.
+
+### Constructing a full-sib family
+
+Construction of a 'full-sib' family (e.g., F1 population) object is achieved using the `makeFS` function.
+```{r makeFS, eval=T}
+mySpecies <- makeFS(RAobj = RAdata, pedfile = vcffile$ped, inferSNPs = FALSE,
+                      filter = list(MAF = 0.05, MISS = 0.5,
+                        BIN = 100, DEPTH = 5, PVALUE = 0.01, MAXDEPTH=500))
+```
+
+The `makeFS` function takes an `RA` object and pedigree file, creates a full-sib population and performs filtering on the data. 
+
+For this tutorial, we use the existing pedigree file stored in the package. The file name of this pedigree file is stored in the object `vcffile$ped`. More information regarding the format of the pedigree file can be found by looking at the package documentation for the `makeFS` function which can be accessed by:
+```{r help_makeFS, eval=F}
+?`$makeFS`
+```
+
+There are six different types of filtering available in GUSMap:
+
+* Minor allele frequency (`MAF`): SNPs are removed if the MAF is below the threshold since in full-sib families, the expected allele frequency are 0.5 for BI SNPs and 0.75 (or 0.25) for PI and MI SNPs.
+* Percentage of missing data (`MISS`): SNPs are removed if the number of individuals without a single read for a given SNP is less than the threshold.
+* SNP binning distance (`BIN`): SNPs are binned together if the distance (in base pairs) between them is less than the threshold value. One SNP is then selected at random from each bin. This filtering is to ensure that there is only a single SNP on each sequence.
+* Parental depth (`DEPTH`): SNPs are removed if the read depth of each parent is below the threshold value. This filtering is performed since low read depth can result in parental heterozygous genotypes to be seen as homozygous resulting in incorrectly inferred segregation type.  
+* Segregation test (`PVALUE`): A segregation test is performed to removed any SNPs in which the segregation type has been incorrectly inferred (e.g., parental genotypes called wrongly).
+* Maximum average SNP depth (`MAXDEPTH`): SNPs with an average depth above the threshold are discarded. SNPs with really high depth compared to the rest of the SNPs often are repeative regions or simply probamatic and it is often best to discard these SNPs. An appropriate threshold for this filter will depend on the overall coverage of the data.
+
+Again, more details of these various filter types is available in the package documentation of the `makeFS` function.
+
+The `makeFS` function also has one additional argument, namely `inferSNPs`. If `inferSNPs=TRUE`, then for the SNPs where the segregation type could not be determined from the parental genotypes, an attempt is made to determine the segregation type from the progeny data only. This can help increase the number of SNPs if there are not enough SNPs when the segregation type was determined only from the parents. One caveat, however, is that for SNPs that are informative in only one parent, the progeny information cannot inform us which parent is the informative parent. We, therefore, refer to the SNPs determined to be informative in a single parent using the `inferSNPs` argument as semi-informative (SI) SNPs.
+
+### Linkage Groups
+
+
+##### Computing 2-point recombination fraction estimates
+
+Linkage group formation in GUSMap is based on 2-point recombination fraction estimates and associated LOD scores between all pairs of SNPs. These are computed using the function `$rf_2pt`. 
+```{r 2pt_rf}
+mySpecies$rf_2pt(nClust = 3)
+```
+
+The `$rf_2pt` function is parallelized to reduce computational time, where the `nClust` argument specifies how many cores to use in the parallelization. Be careful not to set this to more than what is available on your computer. Note: this step can take some time, especially if there are a large number of SNPs in your data set. 
+
+**Hint**: Since computing the 2-point recombination fractions can take quite long, it is best to save the FS object as a R data file using the `save` function. For example:
+```{r save, eval=FALSE}
+save(mySpecies, file="FSobject.Rdata")
+```
+
+Once the 2-point recombination fraction estimates and associated LOD scores have been computed, we can plot the resulting recombination fraction estimates on a heatmap.
+```{r plotChr}
+# plot 2-point rf matrix for BI and MI SNPs
+mySpecies$plotChr(mat = "rf", parent = "maternal", lmai=0.5)
+```
+
+Heatmaps are helpful for examining genome assemblies if the SNPs where called using a reference genome. For our example, we see that the middle section of chromosome 2 should actually be with chromosome 3, and that the last quarter of chromosome 1 needs to be inverted (that is the marker order need to be reversed). Furthermore, there are a number of SNPs that are clearly on the wrong chromosome and should be mapped to one of the other chromosomes. For *de novo* assemblies, one can still plot the 2-point recombination fraction estimates although the resulting plot should look fairly random and so is usually not very informative.
+
+One can also plot the matrix of 2-point LOD scores.
+```{r plotChr2}
+# plot 2-point LOD matrix for BI, PI and MI SNPs
+mySpecies$plotChr(mat = "LOD", parent = "both", lmai=0.5)
+```
+
+In the above code, the `parent` argument has been set to `"both"` which means that all the SNPs will be plotted. The resulting plot looks a somewhat patchy. This is because the LOD scores between PI and MI SNPs are zero as there is no information regarding recombination between these SNPs. The same also applies to the matrix of 2-point recombination fraction estimates.
+
+##### Forming linkage groups
+
+Using our 2-point recombination fraction estimates and LOD scores, we can proceed to forming linkage groups. 
+```{r createLG}
+mySpecies$createLG(parent = "both", LODthres = 5, nComp = 10, reset = FALSE)
+```
+
+`$createLG` creates MI linkage groups (e.g., linkage groups with only MI SNPs) and PI linkage groups (e.g., linkage groups with only PI SNPs). The performance of the linkage grouping algorithm is controlled by the parameters `LODthres` and `nComp`. Details of these arguments and how the linkage groups are formed is explained in the package documentation at:
+```{r help_createLG, eval=F}
+?`$createLG`
+```
+
+One key point with the `$createLG` function is that the MI and PI are grouped into separate linkage groups. We refer to these linkage groups as the "pseudo-testcross linkage groups". 
+
+A couple of additional points regarding the `$createLG` function:
+
+* The function will not use SI SNPs, where the segregation type has been inferred using the progeny information alone (that is, the SNPs where the segregation type has been inferred from the `inferSNPs` argument in the `makeBC` function). Instead, it will only use the BI and MI SNPs to form the pseudo-testcross linkage groups.
+* The linkage groups and any changes to the segregation type can be reset by setting the argument `reset=TRUE`. This is handle if one wishes to restart the analysis.
+* The argument `parent` controls whether only MI linkage groups (`"maternal"`), only PI linkage groups (`"paternal"`) or both MI and PI linkage groups (`"both"`) should be created. 
+
+Once the linkage groups have been formed, it is a good idea to look how well the grouping has performed by examining the heatmap of the 2-point recombination fraction estimates with the SNPs grouped according to the linkage groups. This can be done using the `$plotLG` function.
+```{r plotLG_mat}
+mySpecies$plotLG(parent = "both", interactive = F, LG = NULL)
+```
+
+The heatmap shows that there are four MI linkage groups and two PI linkage groups. We would expect there to be three MI linkage groups and three PI linkage groups since there are 3 chromosomes, and thus there is one extra MI linkage group and one missing PI linkage group. In general, the linkage between SNPs from different linkage groups appears relatively low with high recombination fraction estimates. However,  we see that linkage group 2 has high recombination fraction estimates with linkage group 6 which suggests that these two linkage groups should be joined together. Since linkage group 6 has many more SNPs that linkage group 2, it seems most likely that the segregation type for the SNPs in linkage group 2 were incorrectly inferred to be MI instead of PI (possibly due to sequencing errors and/or low read depth). Lastly, the heatmap suggests that linkage group 5 is actually two separate linkage groups (thus the missing linkage group) and so linkage group 5 needs to be split up into two separate linkage groups. 
+
+Note:
+
+* Setting `interactive=TRUE` for the `$plotLG` function results in an interactive plot being plotted. 
+Interactive plots make interrogating the recombination fraction (or LOD) plot and finding problematic SNPs easier. We have set this to `FALSE` 
+in this tutorial to keep the size of this file small. In your session, try producing the interactive plot.
+* At present, interactive plots generally work on a small number of SNPs (usually no more than 1000), so depending on 
+the size of your linkage groups, you may need to plot each linkage group separately. You can use the `LG` argument to plot specific linkage groups.
+
+
+##### Editing Linkage Groups
+
+There are number of functions in GUSMap for editing linkage groups. Ideally, one should obtain as many linkage groups as the number of chromosomes the species is known to have. However, in practice, the number of linkage groups may be more, or less, than the number of chromosomes depending on the LOD threshold used and whether there is enough linkage between SNPs on the same chromosome to group all the SNPs located on the same chromosome together in the same linkage group. 
+
+For our simulated data, we had four MI linkage groups (one more than the number of chromosomes being 3) and only two PI linkage groups. From the heatmaps above, we see that linkage group 5 appears to be two separate linkage groups and so needs to be split up. The best way to do this is recreating the paternal linkage groups using a higher LOD threshold.
+```{r createLG_pat}
+mySpecies$createLG(parent = "paternal", LODthres = 10, nComp = 10)
+```
+
+Note: the `parent` argument is set to `"paternal"` which means that we are only recreating the PI linkage groups. With a LOD threshold of 10, the number of PI linkage groups becomes four. Again, we examine the heatmap.
+```{r plotLG_pat2}
+mySpecies$plotLG(parent = "both", interactive = F)
+```
+
+So, the second PI linkage group (linkage group 6) with 2 SNPs appears to have some linkage with SNPs in linkage group 5. However, the linkage is only with a few SNPs and has recombination fraction values close to 0.5 with most of the other SNPs, so the linkage between linkage groups 5 and 6 may be spurious. There are two options that should be considered here; to merge linkage groups 5 and 6 or to discard linkage group 6. We will take the latter option and remove linkage group 6. There are two ways of achieving this. One is to remove the entire linkage group.
+```{r removeLG}
+mySpecies$removeLG(LG = 6)
+mySpecies$print(what = "LG-pts")
+```
+
+Alternatively, one could have also remove the SNPs in the linkage group.
+```{r removeSNP, eval=FALSE}
+mySpecies$removeSNP(snps = c(526,527))
+```
+
+Note that the `$removeSNPs` function is more useful for removing SNP(s) from a linkage group if they appear problematic without deleting the entire linkage group. This will be demonstrated later.
+
+The previous heatmaps also suggest that linkage group 2 should be combined with linkage group 7. We can merge these two linkage groups using the `$mergeLG` function.
+```{r mergeLG}
+mySpecies$mergeLG(LG = c(2,7), mergeTo="paternal")
+mySpecies$print(what = "LG-pts")
+```
+
+Since linkage groups 2 and 7 are from different parental lines, the `mergeTo` argument specifies whether the resulting merged linkage group should be considered as PI SNPs (`mergeTo="paternal"`) or MI SNPs (`mergeTo="maternal"`).
+
+**Note:** At this stage there is no undo functionality in GUSMap. So, once you have removed a SNP or linkage group, or merge two linkage groups, you cannot reverse what you have done. However, in the case where you want to undo edits to your linkage group, then the best thing is to recreate the linkage groups using the `$createLG` function and proceed as you were doing before (and hence it helps to save you code in a script).
+
+##### Adding more SNPs to existing linkage groups
+
+Additional MI and PI SNPs (not currently in a linkage group) and the SI SNPs (which are not used in the `$createLG` function) can be added to the linkage groups using the `$addSNPs` function. 
+```{r addSNPs, eval=FALSE}
+mySpecies$addSNPs(LODthres = 10, nComp = 10)
+```
+
+SNPs are added to the existing groups in a similar fashion as in the `$createLG` function. A couple of points to note: 
+
+* The algorithm used in `$addSNPs` is similar to the algorithm used for creating the paternal and maternal linkage groups (see the package documentation via `?$addSNPs` for more details), and so the arguments `LODthres` and `nComp` have the same functionality as in the `$createLG` function.
+* The SI SNPs that are inferred from progeny genetypes when `inferSNPs=TRUE` in the `makeFS` function are only ever added to the analysis using the `$addSNPs`.
+
+##### Adding Both-Informative SNPs
+
+When the pseudo-testcross linkage groups have been tidied up, we can proceed to map the BI SNPs to the linkage groups and merge these linkage groups across the two parental lines. 
+```{r addBIsnps}
+mySpecies$addBIsnps(LODthres = 10, nComp = 10)
+```
+
+The resulting output shows that the PI and MI linkage groups have been merged together to form three complete linkage groups that include BI SNPs. We refer to these linkage groups as the "combined linkage groups". Note: The algorithm used in `$addBIsnps` is similar to the algorithm used for creating the paternal and maternal linkage groups (see the package documentation via `?$addBIsnps` for more details), and so the arguments `LODthres` and `nComp` have the same functionality as in the `$createLG` function. 
+
+At this point, we need to make some important points regarding the linkage groups in an FS object:
+
+* The "pseudo-testcross linkage groups" and the "combined linkage groups" are stored separately in the FS object which means that the combined linkage groups can be recreated from the pseudo-testcross linkage groups at any time, even after major edits to the combined linkage groups.
+* The `$removeSNP`, `$removeLG` and `$mergeLG` function can edit both the "pseudo-testcross linkage groups" and the "combined linkage groups". By default, these functions will edit the combined linkage groups (if they exist) otherwise they will edit the separate linkage groups. Nevertheless, all of these functions have an argument `where` which allows the user to specify which set of linkage groups they want to edit (`where = "LG-pts"` to edit the pseudo-testcross linkage groups and `where = "LG-comb"` to edit the combined linkage groups).
+* Related to the previous point, the `$plotLG` function also has an argument `what` which allows the user to specify which set of linkage groups to plot (`what = "LG-pts"` to plot the pseudo-testcross linkage groups and `what = "LG-comb"` to plot the combined linkage groups).
+
+Once again the combined linkage groups should be examined using heatmaps of the 2-point recombination fraction estimates and edited accordingly if required.
+
+
+### Ordering Linkage Groups
+
+Once we are happy with the combined linkage groups that we have formed, we can proceed to order the SNPs in each linkage group from the set of combined linkage groups. In GUSMap, marker ordering is performed using the multidimensional scaling (MDS) approach as described by @preedy2016tag and is implemented in the `$orderLG` function.
+```{r orderLG, , fig.width=8, fig.height=6}
+mySpecies$orderLG(mapfun = "haldane", weight = "LOD2", ndim = 30) 
+```
+
+The two plots produced by the `$orderLG` function are:
+
+1. The first two dimensions of the components of the MDS.
+2. The heatmap of the 2-point recombination fraction for all SNPs on the linkage group ordered according to the MDS algorithm.
+
+These plots are helpful for examining how well the algorithm has ordered the SNPs. Details of the MDS algorithm are given in @preedy2016tag and information for the arguments `mapfun` and `weight` can be found in the package documentation (The default arguments tend to give the best results).  
+
+```{r help_orderLG, eval=F}
+?`$orderLG`
+```
+
+One other important point is that `$orderLG` function only orders the linakge groups in the set of combined linkage groups created from the `$addBIsnps` function.
+
+At this stage, it is again a good idea to examine the linkage groups using the `$plotLG` function and discard any SNPs which appear to be problematic. Problematic SNPs are SNPs where the recombination fraction values appear to be lower or have a very different pattern than to the SNPs surrounding them. In GUSMap, individual SNPs can be removed from the linkage groups using the `$removeSNP` function. From our analysis, we decided to remove the following SNPs.
+```{r removeSNP_2}
+mySpecies$removeSNP(c(
+  c(253,255,300,316,143,301,340,166,173,201,209,264,312,310,315,336,
+    356,64,500,459,513,449,423,376,451,508,418,228),
+  c(377,405,217,177,436,450,467,28,515,411,229,222,410,230,401,368,
+    375,34,259,164,169,334,283,213,148,288,213),
+  c(112,108,311,37,69,136,46,115,29,126,42,72,26,92,67,71,94))
+)
+```
+
+### Compute Linkage Maps
+
+Now that we have finished ordering and tidying up the combined linkage groups, we proceed to compute the linkage maps using the `$computeMap` function.
+```{r computeMap}
+mySpecies$computeMap(chrom = NULL, nThreads = 2)
+```
+
+The `$computeMap` function has a number of arguments but the main ones are `chrom` which specifies which linkage group to compute 
+linkage maps for and `nThreads` which specifies the number of threads to use in the computation of the likelihood (using OpenMP if available).
+The resulting output gives the overall map distances and sequencing error estimates for each chromosome (in addition to the 
+linkage group information). Like the `$orderLG` function, the `$computeMap` function can only compute maps from the set of combined linkage groups produced from the `$addBIsnps` function. The `rfthres` argument specifies what threshold to use in reporting SNPs associated high recombination fraction values. This helps with determining which SNPs result in really large recombination fraction estimates and so can be removed using the `$removeSNP` function.  
+
+GUSMap have a couple of functions for quickly examining the linkage maps computed. The first function is to plot the linkage maps.
+```{r plotLG}
+mySpecies$plotLM(LG = NULL, fun = "haldane", col=c("cyan","lightblue","blue"))
+```
+
+The arguments for the `$plotLM` function are:
+
+* `LG`: The indices of the linkage groups to be plotted.
+* `fun`: The mapping function to use. Currently only the Haldane, Kosambi and Morgan mapping functions are available.
+* `col`: A vector of colors for the linkage maps.
+
+In addition, we can also examine the order of the SNPs across the linkage groups relative to the original assembly.
+```{r plotSyn, fig.width=7, fig.height=7}
+mySpecies$plotSyn()
+```
+
+From the synteny plot above, we see that linkage group 1 corresponds to chromosome 3, linkage group 2 to chromosome 2 and linkage group 3 to chromosome 1. Furthermore, the plot shows that the linkage mapping analysis has moved the middle section of the chromosome 2 to chromosome 3 (linkage group 1) and that it has inverted the SNP order at the end of chromosome 1 (linkage group 3). 
+
+Finally, one can extract the results of the linkage analysis in GUSMap by writing the results to a file using the `$writeLM` function.
+```{r writeLG, eval=F}
+mySpecies$writeLM(file = "mySpecies")
+```
+
+This is allows users to produce their own custom plots in whatever software they are familiar with. For details of the information given in the file, see the package documentation.
+```{r help_writeLM, eval=F}
+?`$writeLM`
+```
+
+
+# References
+
+

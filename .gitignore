@@ -9,5 +9,4 @@ config.status
 config.log
 src/Makevars
 *.dll
-doc
 Meta
