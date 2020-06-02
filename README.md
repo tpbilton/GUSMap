@@ -28,7 +28,7 @@ There are three different types of mapping populations that are available GUSMap
 
 ### Development:
 
-This package is under continued developement. If you have any suggests for improvement or additional features you like to see, I'd suggest posting a question under the Issues. I'm also happy for people to suggest changes via a pull request provided it fits within the favour of the package.
+This package is under continued development. If you have any suggests for improvement or additional features you like to see, I'd suggest posting a question under the Issues. I'm also happy for people to suggest changes via a pull request provided it fits within the favour of the package.
 
 ### Citation:
 
