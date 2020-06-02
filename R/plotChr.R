@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap)
-# Copyright 2017-2018 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
+# Copyright 2017-2020 Timothy P. Bilton
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,18 +15,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
-#' FS method: Heatmap of 2-point rf and LOD estimates from chromosome order
+#' BC, FS and IC method: Heatmap of 2-point rf and LOD estimates from chromosome order
 #' 
 #' Method for plotting 2-point recombination fraction and LOD score estimates when the SNPs are ordered according to the genomic assembly.
 #'
 #' This function plots the heatmap of the matrix of 2-point recombination fraction estimates (or 2-point LOD scores)
 #' as computed from the \code{\link{$rf_2pt}} function when the SNPs are ordered according to the genomic assembly (as given in the VCF file). 
 #' 
-#' 
-#' Note: 
-#' 
 #' @usage
+#' BCobj$plotChr(parent = "maternal", mat="rf", filename=NULL, chrS=2, lmai=2)
 #' FSobj$plotChr(parent = "maternal", mat="rf", filename=NULL, chrS=2, lmai=2)
+#' ICobj$plotChr(mat="rf", filename=NULL, chrS=2, lmai=2)
 #' 
 #' @param parent Character value specifying whether the SNPs segreagting in the maternal parent should be 
 #' plotted (\code{"maternal"}), or whether  the SNPs segreagting in the paternal parent should be 
@@ -41,7 +40,7 @@
 #' 
 #' @name $plotChr
 #' @author Timothy P. Bilton
-#' @seealso \code{\link{FS}}
+#' @seealso \code{\link{BC}}, \code{\link{FS}}, \code{\link{IC}}
 #' @examples 
 #' ## Simulate some sequencing data
 #' set.seed(6745)

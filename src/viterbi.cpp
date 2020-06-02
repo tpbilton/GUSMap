@@ -1,7 +1,7 @@
 /*
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap)
-# Copyright 2017-2020 Timothy P. Bilton <timothy.bilton@agresearch.co.nz>
+# Copyright 2017-2020 Timothy P. Bilton
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -216,5 +216,91 @@ Rcpp::NumericMatrix viterbi_fs_err(Rcpp::NumericVector rf, Rcpp::NumericVector e
   return states;
 }
   
+// [[Rcpp::export]]
+Rcpp::NumericMatrix viterbi_fs_err_ss(Rcpp::NumericVector rf_p, Rcpp::NumericVector rf_m, Rcpp::NumericVector ep, int nInd, int nSnps,
+                                      Rcpp::IntegerMatrix ref, Rcpp::IntegerMatrix alt, Rcpp::IntegerVector OPGP){
   
+  // Compute the emission matrix
+  Rcpp::NumericMatrix pAA(nInd, nSnps);
+  Rcpp::NumericMatrix pAB(nInd, nSnps);
+  Rcpp::NumericMatrix pBB(nInd, nSnps);
+  int ind, snp, a, b;
+  for(ind = 0; ind < nInd; ind++){
+    for(snp = 0; snp < nSnps; snp++){
+      a = ref(ind, snp);
+      b = alt(ind, snp);
+      pAA(ind, snp) = pow(1-ep[snp], a) * pow(ep[snp], b);
+      pAB(ind, snp) = pow(0.5, a+b);
+      pBB(ind, snp) = pow(1-ep[snp], b) * pow(ep[snp], a); 
+    }
+  }
+  
+  // run the viterbi algorithm
+  int s1, s2, inferState;
+  Rcpp::NumericMatrix eta(4, nSnps);
+  Rcpp::NumericMatrix states(nInd, nSnps);
+  Rcpp::NumericVector etaTemp(4);
+  double tempV, thres = -1e20;
+  //Rcpp::Rcout << " - thres :" << thres << std::endl;
+  for(ind = 0; ind < nInd; ind++){
+    // Compute forward probabilities at snp 1
+    //sum = 0;
+    for(s1 = 0; s1 < 4; s1++){
+      tempV = log(Qentry(OPGP[0], pAA(ind, 0), pAB(ind, 0), pBB(ind, 0), s1+1));
+      if(tempV - thres )
+        eta(s1, 0) = log(0.25) + tempV;
+      else
+        eta(s1, 0) = thres;
+      //if(ind < 2){
+      //  Rcpp::Rcout << "ind :" << ind  << " - eta :" << eta(s1, 0) << std::endl;
+      //  Rcpp::Rcout << "ind :" << ind  << " - log2 :" << tempV << std::endl;
+      //}
+      //sum = sum + alphaDot[s1];
+    }
+    
+    for(snp = 1; snp < nSnps; snp++){
+      // compute the next forward probabilities for snp \ell
+      for(s2 = 0; s2 < 4; s2++){
+        for(s1 = 0; s1 < 4; s1++){
+          etaTemp[s1] = eta(s1, snp - 1) + log(Tmat_ss(s1, s2, rf_p[snp-1], rf_m[snp-1]));
+          if(etaTemp[s1] < thres)
+            etaTemp[s1] = thres;
+          //if(ind < 2){
+          //  Rcpp::Rcout << "snp :" << snp << " - Tmat :" << Tmat(s1, s2, rf[snp-1]) << std::endl;
+          //  Rcpp::Rcout << "snp :" << snp << " - eta :" << eta(s1, snp) << std::endl;
+          //}
+        }
+        eta(s2, snp) = etaTemp[which_max(etaTemp)] + log(Qentry(OPGP[snp], pAA(ind, snp), pAB(ind, snp), pBB(ind, snp), s2+1));
+        if(eta(s2, snp) < thres)
+          eta(s2, snp) = thres;
+        //if(ind < 2){
+        //  Rcpp::Rcout << "snp :" << snp << " - eta :" << eta(s2, snp) << std::endl;
+        //}
+      }
+    }
+    
+    for(s1 = 0; s1 < 4; s1++){
+      etaTemp[s1] = eta(s1, nSnps - 1);
+      //Rcpp::Rcout << "snp :" << snp << " - log(eta) :" << log(eta(s1, nSnps - 1)) << std::endl;
+      if(etaTemp[s1] < thres)
+        etaTemp[s1] = thres;
+    }
+    
+    inferState = which_max(etaTemp);
+    //Rcpp::Rcout << "snp :" << snp << " - etaTemp :" << which_max(etaTemp) << std::endl;
+    states(ind, nSnps - 1) = inferState;
+    // Now compute the most likely states in reverse
+    for(snp = nSnps - 2; snp > -1; snp--){
+      for(s1 = 0; s1 < 4; s1++){
+        etaTemp[s1] = eta(s1, snp) + log(Tmat_ss(s1, inferState, rf_p[snp-1], rf_m[snp-1]));
+        if(etaTemp[s1] < thres)
+          etaTemp[s1] = thres;
+      }
+      inferState = which_max(etaTemp);
+      states(ind, snp) = inferState;
+    }
+  }
+  return states;
+}
+
   

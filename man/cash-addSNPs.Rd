@@ -2,7 +2,7 @@
 % Please edit documentation in R/addSNPs.R
 \name{$addSNPs}
 \alias{$addSNPs}
-\title{BC and FS method: Add MI, PI and SI SNPs to an existing}
+\title{BC and FS method: Add MI, PI and SI SNPs to existing linkage groups}
 \usage{
 BCobj$addSNPs(LODthres = 10, nComp = 30)
 FSobj$addSNPs(LODthres = 10, nComp = 30)
@@ -14,8 +14,8 @@ FSobj$addSNPs(LODthres = 10, nComp = 30)
 with the unmapped SNP.}
 }
 \description{
-Method for adding maternal-informative (MI), paternal-informative (PI) and semi-informative (SI) SNPS 
-to the paternal and maternal linkage groups.
+Method for adding maternal-informative (MI), paternal-informative (PI) and semi-informative (SI) SNPs 
+to the paternal and maternal (pseudo-testcross) linkage groups.
 }
 \details{
 Each MI, PI or SI SNP is mapped to the maternal and paternal linkage groups using the following
@@ -45,7 +45,7 @@ F1data$createLG()
 F1data$addSNPs()
 }
 \seealso{
-\code{\link{FS}}, \code{\link{BC}}
+\code{\link{BC}}, \code{\link{FS}}
 }
 \author{
 Timothy P. Bilton

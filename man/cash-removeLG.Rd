@@ -2,10 +2,11 @@
 % Please edit documentation in R/removeLG.R
 \name{$removeLG}
 \alias{$removeLG}
-\title{BC and FS method: Remove Linkage Groups}
+\title{BC, FS and IC method: Remove linkage groups}
 \usage{
 BCobj$removeLG(LG, where = NULL)
 FSobj$removeLG(LG, where = NULL)
+ICobj$removeLG(LG)
 }
 \arguments{
 \item{LG}{An integer vector specifying the number of the linkage groups to be removed.}
@@ -16,12 +17,12 @@ added (\code{BC} objects only) and \code{"LG-comb"} is for the combined linkage 
 }
 \description{
 Method for removing linkage group(s) from the list of linkage groups contained
-in a BC or FS object.
+in a BC, FS or IC object.
 }
 \details{
-In a linkage analysis in GUSMap, there may be need to remove linkage groups from the 
+For a linkage analysis in GUSMap, there may be the need to remove linkage groups from the 
 list of created linkage groups. The indices of the linkage groups corresponds to the number
-given in the output for the BC or FS object.
+given in the output for the BC, FS or IC object.
 
 \code{BC} object: When \code{where = "LG-pts"}, linkage groups will be removed from the set of pseudo-testcross 
 linkage groups created via the \code{\link{$createLG}} function. On the other hand, if 
@@ -51,7 +52,7 @@ F1data$createLG()
 F1data$removeLG(LG = c(2,4))
 }
 \seealso{
-\code{\link{BC}}, \code{\link{FS}}
+\code{\link{BC}}, \code{\link{FS}}, \code{\link{IC}}
 }
 \author{
 Timothy P. Bilton

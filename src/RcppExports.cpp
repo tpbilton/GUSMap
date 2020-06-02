@@ -22,6 +22,24 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// viterbi_fs_err_ss
+Rcpp::NumericMatrix viterbi_fs_err_ss(Rcpp::NumericVector rf_p, Rcpp::NumericVector rf_m, Rcpp::NumericVector ep, int nInd, int nSnps, Rcpp::IntegerMatrix ref, Rcpp::IntegerMatrix alt, Rcpp::IntegerVector OPGP);
+RcppExport SEXP _GUSMap_viterbi_fs_err_ss(SEXP rf_pSEXP, SEXP rf_mSEXP, SEXP epSEXP, SEXP nIndSEXP, SEXP nSnpsSEXP, SEXP refSEXP, SEXP altSEXP, SEXP OPGPSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type rf_p(rf_pSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type rf_m(rf_mSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type ep(epSEXP);
+    Rcpp::traits::input_parameter< int >::type nInd(nIndSEXP);
+    Rcpp::traits::input_parameter< int >::type nSnps(nSnpsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerMatrix >::type ref(refSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerMatrix >::type alt(altSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerVector >::type OPGP(OPGPSEXP);
+    rcpp_result_gen = Rcpp::wrap(viterbi_fs_err_ss(rf_p, rf_m, ep, nInd, nSnps, ref, alt, OPGP));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 RcppExport SEXP EM_HMM(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP EM_HMM_multierr(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
@@ -37,6 +55,7 @@ RcppExport SEXP score_fs_ss_scaled_multi_err_c(SEXP, SEXP, SEXP, SEXP, SEXP, SEX
 
 static const R_CallMethodDef CallEntries[] = {
     {"_GUSMap_viterbi_fs_err", (DL_FUNC) &_GUSMap_viterbi_fs_err, 7},
+    {"_GUSMap_viterbi_fs_err_ss", (DL_FUNC) &_GUSMap_viterbi_fs_err_ss, 8},
     {"EM_HMM",                         (DL_FUNC) &EM_HMM,                         13},
     {"EM_HMM_multierr",                (DL_FUNC) &EM_HMM_multierr,                13},
     {"EM_HMM_UP",                      (DL_FUNC) &EM_HMM_UP,                      12},

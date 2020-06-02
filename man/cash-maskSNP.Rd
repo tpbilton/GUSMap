@@ -3,19 +3,21 @@
 \name{$maskSNP}
 \alias{$maskSNP}
 \alias{$unmaskSNP}
-\title{BC and FS method: Mask and unmask SNPs}
+\title{BC, FS and IC method: Mask and unmask SNPs}
 \usage{
-BC$obj$maskSNP(snps)
-FS$obj$maskSNP(snps)
+BCobj$maskSNP(snps)
+FSobj$maskSNP(snps)
+ICobj$maskSNP(snps)
 
-BC$obj$unmaskSNP(snps)
-FS$obj$unmaskSNP(snps)
+BCobj$unmaskSNP(snps)
+FSobj$unmaskSNP(snps)
+ICobj$unmaskSNP(snps)
 }
 \arguments{
 \item{snps}{An integer vector giving the indices of the SNP(s) in the dataset.}
 }
 \description{
-Method for masking and unmasking SNPs in an FS object.
+Method for masking and unmasking SNPs in an BC, FS or IC object.
 }
 \details{
 In the linkage mapping process, some SNPs are often probmatic and there 
@@ -43,7 +45,7 @@ F1data$unmaskSNP(c(5,8))
 
 }
 \seealso{
-\code{\link{BC}}, \code{\link{FS}}
+\code{\link{BC}}, \code{\link{FS}}, \code{\link{IC}}
 }
 \author{
 Timothy P. Bilton

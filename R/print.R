@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap)
-# Copyright 2017-2018 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
+# Copyright 2017-2020 Timothy P. Bilton
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,11 +15,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
-#' FS method: Print summary information
+#' BC, FS and IC method: Print summary information
 #' 
-#' Method for printing summary information of an FS object
+#' Method for printing summary information of an BC, FS or IC object
 #' 
 #' There are four types of information availabe to be printed for an object (as specified by the \code{what} argument).
+#' 
+#' \code{BC} object: 
+#' \describe{
+#' \item{\code{"data"}}{Summary information of the data as process by the \code{\link{makeBC}} function.}
+#' \item{\code{"LG-pts"}}{Summary information of the pesudo-testcross linkage groups produced by the \code{\link{$createLG}} function.}
+#' \item{\code{"LG-bi"}}{Summary information of the combined linkage groups produced by either the \code{\link{$addBIsnps}} or \code{\link{$orderLG}} functions.}
+#' \item{\code{"map"}}{Summary information of the linkage maps produced by the \code{\link{$computeMap}} function.}
+#' }
+#' 
+#' \code{FS} object:
 #' \describe{
 #' \item{\code{"data"}}{Summary information of the data as process by the \code{\link{makeFS}} function.}
 #' \item{\code{"LG-pts"}}{Summary information of the pesudo-testcross linkage groups produced by the \code{\link{$createLG}} function.}
@@ -27,15 +37,24 @@
 #' \item{\code{"map"}}{Summary information of the linkage maps produced by the \code{\link{$computeMap}} function.}
 #' }
 #' 
+#' \code{IC} object:
+#' \describe{
+#' \item{\code{"data"}}{Summary information of the data as process by the \code{\link{makeFS}} function.}
+#' \item{\code{"LG"}}{Summary information of the pesudo-testcross linkage groups produced by the \code{\link{$createLG}} function.}
+#' \item{\code{"map"}}{Summary information of the linkage maps produced by the \code{\link{$computeMap}} function.}
+#' }
+#' 
 #' @usage
+#' BCobj$print(what = NULL, ...)
 #' FSobj$print(what = NULL, ...)
+#' ICobj$print(what = NULL, ...)
 #' 
 #' @param what Character vector giving the type of information to be printed. IF \code{NULL}, then all the 
 #' information is printed.
 #' 
 #' @name $print
 #' @author Timothy P. Bilton
-#' @seealso \code{\link{FS}}
+#' @seealso \code{\link{BC}}, \code{\link{FS}}, \code{\link{IC}}
 #' @examples 
 #' ## simulate some sequencing data
 #' set.seed(6745)

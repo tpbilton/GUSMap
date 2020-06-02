@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap)
-# Copyright 2017-2020 Timothy P. Bilton <timothy.bilton@agresearch.co.nz>
+# Copyright 2017-2020 Timothy P. Bilton
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,13 +20,13 @@
 #' Class for storing BC data and associated functions for analysis of backcross family populations.
 #' 
 #' @usage
-#' ## Create FS object
+#' ## Create BC object
 #' BCobj <- makeBC(RAobj, pedfile, family=NULL, inferSNPs=FALSE,
 #'                 filter=list(MAF=0.05, MISS=0.2, BIN=100, DEPTH=5, PVALUE=0.01, MAXDEPTH=500))
 #'
 #' ## Functions (Methods) of an BC object
-#' BCobj$addBIsnps(parent = "both", LODthres = 10, nComp = 10)
-#' BCobj$addSNPs(LODthres = 10, nComp = 10)
+#' BCobj$addBIsnps(LODthres = 10, nComp = 10)
+#' BCobj$s(LODthres = 10, nComp = 10)
 #' BCobj$computeMap(chrom = NULL, init_r = 0.01, ep = 0.001, method = NULL, err = T, mapped = T, nThreads = 1, rfthres = 0.1)
 #' BCobj$createLG(parent = "both", LODthres = 10, nComp = 10, reset = FALSE)
 #' BCobj$maskSNP(snps)
@@ -41,7 +41,7 @@
 #' BCobj$removeSNP(snps, where = NULL)
 #' BCobj$rf_2pt(nClust = 2, err = FALSE)
 #' BCobj$unmaskSNP(snps)
-#' BCobj$writeLM(file, direct = "./", LG = NULL, what = NULL)
+#' BCobj$writeLM(file, direct = "./", LG = NULL, what = NULL, inferGeno = TRUE)
 #' 
 #' @details
 #' An BC object is created from the \code{\link{makeBC}} function and contains RA data,
@@ -692,7 +692,7 @@ BC <- R6::R6Class("BC",
                     graphics::text(MDS$conf, labels=ind)
                     graphics::lines(pcurve)
                     graphics::image(private$rf[ind,ind][pcurve$ord,pcurve$ord], axes=F, 
-                                    col=grDevices::colorRampPalette(c("white", "yellow", "orange", "red"))(200))
+                                    col=grDevices::heat.colors(100))
                     if(is.null(filename)) graphics::par(temp_par)
                     else grDevices::dev.off()
                     ## Set the new order
@@ -776,7 +776,7 @@ BC <- R6::R6Class("BC",
                       stop("invalid argument 'what'")
                     ## Work out if we want a subset of the LGs
                     if(!is.null(LG)){
-                      if(isValue(LG, type="pos_integer", minv=min(LGnum), maxv=max(LGnum)))
+                      if(GUSbase::checkVector(LG, type="pos_integer", minv=min(LGnum), maxv=max(LGnum)))
                         stop(paste0("At least one linkage group number does not exist. Indices must be between ",
                                     min(LGnum)," and ",max(LGnum)," for ",parent," LGs\n"))
                       LGlist <- LGlist[which(LG %in% LGnum)]
@@ -1279,8 +1279,8 @@ BC <- R6::R6Class("BC",
                       if(inferGeno){
                         nInd = unlist(private$nInd)
                         OPGPs = private$para$OPGP[LG]
-                        matgroups <- which(unlist(lapply(OPGPs[LG], function(x) all(x %in% c(1:4,9:12)))))
-                        patgroups <- which(unlist(lapply(OPGPs[LG], function(x) all(x %in% c(1:8)))))
+                        #matgroups <- which(unlist(lapply(OPGPs[LG], function(x) all(x %in% c(1:4,9:12)))))
+                        #patgroups <- which(unlist(lapply(OPGPs[LG], function(x) all(x %in% c(1:8)))))
                         geno = list()
                         for(lg in 1:length(LG)){
                           snps = LGlist[[lg]]
@@ -1322,7 +1322,7 @@ BC <- R6::R6Class("BC",
                                 rep(0,length(unlist(unlist(LGlist[patgroups])))))
                       rf_p <- c(rep(0,length(unlist(unlist(LGlist[matgroups])))),
                                 unlist(lapply(private$para$rf[patgroups], function(y) {if(!is.na(y[1])) return(format(round(cumsum(c(0,y)),6),digits=6,scientific=F))} )))
-                      ep <- format(rep(round(unlist(private$para$ep[LG]),8), unlist(lapply(LGlist, length))),digits=8,scientific=F)
+                      ep <- format(round(unlist(sapply(1:length(LG), function(x) rep(private$para$ep[[x]], length.out=length(LGlist[[x]])))),8),digits=8,scientific=F)
                       ## add geno information if required
                       if(inferGeno){
                         temp = do.call("rbind", geno)

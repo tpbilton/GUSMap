@@ -8,10 +8,10 @@
 #This is free software, and you are welcome to redistribute it
 #under certain conditions.
 #------------------------------------------------------------------------
-"Welcome to GUSMap v2.1.1"
+"Welcome to GUSMap v2.2.0"
      )}
 }
 
-#.onUnload <- function (libpath) {
-#  library.dynam.unload("GUSMap", libpath)
-#}
+.onUnload <- function (libpath) {
+  library.dynam.unload("GUSMap", libpath)
+}

@@ -3,9 +3,11 @@
 \name{$rf_2pt}
 \alias{$rf_2pt}
 \alias{comb}
-\title{FS method: Compute 2-point recombination fraction estimates and LOD scores}
+\title{BC, FS, and IC  method: Compute 2-point recombination fraction estimates and LOD scores}
 \usage{
+BCobj$rf_2pt(nClust = 2, err = FALSE)
 FSobj$rf_2pt(nClust = 2, err = FALSE)
+ICobj$rf_2pt(nClust = 2, err = FALSE)
 }
 \arguments{
 \item{nClust}{An integer value for the number of cores to use in the parallelization of 
@@ -32,8 +34,8 @@ function. The argument \code{nClust} specifies the number of cores to use in the
 Note: It is important that the number of cores you specify is not more than what is available on 
 your comupter (otherwise bad things can happen!).
 
-Currently, only 2-point recombination fractions for a single full-sib family can be computed. However,
-there are plans to extend this function to multiple full-sib families in the future.
+Currently, only 2-point recombination fractions for a single population/family can be computed. However,
+there are plans to extend this function to multiple families in the future.
  
 Note: This function can take a while, espically when there are a large number of SNPs.
 }
@@ -50,7 +52,7 @@ F1data$rf_2pt(nClust=1)
 \insertRef{bilton2018genetics1}{GUSMap}
 }
 \seealso{
-\code{\link{FS}}
+\code{\link{BC}}, \code{\link{FS}}, \code{\link{IC}}
 }
 \author{
 Timothy P. Bilton

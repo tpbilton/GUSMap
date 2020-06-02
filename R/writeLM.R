@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap)
-# Copyright 2017-2018 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
+# Copyright 2017-2020 Timothy P. Bilton
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,19 +15,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
-#' FS method: Write linkage groups/maps to file
+#' BC, FS and IC method: Write linkage groups/maps to file
 #'
 #' Method for writing results from a linkage analysis in GUSMap to a file.
 #' 
-#' The linkage groups written to file are the combined linkage groups produced by \code{\link{$addBIsnps}} and
-#' ordered using \code{\link{$orderLG}}. If linkage maps are also computed using \code{\link{$computeMap}}, then 
-#' information regarding the parameters estimates for the maps are also returned.
-#' 
+#' Linkage groups and linkage maps (if computed) are written to a file. 
 #' When \code{what = NULL}, the linkage mapping results computed using the \code{\link{$computeMap}} function are returned
-#' if they are available, otherwise the combined linkage groups information is returned.
+#' if they are available, otherwise the linkage groups with BI SNPs information is returned. 
+#' 
+#' If \code{inferGeno=TRUE}, then the maternal and paternal haplotypes of the progeny in the population are returned. These haplotypes
+#' are computed using the Viterbi algorithm with the parameters from the final map.  
 #' 
 #' @usage
-#' FSobj$writeLM(file, direct = "./", LG = NULL, what = NULL)
+#' BCobj$writeLM(file, direct = "./", LG = NULL, what = NULL, inferGeno = TRUE)
+#' FSobj$writeLM(file, direct = "./", LG = NULL, what = NULL, inferGeno = TRUE)
+#' ICobj$writeLM(file, direct = "./", LG = NULL, what = NULL, inferGeno = TRUE)
 #' 
 #' @name $writeLM
 #' @param file Character value giving the name of the file to write to.
@@ -36,6 +38,7 @@
 #' linkage groups are returned.
 #' @param what Character vector specifying whether the combined linkage groups \code{"LG-comb"} are to be 
 #' returned or the linkage mapping results \code{"map"}.
+#' @param inferGeno Logical value indicating whether the paternal and maternal haplotypes of the progeny is to be returned.
 #' @return 
 #' The function returns a csv file with the rows representing the SNPs and the columns containing the linkage group and linkage map 
 #' information.
@@ -57,10 +60,16 @@
 #' \item{CALLRATE}{The proportion of individuals in which there is at least one read across the SNP.}
 #' }
 #' If no linkage maps have been computed (using the \code{\link{$computeMap}}), then the
-#' columns RF_PAT, RF_MAT and ERR are not returned.
+#' columns RF_PAT, RF_MAT and ERR are not returned. 
+#' 
+#' If \code{inferGeno=TRUE}, then extra columns are appended to the file containing the paternal and maternal haplotype of the progeny. Each additional column
+#' is titled "MAT_[sampleID]" or "PAT_[sampleID]", where "MAT_[sampleID]" denotes the maternal haplotype in individual
+#' [sampleID] and "PAT_[sampleID]" is the paternal haplotype in individual [sampleID], where [sampleID] is replaced with the 
+#' sampleID of the particular individual. The entries of these extra columns are either \code{A} for the reference allele or \code{B} for the 
+#' alternate allele. 
 #' 
 #' @author Timothy P. Bilton
-#' @seealso \code{\link{FS}}
+#' @seealso \code{\link{BC}}, \code{\link{FS}}, \code{\link{IC}}
 #' @examples
 #' ## Simulate some sequencing data
 #' set.seed(6745)

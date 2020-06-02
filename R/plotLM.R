@@ -15,17 +15,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
-#' FS method: Plot linkage maps
+#' BC, FS and IC method: Plot linkage maps
 #' 
 #' Method for plotting linkage maps in GUSMap
 #' 
-#' Function produces linkage maps of the combined linkage groups produced from the \code{\link{$computeMap}}
-#' function.
+#' Function displays linkage maps computed using the \code{\link{$computeMap}} function.
 #' 
 #' For a list of mapping functions available, see \code{\link{mfun}}. 
 #'  
 #' @usage
+#' BCobj$plotLM(LG = NULL, fun="haldane", col="black")
 #' FSobj$plotLM(LG = NULL, fun="haldane", col="black")
+#' ICobj$plotLM(LG = NULL, fun="haldane", col="black")
 #' 
 #' @param LG An integer vector specifying the indices of the linkage groups for which their linkage maps are to be plotted. 
 #' @param fun Character value giving the mapping function to use which is passed to \code{\link{mfun}}.
@@ -33,7 +34,7 @@
 #' 
 #' @name $plotLM
 #' @author Timothy P. Bilton
-#' @seealso \code{\link{FS}}, \code{\link{mfun}}
+#' @seealso \code{\link{BC}}, \code{\link{FS}}, \code{\link{IC}}, \code{\link{mfun}}
 #' @examples 
 #' ## Simulate some sequencing data
 #' set.seed(6745)

@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap)
-# Copyright 2017-2020 Timothy P. Bilton <timothy.bilton@agresearch.co.nz>
+# Copyright 2017-2020 Timothy P. Bilton
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,13 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
-#' Make a intercross (F2) population
+#' Make a intercross (IC) population
 #'
 #' Create an IC object from an RA object, perform standard filtering and compute statistics specific to intercross populations.
 #' 
 #' This function converts an RA object into an IC (intercross) object. An IC object is a R6 type object 
-#' that contains RA data, various other statistics computed and functions (methods) for analyzing
-#' the intercross population and for performing linkage mapping. The statistics computed and data filtering are 
+#' that contains RA data, various other statistics computed and functions (methods) for analyzing and performing 
+#' linkage mapping for intercross population. The statistics computed and data filtering are 
 #' specific to intercross populations and sequencing data.
 #' 
 #' The filtering criteria currently implemented are:
@@ -43,28 +43,29 @@
 #' The segregation test performed for the \code{PVALUE} filter is described in the supplementary methods 
 #' of the publication by \insertCite{bilton2018genetics1;textual}{GUSMap} (Section 4 of File S1).
 #' 
-#' The pedigree file must be a csv file containing the five columns:
-#' \itemize{
-#' \item SampleID: A unique character string of the sample ID. These correspond to those found in the VCF file
-#' \item IndividualID: A character giving the ID number of the individual for which the sample corresponds to.
-#' Note that some samples can be from the same individual. 
-#' \item Mother: The ID of the mother as given in the IndividualID. Note, if the mother is unknown then this should be left blank.
-#' \item Father: The ID of the father as given in the IndividualID. Note, if the father is unknown then this should be left blank.
-#' \item Family: The name of the Family for a group of progeny with the same parents. Note that this is not necessary (it works all the full-sib families) but if
-#' given must be the same for all the progeny.
-#' }
-#' Grandparents can also be supplied but are only used to infer parental genotypes 
-#' when the associated read depth is greater than or equal the threshold \code{DEPTH}.
-#' 
-#' The \code{family} argument allows the user to specify the family to be used in the creation of
-#' the full-sib population. Note that this argument using the "Family" column in the pedigree file and
-#' so pedigree file needs to be set-up correctly.
+# The pedigree file must be a csv file containing the five columns:
+# \itemize{
+# \item SampleID: A unique character string of the sample ID. These correspond to those found in the VCF file
+# \item IndividualID: A character giving the ID number of the individual for which the sample corresponds to.
+# Note that some samples can be from the same individual.
+# \item Mother: The ID of the mother as given in the IndividualID. Note, if the mother is unknown then this should be left blank.
+# \item Father: The ID of the father as given in the IndividualID. Note, if the father is unknown then this should be left blank.
+# \item Family: The name of the Family for a group of progeny with the same parents. Note that this is not necessary (it works all the full-sib families) but if
+# given must be the same for all the progeny.
+# }
+# Grandparents can also be supplied but are only used to infer parental genotypes
+# when the associated read depth is greater than or equal the threshold \code{DEPTH}.
+# 
+# The \code{family} argument allows the user to specify the family to be used in the creation of
+# the full-sib population. Note that this argument using the "Family" column in the pedigree file and
+# so pedigree file needs to be set-up correctly.
 #' 
 #' Note: Only a single intercross family can be processed at present. There are future plans to extend this out to include
 #' multiple families.
 #' 
 #' @param RAobj Object of class RA created via the \code{\link[GUSbase]{readRA}} function.
-#' @param pedfile Character string giving the file name (relative to the current directory) of the pedigree file.
+#' @param samID Character vector of the sampleIDs corresponding to the individuals in the intercross population. If \code{NULL}, 
+#' then it is assumed that all individuals in the dataset belong to the intercross population.
 #' @param family Vector of character strings giving the families to retain in the IC object. This allows a pedigree file with more than one family to be supplied.
 #' @param filter Named list of thresholds for various filtering criteria.
 #' See below for details.
@@ -82,13 +83,16 @@
 #' ## read in the RA data
 #' mkdata <- readRA(rafile)
 #' 
+#' ## Extract IDs that correspond to individuals in the IC population
+#' progeny = RAdata$extractVar("indID")$indID[-c(1:4)]
+#' 
 #' ## Create the IC population
-#' makeIC(mkdata, pedfile=vcffile$ped)
+#' makeIC(mkdata, samID=progeny)
 #' @references
 #' \insertRef{bilton2018genetics1}{GUSMap}
 #' @export
 
-### Make a full-sib family population
+### Make a intercross population
 makeIC <- function(RAobj, samID=NULL,
                    filter=list(MAF=0.05, MISS=0.2, BIN=100, DEPTH=5, PVALUE=0.01, MAXDEPTH=500)){
   #inferSNPs = FALSE, perInfFam=1){

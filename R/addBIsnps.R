@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap)
-# Copyright 2017-2020 Timothy P. Bilton <timothy.biltn@agresearch.co.nz>
+# Copyright 2017-2020 Timothy P. Bilton
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
-#' FS method: Add BI SNPs to existing linkage groups
+#' BC and FS method: Add BI SNPs to existing linkage groups
 #' 
 #' Method for adding both-informative (BI) SNPs to paternal and maternal linkage groups
 #' and to combine maternal and paternal linkage groups.
@@ -32,6 +32,18 @@
 #'   \item All the other average LOD scores are less than the LOD threshold.
 #'   }
 #' }
+#' The performance of the linkage group algorithm depends on the value of \code{LODthres} and \code{nComp}. The user is
+#' advised to experiment with different values and examine the matrix of recombination fractions (using the \code{\link{$plotLG}}
+#' function).
+#' 
+#' \code{BC} object:
+#' Each BI SNP is mapped to a MI linkage group and then independently to a PI linkage group using the above algorithm. 
+#' The linkage groups produced from this function are referred to as the "pseudo-testcross linkage groups with BI SNPs" 
+#' and are stored separately to the "pseudo-testcross linkage groups" produced by \code{\link{$createLG}} function. This means that 
+#' pseudo-testcross linkage groups with BI SNPs can be produced at any time from the pseudo-testcross linkage groups, even after major 
+#' edits to the pseudo-testcross linkage groups with BI SNPs have been made.
+#' 
+#' \code{FS} object: 
 #' Each BI SNP is mapped to a MI linkage group and then independently to a PI linkage group using the above algorithm. The 
 #' MI and PI linkage groups are then merged together using the following algorithm:
 #' \enumerate{
@@ -45,16 +57,13 @@
 #' in common (provided there are any).
 #' \item Contiune step 4 until all linkage groups have been merged or until no more linkage groups can be merged.
 #' }
-#' The performance of the linkage group algorithm depends on the value of \code{LODthres} and \code{nComp}. The user is
-#' advised to experiment with different values and examine the matrix of recombination fractions (using the \code{\link{$plotLG}}
-#' function). 
-#' 
-#' Note: The linkage groups produced from this function are referred to as the "combined linkage groups" and are stored separately
+#' The linkage groups produced are referred to as the "combined linkage groups" and are stored separately
 #' to the "pseudo-testcross linkage groups" produced by \code{\link{$createLG}} function. This means that combined linkage groups
-#' can produced at any time from the pseudo-testcross linkage groups, even after major edits to the combined linkage groups
+#' can be produced at any time from the pseudo-testcross linkage groups, even after major edits to the combined linkage groups
 #' have been made.
 #' 
 #' @usage
+#' BCobj$addBIsnps(LODthres = 10, nComp = 30)
 #' FSobj$addBIsnps(LODthres = 10, nComp = 30)
 #' 
 #' @param LODthres A positive numeric value specifying the LOD threshold used to add SNPs to the linkage groups.
@@ -63,7 +72,7 @@
 #' 
 #' @author Timothy P. Bilton
 #' @name $addBIsnps
-#' @seealso \code{\link{FS}}
+#' @seealso \code{\link{BC}}, \code{\link{FS}}
 #' @examples 
 #' ## Simulate some sequencing data
 #' set.seed(6745)

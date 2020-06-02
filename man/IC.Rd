@@ -5,25 +5,25 @@
 \title{IC object}
 \usage{
 ## Create IC object
-ICobj <- makeFS(RAobj, pedfile, family=NULL, inferSNPs = FALSE,
+ICobj <- makeIC(RAobj, samID=NULL,
                 filter=list(MAF=0.05, MISS=0.2, BIN=100, DEPTH=5, PVALUE=0.01, MAXDEPTH=500))
 
-## Functions (Methods) of an FS object
-ICobj$computeMap(chrom=NULL, init_r=0.01, ep=0.001, method=NULL, err=T, mapped=T, nThreads=1)
+## Functions (Methods) of an IC object
+ICobj$computeMap(chrom = NULL, init_r = 0.01, ep = 0.001, method = "EM", err = T, mapped = T, nThreads = 1)
 ICobj$createLG(LODthres = 10, nComp = 10)
 ICobj$maskSNP(snps)
 ICobj$mergeLG(LG)
-ICobj$orderLG(chrom = NULL, mapfun = "haldane", weight="LOD2", ndim=30, spar = NULL)
-ICobj$plotChr(mat="rf", filename=NULL, chrS=2, lmai=2)
-ICobj$plotLG(LG=NULL, mat="rf", filename=NULL, interactive=TRUE)
-ICobj$plotLM(LG = NULL, fun="haldane", col="black")
+ICobj$orderLG(chrom = NULL, mapfun = "haldane", weight = "LOD2", ndim = 30, spar = NULL)
+ICobj$plotChr(mat = "rf", filename = NULL, chrS = 2, lmai = 2)
+ICobj$plotLG(LG = NULL, mat = "rf", filename = NULL, interactive = TRUE)
+ICobj$plotLM(LG = NULL, fun = "haldane", col = "black")
 ICobj$plotSyn()
 ICobj$print(what = NULL, ...)
-ICobj$removeLG(LG, where = NULL)
-ICobj$removeSNP(snps, where = NULL)
+ICobj$removeLG(LG)
+ICobj$removeSNP(snps)
 ICobj$rf_2pt(nClust = 2, err=FALSE)
 ICobj$unmaskSNP(snps)
-ICobj$writeLM(file, direct = "./", LG = NULL, what = NULL)
+ICobj$writeLM(file, direct = "./", LG = NULL, what = NULL, inferGeno = TRUE)
 }
 \description{
 Class for storing RA data and associated functions for analysis of intercross (F2) populations.
@@ -174,7 +174,7 @@ Timothy P. Bilton
 \if{latex}{\out{\hypertarget{method-createLG}{}}}
 \subsection{Method \code{createLG()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{IC$createLG(LODthres = 10, nComp = 10)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{IC$createLG(LODthres = 10, nComp = 10, reset = FALSE)}\if{html}{\out{</div>}}
 }
 
 }
@@ -239,13 +239,14 @@ Timothy P. Bilton
   chrom = NULL,
   init_r = 0.001,
   ep = 0.001,
-  method = "optim",
-  sexSpec = FALSE,
+  method = "EM",
   err = TRUE,
   multiErr = FALSE,
   mapped = TRUE,
   nThreads = 1,
-  inferOPGP = FALSE
+  inferOPGP = TRUE,
+  rfthres = 0.1,
+  ...
 )}\if{html}{\out{</div>}}
 }
 

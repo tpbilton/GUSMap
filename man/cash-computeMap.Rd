@@ -3,10 +3,14 @@
 \name{$computeMap}
 \alias{$computeMap}
 \alias{rf_est_FS}
-\title{FS method: Compute ordered linkage maps}
+\title{BC, FS and IC method: Compute ordered linkage maps}
 \usage{
-FSobj$computeMap(chrom=NULL, init_r=0.01, ep=0.001, method="optim", sexSpec=FALSE, 
-                    err=TRUE, mapped=TRUE, nThreads=1)
+BCobj$computeMap(chrom = NULL, init_r = 0.01, ep = 0.001, method = NULL, err = TRUE,
+                 multiErr = FALSE, mapped = TRUE, nThreads = 1, inferOPGP = TRUE, rfthres = 0.1)
+FSobj$computeMap(chrom = NULL, init_r = 0.01, ep = 0.001, method = NULL, sexSpec = FALSE, err = TRUE,
+                 multiErr = FALSE, mapped = TRUE, nThreads = 1, inferOPGP = TRUE, rfthres = 0.1)
+ICobj$computeMap(chrom = NULL, init_r = 0.01, ep = 0.001, method = "EM", err = TRUE, 
+                 multiErr = FALSE, mapped = TRUE, nThreads = 1, inferOPGP = TRUE, rfthres = 0.1)
 }
 \arguments{
 \item{init_r}{A numeric value giving the initial values for the recombination fractions. Each 
@@ -16,6 +20,9 @@ recombination fraction parameter is set to the same initial value.}
 
 \item{sexSpec}{Logical value. If \code{TRUE}, sex-specific recombination fractions are
 are estimated.}
+
+\item{multiErr}{Locical value. If \code{TRUE}, a separate sequencing error rate is used for each SNP, otherwise a common error rate is 
+used for each SNP.}
 
 \item{method}{A character string specifying whether optimization should be performed using
 direct maximization (\code{optim}) or via the Expectation-Maximum (EM) algorithm (\code{EM}).}
@@ -30,6 +37,12 @@ sequenicng error parameter is fixed to the value of the \code{ep} argument.}
 \item{mapped}{Locial value. If \code{TRUE}, the maps are computed using the marker order given 
 in the combined linkage groups. Otherwise, the maps are computed using the original marker order  
 given by the genomic assembly.}
+
+\item{inferOPGP}{Logical value. If \code{inferOPGP=TRUE} then the OPGPs will always be inferred, otherwise the OPGPs
+will only be inferred if required.}
+
+\item{rfthres}{Numeric value. Print output highlighting SNP pairs with high recombination fraction estimates.
+Helpfully for identifying potentially probmatic SNPs.}
 }
 \description{
 Method for inferring parental phase (e.g., ordered parental genotype pair (OPGP)) and
@@ -41,7 +54,8 @@ estimates adjacent recombination fractions using the hidden Markov model (HMM) a
 described in \insertCite{bilton2018genetics1;textual}{GUSMap}. 
 
 The optimization of the likelihood for the HMM is performed using either the Expectation-Maximumization (EM) algorithm
-(\code{method="EM"}) or using direct numeric optimization via the \code{\link{optim}} function (\code{method="optim"}).
+(\code{method="EM"}), direct numeric optimization via the \code{\link{optim}} function (\code{method="optim"}), or using
+20 iterations of the EM algorithm followed by optimization via direct numeric optimization (\code{method=NULL}).
 The likelihood computations (and computation of derivatives if required) are scaled using 
 forward and backward recursion to avoid overflow issues and are performed in C. These computations 
 are also parallelization via the OpenMP package, where the argument \code{nThreads} specifies
@@ -75,7 +89,7 @@ F1data$computeMap(mapped = FALSE)
 \insertRef{bilton2018genetics1}{GUSMap}
 }
 \seealso{
-\code{\link{FS}}
+\code{\link{BC}}, \code{\link{FS}}, \code{\link{IC}}
 }
 \author{
 Timothy P. Bilton and Chris Scott

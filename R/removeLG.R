@@ -16,14 +16,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
 #'
-#' BC and FS method: Remove Linkage Groups
+#' BC, FS and IC method: Remove linkage groups
 #' 
 #' Method for removing linkage group(s) from the list of linkage groups contained
-#' in a BC or FS object.
+#' in a BC, FS or IC object.
 #' 
-#' In a linkage analysis in GUSMap, there may be need to remove linkage groups from the 
+#' For a linkage analysis in GUSMap, there may be the need to remove linkage groups from the 
 #' list of created linkage groups. The indices of the linkage groups corresponds to the number
-#' given in the output for the BC or FS object.
+#' given in the output for the BC, FS or IC object.
 #'
 #' \code{BC} object: When \code{where = "LG-pts"}, linkage groups will be removed from the set of pseudo-testcross 
 #' linkage groups created via the \code{\link{$createLG}} function. On the other hand, if 
@@ -42,6 +42,7 @@
 #' @usage
 #' BCobj$removeLG(LG, where = NULL)
 #' FSobj$removeLG(LG, where = NULL)
+#' ICobj$removeLG(LG)
 #' 
 #' @param LG An integer vector specifying the number of the linkage groups to be removed.
 #' @param where Character vector specifying which list of linkage groups to remove linkage groups from. \code{"LG-pts"} is for 
@@ -49,7 +50,7 @@
 #' added (\code{BC} objects only) and \code{"LG-comb"} is for the combined linkage group list (\code{FS} objects only).
 #' @name $removeLG
 #' @author Timothy P. Bilton
-#' @seealso \code{\link{BC}}, \code{\link{FS}}
+#' @seealso \code{\link{BC}}, \code{\link{FS}}, \code{\link{IC}}
 #' @examples 
 #' ## simulate sequencing data
 #' config <- list(replicate(2,sample(c(1,2,4), size=30, replace=TRUE), simplify = FALSE))

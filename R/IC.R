@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap)
-# Copyright 2017-2020 Timothy P. Bilton <timothy.bilton@agresearch.co.nz>
+# Copyright 2017-2020 Timothy P. Bilton
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,25 +21,25 @@
 #' 
 #' @usage
 #' ## Create IC object
-#' ICobj <- makeFS(RAobj, pedfile, family=NULL, inferSNPs = FALSE,
+#' ICobj <- makeIC(RAobj, samID=NULL,
 #'                 filter=list(MAF=0.05, MISS=0.2, BIN=100, DEPTH=5, PVALUE=0.01, MAXDEPTH=500))
 #'
-#' ## Functions (Methods) of an FS object
-#' ICobj$computeMap(chrom=NULL, init_r=0.01, ep=0.001, method=NULL, err=T, mapped=T, nThreads=1)
+#' ## Functions (Methods) of an IC object
+#' ICobj$computeMap(chrom = NULL, init_r = 0.01, ep = 0.001, method = "EM", err = T, mapped = T, nThreads = 1)
 #' ICobj$createLG(LODthres = 10, nComp = 10)
 #' ICobj$maskSNP(snps)
 #' ICobj$mergeLG(LG)
-#' ICobj$orderLG(chrom = NULL, mapfun = "haldane", weight="LOD2", ndim=30, spar = NULL)
-#' ICobj$plotChr(mat="rf", filename=NULL, chrS=2, lmai=2)
-#' ICobj$plotLG(LG=NULL, mat="rf", filename=NULL, interactive=TRUE)
-#' ICobj$plotLM(LG = NULL, fun="haldane", col="black")
+#' ICobj$orderLG(chrom = NULL, mapfun = "haldane", weight = "LOD2", ndim = 30, spar = NULL)
+#' ICobj$plotChr(mat = "rf", filename = NULL, chrS = 2, lmai = 2)
+#' ICobj$plotLG(LG = NULL, mat = "rf", filename = NULL, interactive = TRUE)
+#' ICobj$plotLM(LG = NULL, fun = "haldane", col = "black")
 #' ICobj$plotSyn()
 #' ICobj$print(what = NULL, ...)
-#' ICobj$removeLG(LG, where = NULL)
-#' ICobj$removeSNP(snps, where = NULL)
+#' ICobj$removeLG(LG)
+#' ICobj$removeSNP(snps)
 #' ICobj$rf_2pt(nClust = 2, err=FALSE)
 #' ICobj$unmaskSNP(snps)
-#' ICobj$writeLM(file, direct = "./", LG = NULL, what = NULL)
+#' ICobj$writeLM(file, direct = "./", LG = NULL, what = NULL, inferGeno = TRUE)
 #' 
 #' @details
 #' An IC object is created from the \code{\link{makeIC}} function and contains RA data,
@@ -545,7 +545,7 @@ IC <- R6::R6Class("IC",
                     }, 
                     ## Function for computing the rf's for each chromosome 
                     computeMap = function(chrom=NULL, init_r=0.001, ep=0.001, method="EM", err=TRUE, multiErr=FALSE, 
-                                          mapped=TRUE, nThreads=1, inferOPGP=FALSE, rfthres=0.1, ...){
+                                          mapped=TRUE, nThreads=1, inferOPGP=TRUE, rfthres=0.1, ...){
                       ## do some checks
                       if( !is.null(init_r) & !is.numeric(init_r) )
                         stop("Starting values for the recombination fraction needs to be a numeric vector or integer or a NULL object")
@@ -629,7 +629,7 @@ IC <- R6::R6Class("IC",
                           if(inferOPGP || !is.list(curOPGP) || length(curOPGP[[1]]) != length(indx_chrom)){
                             tempOPGP <- list()
                             for(fam in 1:private$noFam){
-                              tempOPGP <- c(tempOPGP,list(as.integer(infer_OPGP_FS(ref_temp[[fam]],alt_temp[[fam]],private$config[[fam]][indx_chrom], method="EM", nThreads=nThreads, ...))))
+                              tempOPGP <- c(tempOPGP,list(as.integer(infer_OPGP_FS(ref_temp[[fam]],alt_temp[[fam]],private$config[[fam]][indx_chrom], method="EM", nThreads=1, ...))))
                             }
                             private$para$OPGP[i] <- tempOPGP
                           }
@@ -747,7 +747,7 @@ IC <- R6::R6Class("IC",
                           callrate <- colMeans(temp)
                           rf <- unlist(lapply(private$para$rf[LG], function(y) {if(!is.na(y[1])) return(format(round(cumsum(c(0,y)),6),digits=6,scientific=F))} ))
                           #rf_m <- unlist(lapply(private$para$rf_m[LG], function(y) {if(!is.na(y[1])) return(format(round(cumsum(c(0,y)),6),digits=6,scientific=F))} ))
-                          ep <- format(rep(round(unlist(private$para$ep[LG]),8), unlist(lapply(LGlist, length))),digits=8,scientific=F)
+                          ep <- format(round(unlist(sapply(1:length(LG), function(x) rep(private$para$ep[[x]], length.out=length(LGlist[[x]])))),8),digits=8,scientific=F)
                           ## add geno information if required
                           if(inferGeno){
                             temp = do.call("rbind", geno)

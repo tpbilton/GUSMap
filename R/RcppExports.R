@@ -5,3 +5,7 @@ viterbi_fs_err <- function(rf, ep, nInd, nSnps, ref, alt, OPGP) {
     .Call('_GUSMap_viterbi_fs_err', PACKAGE = 'GUSMap', rf, ep, nInd, nSnps, ref, alt, OPGP)
 }
 
+viterbi_fs_err_ss <- function(rf_p, rf_m, ep, nInd, nSnps, ref, alt, OPGP) {
+    .Call('_GUSMap_viterbi_fs_err_ss', PACKAGE = 'GUSMap', rf_p, rf_m, ep, nInd, nSnps, ref, alt, OPGP)
+}
+

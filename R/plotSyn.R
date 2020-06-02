@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap)
-# Copyright 2017-2018 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
+# Copyright 2017-2020 Timothy P. Bilton
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,21 +15,31 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
-#' FS method: Produce synteny plot
+#' BC, FS and IC method: Produce synteny plot
 #' 
 #' Method for plotting the combined linkage group SNP ordering against the original SNP order
 #' from the genomic assembly.
 #' 
 #' This function produces a scatter plot of the SNP order as obtained from the linkage analysis
-#' against the SNP order given by the genomic assembly. Note that the SNP order from the linkage analysis
-#' is from the combined linkage groups obtained using \code{\link{$plotSyn}} and ordered via \code{\link{$orderLG}}.
+#' against the SNP order given by the genomic assembly. 
+#'
+#' \code{BC} object: The SNP order from the linkage analysis is from the pseudo-testcross linkage groups with BI SNPs
+#' constructed from the \code{\link{addBIsnps}} function and ordered via the \code{\link{$orderLG}} function.
+#' 
+#' \code{FS} object: The SNP order from the linkage analysis is from the combined linkage groups 
+#' obtained from the \code{\link{$addBIsnps}} function and ordered via the \code{\link{$orderLG}} function.
+#' 
+#' \code{IC} object: The SNP order from the linkage analysis is from the linkage groups 
+#' computed from the \code{\link{$computeLG}} function and ordered via the \code{\link{$orderLG}} function.
 #' 
 #' @usage
+#' BCobj$plotSyn()
 #' FSobj$plotSyn()
+#' ICobj$plotSyn()
 #' 
 #' @name $plotSyn
 #' @author Timothy P. Bilton
-#' @seealso \code{\link{FS}}
+#' @seealso \code{\link{BC}}, \code{\link{FS}}, \code{\link{IC}}
 #' @examples
 #' ## Simulate some sequencing data
 #' set.seed(6745)

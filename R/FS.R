@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap)
-# Copyright 2017-2020 Timothy P. Bilton <timothy.bilton@agresearch.co.nz>
+# Copyright 2017-2020 Timothy P. Bilton
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,21 +26,22 @@
 #'
 #' ## Functions (Methods) of an FS object
 #' FSobj$addBIsnps(LODthres = 10, nComp = 10)
-#' FSobj$computeMap(chrom=NULL, init_r=0.01, ep=0.001, method="optim", sexSpec=F, err=T, mapped=T, nThreads=1)
+#' FSobj$addSNPs(LODthres = 10, nComp = 10)
+#' FSobj$computeMap(chrom = NULL, init_r = 0.01, ep = 0.001, method = "optim", sexSpec = F, err = T, mapped = T, nThreads = 1)
 #' FSobj$createLG(parent = "both", LODthres = 10, nComp = 10)
 #' FSobj$maskSNP(snps)
 #' FSobj$mergeLG(LG, where = NULL, mergeTo = NULL)
-#' FSobj$orderLG(chrom = NULL, mapfun = "haldane", weight="LOD2", ndim=30, spar = NULL)
-#' FSobj$plotChr(parent = "maternal", mat="rf", filename=NULL, chrS=2, lmai=2)
-#' FSobj$plotLG(parent  = "maternal", LG=NULL, mat="rf", filename=NULL, interactive=TRUE, what = NULL)
-#' FSobj$plotLM(LG = NULL, fun="haldane", col="black")
+#' FSobj$orderLG(chrom = NULL, mapfun = "haldane", weight = "LOD2", ndim = 30, spar = NULL)
+#' FSobj$plotChr(parent = "maternal", mat = "rf", filename = NULL, chrS = 2, lmai = 2)
+#' FSobj$plotLG(parent = "maternal", LG = NULL, mat = "rf", filename = NULL, interactive = TRUE, what = NULL)
+#' FSobj$plotLM(LG = NULL, fun = "haldane", col = "black")
 #' FSobj$plotSyn()
 #' FSobj$print(what = NULL, ...)
 #' FSobj$removeLG(LG, where = NULL)
 #' FSobj$removeSNP(snps, where = NULL)
-#' FSobj$rf_2pt(nClust = 2, err=FALSE)
+#' FSobj$rf_2pt(nClust = 2, err = FALSE)
 #' FSobj$unmaskSNP(snps)
-#' FSobj$writeLM(file, direct = "./", LG = NULL, what = NULL)
+#' FSobj$writeLM(file, direct = "./", LG = NULL, what = NULL, inferGeno=TRUE)
 #' 
 #' @details
 #' An FS object is created from the \code{\link{makeFS}} function and contains RA data,
@@ -400,7 +401,7 @@ FS <- R6::R6Class("FS",
                   return(invisible(NULL))
                 },
                 ## Function for creating linkage groups
-                createLG = function(parent="both", LODthres=10, nComp=10){
+                createLG = function(parent="both", LODthres=10, nComp=10, reset=FALSE){
                   ## Do some checks
                   if(is.null(private$rf) || is.null(private$LOD))
                     stop("Recombination fractions and LOD scores have not been computed.\nUse $rf_2pt() to compute the recombination fractions and LOD scores.")
@@ -415,6 +416,20 @@ FS <- R6::R6Class("FS",
                   if(!is.numeric(nComp) || !is.vector(nComp) || length(nComp) != 1 || is.na(nComp) || nComp < 0 || !is.finite(nComp) ||
                      round(nComp) != nComp)
                     stop("The number of comparsion points (argument 3) needs to be a finite integer number.")
+                  
+                  ## Reset the groups 
+                  if(reset){
+                    private$config <- private$config_orig
+                    private$config_infer <- private$config_infer_orig
+                    private$LG_mat = private$LG_pat = private$LG_mat_bi = private$LG_pat_bi = NULL
+                    private$summaryInfo <- private$summaryInfo$data
+                  } else if(parent == "maternal"){
+                    private$LG_mat = private$LG_mat_bi = NULL
+                  } else if(parent == "paternal"){
+                    private$LG_pat = private$LG_pat_bi = NULL
+                  } else if(parent == "both"){
+                    private$LG_mat = private$LG_pat = private$LG_mat_bi = private$LG_pat_bi = NULL
+                  }
                   
                   private$config <- private$config_orig
                   private$config_infer <- private$config_infer_orig
@@ -709,12 +724,16 @@ FS <- R6::R6Class("FS",
                     graphics::text(MDS$conf, labels=ind)
                     graphics::lines(pcurve)
                     graphics::image(private$rf[ind,ind][pcurve$ord,pcurve$ord], axes=F,
-                                    col=grDevices::colorRampPalette(c("white", "yellow", "orange", "red"))(200))
+                                    col=grDevices::heat.colors(100))
                     if(is.null(filename)) graphics::par(temp_par)
                     else grDevices::dev.off()
                     ## Set the new order
                     private$LG[[lg]] <- ind[pcurve$ord]
                   }
+                  ## Acknowledge paper we are using algorithm from
+                  cat("Using the MDS scaling algorithm to order SNPs.\n",
+                      "Please cite:\n",
+                      "\tPreedy & Hackett (2016). Theor Appl Genet. 129:2117-2132\n",sep="")
                   return(invisible(NULL))
                 },
                 ## Function for setting temp LGs to new LGs
@@ -810,10 +829,16 @@ Please select one of the following:
                     
 
                     ## Sort out the matrix
-                    if(mat == "rf")
+                    if(mat == "rf"){
                       temprf <- private$rf
-                    else if(mat == "LOD")
+                      mycol <- heat.colors(100)
+                      zlim = c(0,0.5)
+                    }
+                    else if(mat == "LOD"){
                       temprf <- private$LOD
+                      mycol <- grDevices::colorRampPalette(rev(c("red","orange","yellow","white")), bias=5)(100)
+                      zlim=c(0,50)
+                    }
                     b <- ncol(temprf) + 1
                     temprf <- cbind(temprf,rep(NA,b-1))
                     temprf <- rbind(temprf,rep(NA,b))
@@ -831,21 +856,22 @@ Please select one of the following:
                                                 matrix(paste0("col: ",chrom.ind), nrow=nn, ncol=nn, byrow=T), paste0("rf: ",round(temprf,4)), sep="<br>"),
                                           nrow=nn, ncol=nn)
                       ax <- list(visible=FALSE)
+                      ax_z <- list(range=zlim)
                       # suppress warnings  
                       storeWarn <- getOption("warn")
                       options(warn = -1) 
                       ## produce the plotly plot
                       if(length(which(b_indx)) == 0){
                         p <- plotly::plot_ly(z=temprf, type="heatmap", showscale=F, hoverinfo="text",
-                                             text=hovertext, colors=grDevices::heat.colors(100)) %>%
-                          plotly::layout(margin=list(l=0,r=0,t=0,b=0), xaxis=ax, yaxis=ax)
+                                             text=hovertext, colors=mycol) %>%
+                          plotly::layout(margin=list(l=0,r=0,t=0,b=0), xaxis=ax, yaxis=ax, zaxis=ax_z)
                       }
                       else{
                         p <- plotly::plot_ly(z=temprf, type="heatmap", showscale=F, hoverinfo="text",
-                                text=hovertext, colors=grDevices::heat.colors(100)) %>% 
+                                text=hovertext, colors=mycol) %>% 
                           plotly::add_segments(x=which(b_indx)-1,xend=which(b_indx)-1,y=0,yend=nn, line=list(color="black"),  showlegend=F) %>%
                           plotly::add_segments(y=which(b_indx)-1,yend=which(b_indx)-1,x=0,xend=nn, line=list(color="black"),  showlegend=F) %>%
-                          plotly::layout(margin=list(l=0,r=0,t=0,b=0), xaxis=ax, yaxis=ax)
+                          plotly::layout(margin=list(l=0,r=0,t=0,b=0), xaxis=ax, yaxis=ax, zaxis=ax_z)
                       }
                       if(!is.null(filename)){
                         temp <- file.create(paste0(filename,".html"))
@@ -871,7 +897,7 @@ Please select one of the following:
                       else
                         temp_par <- graphics::par(no.readonly = TRUE)
                       graphics::par(mar=rep(0,4),oma=c(0,0,0,0), mfrow=c(1,1), xaxt='n',yaxt='n',bty='n',ann=F)
-                      graphics::image(temprf, x=1:nn, y=1:nn, zlim=c(0,0.5), col=grDevices::heat.colors(100))
+                      graphics::image(temprf, x=1:nn, y=1:nn, zlim=zlim, col=mycol)
                       graphics::abline(v=which(b_indx))
                       graphics::abline(h=which(b_indx))
                       if(!is.null(filename))
@@ -1010,13 +1036,29 @@ Please select one of the following:
                   graphics::par(temp_par) # reset the plot margins
                 }, 
                 ## Function for computing the rf's for each chromosome 
-                computeMap = function(chrom=NULL, init_r=0.001, ep=0.001, method="optim", sexSpec=FALSE, err=TRUE, multiErr=FALSE, 
-                                      mapped=TRUE, nThreads=1, inferOPGP=FALSE){
+                computeMap = function(chrom=NULL, init_r=0.001, ep=0.001, method=NULL, sexSpec=FALSE, err=TRUE, multiErr=FALSE, 
+                                      mapped=TRUE, nThreads=1, inferOPGP=TRUE, rfthres=0.1){
                   ## do some checks
                   if( !is.null(init_r) & !is.numeric(init_r) )
                     stop("Starting values for the recombination fraction needs to be a numeric vector or integer or a NULL object")
                   if( (length(ep) != 1 || !is.numeric(ep) || (ep <= 0 | ep >= 1)) )
                     stop("Value for the error parameters needs to be a single numeric value in the interval (0,1) or a NULL object")
+                  if(!is.null(method) && (!is.vector(method) || !is.character(method) || 
+                                          length(method) != 1 || !(method %in% c("optim", "EM"))))
+                    stop("Argument `method` is invalid. Must be NULL, 'optim' or 'EM'")
+                  if(!is.logical(err) || length(err) != 1 || is.na(err))
+                    stop("Argument `err` is invalid. Must be a logical value")
+                  if(!is.logical(multiErr) || length(multiErr) != 1 || is.na(multiErr))
+                    stop("Argument `multiErr` is invalid. Must be a logical value")
+                  if(!is.logical(inferOPGP) || length(inferOPGP) != 1 || is.na(inferOPGP))
+                    stop("Argument `inferOPGP` is invalid. Must be a logical value")                  
+                  if(!is.logical(mapped) || length(mapped) != 1 || is.na(mapped))
+                    stop("Argument `mapped` is invalid. Must be a logical value")                  
+                  if(GUSbase::checkVector(nThreads, type="pos_integer", minv=1) || length(nThreads) != 1)
+                    stop("Argument `nThreads` is invalid. Must be a positive integer")
+                  if(GUSbase::checkVector(rfthres, type="pos_numeric", minv=0, maxv = 0.5) || length(rfthres) != 1)
+                    stop("Argument `rfthres` is invalid. Must be a positive integer")
+                  
                   ## for existing chromosome orders
                   if(!mapped){
                     list_chrom <- unique(private$chrom)
@@ -1049,13 +1091,21 @@ Please select one of the following:
                       if(inferOPGP || !is.list(curOPGP) || length(curOPGP[[1]]) != length(indx_chrom)){
                         tempOPGP <- list()
                         for(fam in 1:private$noFam){
-                          tempOPGP <- c(tempOPGP,list(as.integer(infer_OPGP_FS(ref_temp[[fam]],alt_temp[[fam]],private$config[[fam]][indx_chrom], method=method, nThreads=nThreads))))
+                          tempOPGP <- c(tempOPGP,list(as.integer(infer_OPGP_FS(ref_temp[[fam]],alt_temp[[fam]],private$config[[fam]][indx_chrom], method="EM", nThreads=nThreads))))
                         }
                         private$para$OPGP[i] <- tempOPGP
                       }
                       ## estimate the rf's
-                      MLE <- rf_est_FS(init_r=init_r, ep=ep, ref=ref_temp, alt=alt_temp, OPGP=private$para$OPGP[i],
+                      if(!is.null(method))
+                        MLE <- rf_est_FS(init_r=init_r, ep=ep, ref=ref_temp, alt=alt_temp, OPGP=private$para$OPGP[i],
                                          sexSpec=sexSpec, seqErr=err, method=method, nThreads=nThreads, multiErr=multiErr)
+                      else{
+                        MLE_init <- rf_est_FS(init_r=init_r, ep=ep, ref=ref_temp, alt=alt_temp, OPGP=private$para$OPGP[i],
+                                              sexSpec=sexSpec, seqErr=err, method="EM", nThreads=nThreads, multiErr=multiErr, maxit=20)
+                        MLE <- rf_est_FS(init_r=MLE_init$rf, ep=MLE_init$ep, ref=ref_temp, alt=alt_temp, OPGP=private$para$OPGP[i],
+                                         sexSpec=sexSpec, seqErr=err, method="optim", nThreads=nThreads, multiErr=multiErr)
+                      }
+                      
                       if(sexSpec){
                         private$para$rf_p[i]   <- list(MLE$rf_p)
                         private$para$rf_m[i]   <- list(MLE$rf_m)
@@ -1065,6 +1115,18 @@ Please select one of the following:
                       }
                       private$para$ep[i]    <- list(list(MLE$ep))
                       private$para$loglik[i]<- list(MLE$loglik)
+                      ### Check for SNPs with really large rf values
+                      if(!sexSpec){
+                        highrf = which(MLE$rf > rfthres)
+                        if(length(highrf) > 0){
+                          snp1 = indx_chrom[highrf]
+                          snp2 = indx_chrom[highrf+1]
+                          junk = sapply(1:length(highrf),function(x) {
+                            cat("RF-", highrf[x]," is ", round(MLE$rf[x],4)," (between SNPs ",snp1[x]," and ",snp2[x],")\n", sep="")
+                            return(invisible())
+                          })
+                        }
+                      }
                     }
                   }
                   else{
@@ -1103,8 +1165,15 @@ Please select one of the following:
                         private$para$OPGP[i] <- tempOPGP
                       }
                       ## estimate the rf's
-                      MLE <- rf_est_FS(init_r=init_r, ep=ep, ref=ref_temp, alt=alt_temp, OPGP=private$para$OPGP[i],
-                                       sexSpec=sexSpec, seqErr=err, method=method, nThreads=nThreads, multiErr=multiErr)
+                      if(!is.null(method))
+                        MLE <- rf_est_FS(init_r=init_r, ep=ep, ref=ref_temp, alt=alt_temp, OPGP=private$para$OPGP[i],
+                                         sexSpec=sexSpec, seqErr=err, method=method, nThreads=nThreads, multiErr=multiErr)
+                      else{
+                        MLE_init <- rf_est_FS(init_r=init_r, ep=ep, ref=ref_temp, alt=alt_temp, OPGP=private$para$OPGP[i],
+                                              sexSpec=sexSpec, seqErr=err, method="EM", nThreads=nThreads, multiErr=multiErr, maxit=20)
+                        MLE <- rf_est_FS(init_r=MLE_init$rf, ep=MLE_init$ep, ref=ref_temp, alt=alt_temp, OPGP=private$para$OPGP[i],
+                                         sexSpec=sexSpec, seqErr=err, method="optim", nThreads=nThreads, multiErr=multiErr)
+                      }
                       if(sexSpec){
                         private$para$rf_p[i]   <- list(MLE$rf_p)
                         private$para$rf_m[i]   <- list(MLE$rf_m)
@@ -1115,6 +1184,18 @@ Please select one of the following:
                       private$para$ep[i]       <- list(MLE$ep)
                       private$para$loglik[i]   <- list(MLE$loglik)
                       private$LG_map[[i]]      <- private$LG[[i]]
+                      ### Check for SNPs with really large rf values
+                      if(!sexSpec){
+                        highrf = which(MLE$rf > rfthres)
+                        if(length(highrf) > 0){
+                          snp1 = indx_chrom[highrf]
+                          snp2 = indx_chrom[highrf+1]
+                          junk = sapply(1:length(highrf),function(x) {
+                            cat("RF-", highrf[x]," is ", round(MLE$rf[x],4)," (between SNPs ",snp1[x]," and ",snp2[x],")\n", sep="")
+                            return(invisible())
+                          })
+                        }
+                      }
                     }
                     ## Create summary of results:
                     MI <- unlist(lapply(private$LG_map, function(x) sum(x %in% private$group$MI)))
@@ -1137,7 +1218,7 @@ Please select one of the following:
                   }
                 },
                 #### Write output
-                writeLM = function(file, direct = "./", LG = NULL, what = NULL){
+                writeLM = function(file, direct = "./", LG = NULL, what = NULL, inferGeno = TRUE){
                   ## do some checks
                   if(private$noFam == 1){
                     if(!is.vector(file) || !is.character(file) || length(file) != 1)
@@ -1165,8 +1246,37 @@ Please select one of the following:
                         stop("LGs to write to file is invalid.")
                       else
                         LGlist <- private$LG_map[LG]
+                      if(!is.vector(inferGeno) || length(inferGeno) != 1 || !is.logical(inferGeno) || is.na(inferGeno))
+                        stop("Argument `inferGeno` is invalid. Should be a logical value")
                       if(length(unlist(LGlist)) == 0)
                         stop("No maps have been computed for the specified linkage groups.")
+                      ## Infer genotypes if required
+                      if(inferGeno){
+                        nInd = unlist(private$nInd)
+                        OPGPs = private$para$OPGP[LG]
+                        geno = list()
+                        for(lg in LG){
+                          snps = LGlist[[lg]]
+                          if(length(snps) == 0)
+                            next
+                          else{
+                            nSnps = length(snps)
+                            ref = private$ref[[1]][,snps]
+                            alt = private$alt[[1]][,snps]
+                            # output from viterbi_fs_err: 0 = 00, 1 = 10, 2 = 01, 3 = 11 (mat/pat)
+                            ms = viterbi_fs_err_ss(private$para$rf_p[[lg]], private$para$rf_m[[lg]],
+                                                rep(private$para$ep[[lg]], length.out=nSnps),
+                                                nInd, nSnps, ref, alt,
+                                                OPGPs[[lg]])
+                            ## 1 = on paternal chrosome, 0 = maternal chromsome
+                            infer_pat = (ms > 1) + 1
+                            infer_mat = apply(ms, 2, function(x) x %in% c(1,3)) + 1
+                            parHap = OPGPtoParHap(OPGPs[[lg]])
+                            geno_temp = sapply(1:nInd, function(x) rbind(parHap[cbind(infer_mat[x,]+2,1:nSnps)], parHap[cbind(infer_pat[x,],1:nSnps)]), simplify = FALSE)
+                            geno[[lg]] = t(do.call("rbind", geno_temp))
+                          }
+                        }
+                      }
                       ## compute the information to go in file
                       nLG = length(LGlist)
                       LGno <- rep(LG, unlist(lapply(LGlist, length)))
@@ -1179,9 +1289,17 @@ Please select one of the following:
                       callrate <- colMeans(temp)
                       rf_p <- unlist(lapply(private$para$rf_p[LG], function(y) {if(!is.na(y[1])) return(format(round(cumsum(c(0,y)),6),digits=6,scientific=F))} ))
                       rf_m <- unlist(lapply(private$para$rf_m[LG], function(y) {if(!is.na(y[1])) return(format(round(cumsum(c(0,y)),6),digits=6,scientific=F))} ))
-                      ep <- format(rep(round(unlist(private$para$ep[LG]),8), unlist(lapply(LGlist, length))),digits=8,scientific=F)
-                      out <- list(LG=LGno, LG_POS=LGindx, CHROM=chrom, POS=pos, TYPE=segType, RF_PAT=rf_p, RF_MAT=rf_m,
-                                  ERR=ep, MEAN_DEPTH=depth, CALLRATE=callrate)
+                      ep <- format(round(unlist(sapply(1:length(LG), function(x) rep(private$para$ep[[x]], length.out=length(LGlist[[x]])))),8),digits=8,scientific=F)
+                      ## add geno information if required
+                      if(inferGeno){
+                        temp = do.call("rbind", geno)
+                        temp2 = split(temp, rep(1:ncol(temp), each = nrow(temp)))
+                        names(temp2) = paste0(c("MAT_","PAT_"), rep(private$indID[[1]], rep(2,nInd)))
+                        out <- c(list(LG=LGno, LG_POS=LGindx, CHROM=chrom, POS=pos, TYPE=segType, RF_PAT=rf_p, RF_MAT=rf_m,
+                                      ERR=ep, MEAN_DEPTH=depth, CALLRATE=callrate), temp2)
+                      } else 
+                        out <- list(LG=LGno, LG_POS=LGindx, CHROM=chrom, POS=pos, TYPE=segType, RF_PAT=rf_p, RF_MAT=rf_m,
+                                    ERR=ep, MEAN_DEPTH=depth, CALLRATE=callrate)
                       ## write out file
                       data.table::fwrite(out, file = outfile, sep="\t", nThread = 1)  
                       cat(paste0("Linkage analysis results written to file:\nFilename:\t",filename)) 
