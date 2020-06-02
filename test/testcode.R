@@ -17,6 +17,15 @@ ref <- simData$.__enclos_env__$private$ref
 alt <- simData$.__enclos_env__$private$alt
 config <- simData$.__enclos_env__$private$config
 OPGP <- as.integer(GUSMap:::infer_OPGP_FS(ref[[1]],alt[[1]],config[[1]], method="EM"))
+bcoef_mat <- Kab <- vector(mode="list", length=noFam)
+for(fam in 1:noFam){
+  bcoef_mat[[fam]] <- choose(ref[[fam]]+alt[[fam]],ref[[fam]])
+  Kab[[fam]] <- bcoef_mat[[fam]]*(1/2)^(ref[[fam]]+alt[[fam]])
+}
+
+
+r = rep(0.001,ncol(ref[[1]]))
+ep = rep(0.001,ncol(ref[[1]]))
 
 rf1 <- GUSMap:::rf_est_FS(ref=ref,alt=alt, OPGP=list(OPGP), method="optim")
 rf2 <- GUSMap:::rf_est_FS(ref=ref,alt=alt, OPGP=list(OPGP), method="EM")

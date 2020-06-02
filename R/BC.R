@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap)
-# Copyright 2017-2020 Timothy P. Bilton <timothy.bilton@agresearch.co.nz>
+# Copyright 2017-2020 Timothy P. Bilton
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,13 +20,13 @@
 #' Class for storing BC data and associated functions for analysis of backcross family populations.
 #' 
 #' @usage
-#' ## Create FS object
+#' ## Create BC object
 #' BCobj <- makeBC(RAobj, pedfile, family=NULL, inferSNPs=FALSE,
 #'                 filter=list(MAF=0.05, MISS=0.2, BIN=100, DEPTH=5, PVALUE=0.01, MAXDEPTH=500))
 #'
 #' ## Functions (Methods) of an BC object
-#' BCobj$addBIsnps(parent = "both", LODthres = 10, nComp = 10)
-#' BCobj$addSNPs(LODthres = 10, nComp = 10)
+#' BCobj$addBIsnps(LODthres = 10, nComp = 10)
+#' BCobj$s(LODthres = 10, nComp = 10)
 #' BCobj$computeMap(chrom = NULL, init_r = 0.01, ep = 0.001, method = NULL, err = T, mapped = T, nThreads = 1, rfthres = 0.1)
 #' BCobj$createLG(parent = "both", LODthres = 10, nComp = 10, reset = FALSE)
 #' BCobj$maskSNP(snps)
@@ -41,7 +41,7 @@
 #' BCobj$removeSNP(snps, where = NULL)
 #' BCobj$rf_2pt(nClust = 2, err = FALSE)
 #' BCobj$unmaskSNP(snps)
-#' BCobj$writeLM(file, direct = "./", LG = NULL, what = NULL)
+#' BCobj$writeLM(file, direct = "./", LG = NULL, what = NULL, inferGeno = TRUE)
 #' 
 #' @details
 #' An BC object is created from the \code{\link{makeBC}} function and contains RA data,
@@ -194,7 +194,7 @@ BC <- R6::R6Class("BC",
                   }
                   if(where == "LG-pts"){
                     if (is.null(private$LG_mat) & is.null(private$LG_pat))
-                      stop("Linakge groups have not been formed. Use the '$createLG' function to create linkage groups.")
+                      stop("All linkage groups have been removed. Use the '$createLG' function to create linkage groups.")
                     else{
                       ## remove SNP from the maternal linkage groups
                       for(lg in 1:length(private$LG_mat)){
@@ -692,7 +692,7 @@ BC <- R6::R6Class("BC",
                     graphics::text(MDS$conf, labels=ind)
                     graphics::lines(pcurve)
                     graphics::image(private$rf[ind,ind][pcurve$ord,pcurve$ord], axes=F, 
-                                    col=grDevices::colorRampPalette(c("white", "yellow", "orange", "red"))(200))
+                                    col=grDevices::heat.colors(100))
                     if(is.null(filename)) graphics::par(temp_par)
                     else grDevices::dev.off()
                     ## Set the new order
@@ -709,7 +709,7 @@ BC <- R6::R6Class("BC",
                   return(invisible(NULL))
                 },
                 ## Function for plotting linkage groups
-                plotLG = function(parent = "bothl", LG=NULL, mat="rf", filename=NULL, interactive=FALSE, what = NULL, ...){
+                plotLG = function(parent = "both", LG=NULL, mat="rf", filename=NULL, interactive=FALSE, what = NULL, ...){
                   ## do some checks
                   if(!is.vector(mat) || !is.character(mat) || length(mat) != 1 || !(mat %in% c('rf','LOD')))
                     stop("Argument specifying which matrix to plot (argument 1) must be either 'rf' or 'LOD'")
@@ -776,7 +776,7 @@ BC <- R6::R6Class("BC",
                       stop("invalid argument 'what'")
                     ## Work out if we want a subset of the LGs
                     if(!is.null(LG)){
-                      if(isValue(LG, type="pos_integer", minv=min(LGnum), maxv=max(LGnum)))
+                      if(GUSbase::checkVector(LG, type="pos_integer", minv=min(LGnum), maxv=max(LGnum)))
                         stop(paste0("At least one linkage group number does not exist. Indices must be between ",
                                     min(LGnum)," and ",max(LGnum)," for ",parent," LGs\n"))
                       LGlist <- LGlist[which(LG %in% LGnum)]
@@ -1243,7 +1243,7 @@ BC <- R6::R6Class("BC",
                   return(invisible())
                 },
                 #### Write output
-                writeLM = function(file, direct = "./", LG = NULL, what = NULL){
+                writeLM = function(file, direct = "./", LG = NULL, what = NULL, inferGeno = TRUE){
                   ## do some checks
                   if(private$noFam == 1){
                     if(!is.vector(file) || !is.character(file) || length(file) != 1)
@@ -1271,8 +1271,39 @@ BC <- R6::R6Class("BC",
                         stop("LGs to write to file is invalid.")
                       else
                         LGlist <- private$LG_map[LG]
+                      if(!is.vector(inferGeno) || length(inferGeno) != 1 || !is.logical(inferGeno) || is.na(inferGeno))
+                        stop("Argument `inferGeno` is invalid. Should be a logical value")
                       if(length(unlist(LGlist)) == 0)
                         stop("No maps have been computed for the specified linkage groups.")
+                      ## Infer genotypes if required
+                      if(inferGeno){
+                        nInd = unlist(private$nInd)
+                        OPGPs = private$para$OPGP[LG]
+                        #matgroups <- which(unlist(lapply(OPGPs[LG], function(x) all(x %in% c(1:4,9:12)))))
+                        #patgroups <- which(unlist(lapply(OPGPs[LG], function(x) all(x %in% c(1:8)))))
+                        geno = list()
+                        for(lg in 1:length(LG)){
+                          snps = LGlist[[lg]]
+                          if(length(snps) == 0)
+                            next
+                          else{
+                            nSnps = length(snps)
+                            ref = private$ref[[1]][,snps]
+                            alt = private$alt[[1]][,snps]
+                            # output from viterbi_fs_err: 0 = 00, 1 = 10, 2 = 01, 3 = 11 (mat/pat)
+                            ms = viterbi_fs_err(private$para$rf[[lg]], 
+                                                rep(private$para$ep[[lg]], length.out=nSnps),
+                                                nInd, nSnps, ref, alt,
+                                                OPGPs[[lg]])
+                            ## 1 = on paternal chrosome, 0 = maternal chromsome
+                            infer_pat = (ms > 1) + 1
+                            infer_mat = apply(ms, 2, function(x) x %in% c(1,3)) + 1
+                            parHap = OPGPtoParHap(OPGPs[[lg]])
+                            geno_temp = sapply(1:nInd, function(x) rbind(parHap[cbind(infer_mat[x,]+2,1:nSnps)], parHap[cbind(infer_pat[x,],1:nSnps)]), simplify = FALSE)
+                            geno[[lg]] = t(do.call("rbind", geno_temp))
+                          }
+                        }
+                      }
                       ## compute the information to go in file
                       nLG = length(LGlist)
                       LGno <- rep(LG, unlist(lapply(LGlist, length)))
@@ -1291,9 +1322,17 @@ BC <- R6::R6Class("BC",
                                 rep(0,length(unlist(unlist(LGlist[patgroups])))))
                       rf_p <- c(rep(0,length(unlist(unlist(LGlist[matgroups])))),
                                 unlist(lapply(private$para$rf[patgroups], function(y) {if(!is.na(y[1])) return(format(round(cumsum(c(0,y)),6),digits=6,scientific=F))} )))
-                      ep <- format(rep(round(unlist(private$para$ep[LG]),8), unlist(lapply(LGlist, length))),digits=8,scientific=F)
-                      out <- list(LG=LGno, LG_POS=LGindx, CHROM=chrom, POS=pos, TYPE=segType, RF_PAT=rf_p, RF_MAT=rf_m,
-                                  ERR=ep, MEAN_DEPTH=depth, CALLRATE=callrate)
+                      ep <- format(round(unlist(sapply(1:length(LG), function(x) rep(private$para$ep[[x]], length.out=length(LGlist[[x]])))),8),digits=8,scientific=F)
+                      ## add geno information if required
+                      if(inferGeno){
+                        temp = do.call("rbind", geno)
+                        temp2 = split(temp, rep(1:ncol(temp), each = nrow(temp)))
+                        names(temp2) = paste0(c("MAT_","PAT_"), rep(private$indID[[1]], rep(2,nInd)))
+                        out <- c(list(LG=LGno, LG_POS=LGindx, CHROM=chrom, POS=pos, TYPE=segType, RF_PAT=rf_p, RF_MAT=rf_m,
+                                      ERR=ep, MEAN_DEPTH=depth, CALLRATE=callrate), temp2)
+                      } else 
+                        out <- list(LG=LGno, LG_POS=LGindx, CHROM=chrom, POS=pos, TYPE=segType, RF_PAT=rf_p, RF_MAT=rf_m,
+                                    ERR=ep, MEAN_DEPTH=depth, CALLRATE=callrate)
                       ## write out file
                       data.table::fwrite(out, file = outfile, sep="\t", nThread = 1)  
                       cat(paste0("Linkage analysis results written to file:\nFilename:\t",filename,"\n")) 
@@ -1328,7 +1367,7 @@ BC <- R6::R6Class("BC",
                   }
                 }
                 ##############################################################
-                    ),
+              ),
               private = list(
                 config_orig  = NULL,
                 config_infer_orig = NULL,

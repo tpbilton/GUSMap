@@ -1,12 +1,13 @@
 ---
-title: "Introduction to GUSMap (back-cross analysis)"
+title: "Introduction to GUSMap (BC class)"
+subtitle: "Backcross Populations"
 author: "Timothy P. Bilton"
 date: "`r Sys.Date()`"
 output: 
   rmarkdown::html_vignette:
     fig_caption: yes
 vignette: >
-  %\VignetteIndexEntry{Introduction to GUSMap}
+  %\VignetteIndexEntry{Introduction to GUSMap (BC class)}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 bibliography: "../inst/REFERENCES.bib"
@@ -21,7 +22,7 @@ library(GUSMap)
 In this tutorial, we will describe how to use GUSMap to perform linkage mapping and explain some of the functionality available. For this tutorial, we will use a back-cross approach as implemented in the `BC` class. A back-cross approach may be desirable for two reasons:
 
 a) There are not enough BI SNPs to perform a full-sib analysis using the `FS` class (see the [FS tutorial](http://htmlpreview.github.io/?https://github.com/tpbilton/GUSMap/blob/master/inst/doc/Introduction_FS.html) for an introduction to the FS class)
-b) The recombination fraction is substantially different in the two parents.
+b) The recombination fraction is substantially different in the two parental meiosis.
 
 For this tutorial, we will use a simulated data set of a full-sib family (F1 population) consisting of 100 offspring, 3 chromosomes and 1000 SNPs to illustrate GUSMap. The file location to the VCF file (and associated pedigree file) for the data set can be extracted using the `simDS` function.
 
@@ -73,7 +74,7 @@ The RA file created is a tab-delimited file with columns, **CHROM** (the chromos
 |1	    |2232468 |1,0	  |0,1  |2,0  |
 |1	    |3459263 |12,13 |0,0  |0,1  |
 
-The entry in the first row and the third column is "25,0" which means that 25 reads for the reference allele has been observed and none for the alternate allele. In addition, the fourth row of the third column is "12,13" which menas that 12 reads reads for the reference allele and 13 reads for the alternate allele has been observed at the SNP on chromosome 1 and position 3459263 in individual P1_1. 
+The entry in the first row and the third column is "25,0" which means that there are 25 reads for the reference allele and no reads for the alternate allele at the SNP on chromosome 1 with position 866499 in sample P1_1. In addition, the fourth row of the third column is "12,13" which menas that there are 12 reads for the reference allele and 13 reads for the alternate allele at the SNP on chromosome 1 with position 3459263 in sample P1_1. 
 
 An RA file can then be loaded into R using the `readRA` function.
 ```{r readRA, eval=T}
@@ -98,25 +99,25 @@ RAdata
 
 ## Linkage mapping with GUSMap
 
-In this section, we will discuss linkage mapping using GUSMap. The main steps to the process are:
+In this section, we will discuss linkage mapping using GUSMap for a backcross population. The main steps to the process are:
 
-1. Create a full-sib family and perform appropriate filtering
+1. Create a backcross population and perform appropriate filtering
 2. Constructing linkage groups
 3. Ordering markers across each linkage group
 4. Computing maps for the ordered linkage groups
 
-In the following sections, we shall discuss how each of these steps are performed in GUSMap for a BC object.
+In the following sections, we shall discuss how each of these steps are performed in GUSMap for a backcross population.
 
 ### Constructing a back-cross population
 
-Construction of a 'back-cross' population object is achieved using the `makeBC` function.
+Construction of a 'backcross' population object is achieved using the `makeBC` function.
 ```{r makeBC, eval=T}
 mySpecies <- makeBC(RAobj = RAdata, pedfile = vcffile$ped, inferSNPs = TRUE,
                       filter = list(MAF = 0.05, MISS = 0.5, BIN = 100,
                         DEPTH = 5, PVALUE = 0.01, MAXDEPTH=500))
 ```
 
-The `makeBC` function takes an `RA` object and pedigree file, creates a back-cross population and performs filtering on the data. 
+The `makeBC` function takes an `RA` object and pedigree file, creates a backcross population and performs filtering on the data. 
 
 For this tutorial, we use the existing pedigree file stored in the package. The file name of this pedigree file is stored in the object `vcffile$ped`. More information regarding the format of the pedigree file can be found by looking at the package documentation for the `makeBC` function which can be accessed by:
 ```{r help_makeBC, eval=F}
@@ -130,7 +131,7 @@ There are six different types of filtering available in GUSMap:
 * SNP binning distance (`BIN`): SNPs are binned together if the distance (in base pairs) between them is less than the threshold value. One SNP is then selected at random from each bin. This filtering is to ensure that there is only a single SNP on each sequence.
 * Parental depth (`DEPTH`): SNPs are removed if the read depth of each parent is below the threshold value. This filtering is performed since low read depth can result in parental heterozygous genotypes to be seen as homozygous resulting in incorrectly inferred segregation type.  
 * Segregation test (`PVALUE`): A segregation test is performed to removed any SNPs in which the segregation type has been incorrectly inferred (e.g., parental genotypes called wrongly).
-* Maximum average SNP depth (`MAXDEPTH`): SNPs with an average depth above 500 are discarded. SNPs with really high depth compared to the rest of the SNPs often are repeative regions or simply probamatic. It is often best to discard these SNPs. 
+* Maximum average SNP depth (`MAXDEPTH`): SNPs with an average depth above the threshold are discarded. SNPs with really high depth compared to the rest of the SNPs often are repeative regions or simply probamatic and it is often best to discard these SNPs. An appropriate threshold for this filter will depend on the overall coverage of the data.  
 
 Again, more details of these various filter types is available in the package documentation of the `makeBC` function.
 
@@ -185,7 +186,7 @@ One key point with the `$createLG` function is that the MI and PI are grouped in
 
 A couple of additional points regarding the `$createLG` function:
 
-* The function will not use SI SNPs where the segregation type has been inferred using the progeny information alone (that is, the SNPs where the segregation type has been inferred from the `inferSNPs` argument in the `makeBC` function). Instead, it will only use the BI and MI SNPs to form the pseudo-testcross linkage groups.
+* The function will not use SI SNPs, where the segregation type has been inferred using the progeny information alone (that is, the SNPs where the segregation type has been inferred from the `inferSNPs` argument in the `makeBC` function). Instead, it will only use the BI and MI SNPs to form the pseudo-testcross linkage groups.
 * The linkage groups and any changes to the segregation type can be reset by setting the argument `reset=TRUE`. This is handle if one wishes to restart the analysis.
 * The argument `parent` controls whether only MI linkage groups (`"maternal"`), only PI linkage groups (`"paternal"`) or both MI and PI linkage groups (`"both"`) should be created. 
 
@@ -283,7 +284,7 @@ Once we are happy with our pseudo-testcross linkage groups that we have formed, 
 mySpecies$orderLG(mapfun = "haldane", weight = "LOD2", ndim = 30) 
 ```
 
-The two plots produced by the `mySpecies$orderLG` function are:
+The two plots produced by the `$orderLG` function are:
 
 1. The first two dimensions of the components of the MDS.
 2. The heatmap of the 2-point recombination fraction for all SNPs on the linkage group ordered according to the MDS algorithm.
@@ -296,7 +297,7 @@ These plots are helpful for examining how well the algorithm has ordered the SNP
 
 An important point is that if no BI SNPs have been added to the pseudo-testcross linkage groups using the `$addBIsnps`, the `$orderLG` function will proceed using the pseudo-testcross linkage groups without the BI SNPs. 
 
-At this stage, it is again a good idea to examine the linkage groups using the `$plotLG` function and discard any SNPs which appear to be problematic. Problematic SNPs are SNPs where the recombination fraction values appear to be lower or have a very different pattern than to the SNPs surrounding them. In GUSMap, individual SNPs can be removed from the linkage groups using the `$removeSNP` function. From our analysis, we decided to remove the following SNPs.
+At this stage, it is again a good idea to examine the linkage groups using the `$plotLG` function and discard any SNPs which appear to be problematic. Problematic SNPs are SNPs where the recombination fraction values appear to be lower or have a very different pattern than to the SNPs surrounding them. In GUSMap, individual SNPs can be removed from the linkage groups using the `$removeSNP` function.
 
 ### Compute Linkage Maps
 

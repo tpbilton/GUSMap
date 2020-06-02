@@ -3,9 +3,11 @@
 \name{$plotLG}
 \alias{$plotLG}
 \alias{plotLG}
-\title{FS method: Heatmap of 2-point rf and LOD estimates from linkage group order}
+\title{BC, FS and IC method: Heatmap of 2-point rf and LOD estimates from linkage group order}
 \usage{
+BCobj$plotLG(parent  = "maternal", LG=NULL, mat="rf", filename=NULL, interactive=TRUE, what = NULL)
 FSobj$plotLG(parent  = "maternal", LG=NULL, mat="rf", filename=NULL, interactive=TRUE, what = NULL)
+ICobj$plotLG(LG=NULL, mat="rf", filename=NULL, interactive=TRUE)
 }
 \arguments{
 \item{mat}{Charater value for the matrix to be plotted. \code{"rf"} plots the matrix of 2-point 
@@ -23,8 +25,7 @@ plotted (\code{"paternal"}), or whether all the SNPs should be plotted (\code{"b
 \item{interative}{Logical value. If \code{TRUE} then an interactive plot is produced, otherwise a standard
 base R plot is used.}
 
-\item{what}{Character vector specifying which list of linkage groups to plot. \code{"LG-pts"} is for 
-the pseudo-testcross linkage groups and \code{"LG-comb"} is for the combined linkage groups.}
+\item{what}{Character vector specifying which list of linkage groups to plot (see details).}
 }
 \description{
 Method for plotting 2-point recombination fraction and LOD score estimates when the SNPs are ordered according to the linkage groups.
@@ -38,8 +39,13 @@ that the interactive plot only works for a relatively small number of SNPs (abou
 Nevertheless, one can still plot each linkage group (using the \code{LG} argument) provided there are 
 not too many SNPs in the linkage group.
 
-When \code{what = "LG"}, the pseudo-testcross linkage groups created via the \code{\link{$createLG}} function 
-will be plotted. On the other hand, if \code{what = "LG_BI"}, then the combined linkage groups created from 
+\code{BC} object: When \code{what = "LG-pts"}, the pseudo-testcross linkage groups created via the \code{\link{$createLG}} function 
+will be plotted. On the other hand, if \code{what = "LG-bi"}, then the pseudo-testcross linkage groups with BI SNPs created from 
+the \code{\link{$addBIsnps}} function will be plotted. When \code{what = NULL}, the pseudo-testcross linkage groups with BI SNPs will
+be plotted if available, otherwise the pseudo-testcross linkage groups will be plotted.
+
+\code{FS} object: When \code{what = "LG-pts"}, the pseudo-testcross linkage groups created via the \code{\link{$createLG}} function 
+will be plotted. On the other hand, if \code{what = "LG-comb"}, then the combined linkage groups created from 
 the \code{\link{$addBIsnps}} function will be plotted. When \code{what = NULL}, the combined linkage groups will
 be plotted if available, otherwise the pseudo-testcross linkage groups will be plotted.
 }
@@ -60,7 +66,7 @@ F1data$plotLG()
 F1data$plotLG(interactive = FALSE)
 }
 \seealso{
-\code{\link{FS}}
+\code{\link{BC}}, \code{\link{FS}}, \code{\link{IC}}
 }
 \author{
 Timothy P. Bilton

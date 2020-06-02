@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap)
-# Copyright 2017-2019 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
+# Copyright 2017-2020 Timothy P. Bilton
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
-#' FS method: Compute 2-point recombination fraction estimates and LOD scores
+#' BC, FS, and IC  method: Compute 2-point recombination fraction estimates and LOD scores
 #' 
 #' Method for estimating 2-point recombination fraction and associated LOD scores.
 #' 
@@ -32,13 +32,15 @@
 #' Note: It is important that the number of cores you specify is not more than what is available on 
 #' your comupter (otherwise bad things can happen!).
 #' 
-#' Currently, only 2-point recombination fractions for a single full-sib family can be computed. However,
-#' there are plans to extend this function to multiple full-sib families in the future.
+#' Currently, only 2-point recombination fractions for a single population/family can be computed. However,
+#' there are plans to extend this function to multiple families in the future.
 #'  
 #' Note: This function can take a while, espically when there are a large number of SNPs. 
 #' 
 #' @usage
+#' BCobj$rf_2pt(nClust = 2, err = FALSE)
 #' FSobj$rf_2pt(nClust = 2, err = FALSE)
+#' ICobj$rf_2pt(nClust = 2, err = FALSE)
 #' 
 #' @param nClust An integer value for the number of cores to use in the parallelization of 
 #' computing the 2-point recombination fraction estimates. 
@@ -47,7 +49,7 @@
 #' error parameter is fixed at zero. 
 #' 
 #' @name $rf_2pt
-#' @seealso \code{\link{FS}}
+#' @seealso \code{\link{BC}}, \code{\link{FS}}, \code{\link{IC}}
 #' @author Timothy P. Bilton
 #' @references 
 #' \insertRef{bilton2018genetics1}{GUSMap}
@@ -100,173 +102,184 @@ rf_2pt_single <- function(ref, alt, config, config_infer, group, group_infer, nC
   doParallel::registerDoParallel(nClust)
 
   cat("\nComputing 2-point recombination fraction estimates ...\n")
-  cat("Paternal informative SNPs\n")
-  ## Paternal informative SNPs
-  rf.PI <- foreach::foreach(snp1 = iterators::iter(seq(length.out=nSnps_PI)), .combine=comb) %dopar% {
-    rf <- replicate(2,numeric(nSnps_PI),simplify=F)
-    for(snp2 in seq_len(snp1-1)){
-      ind = indx_PI[c(snp1,snp2)]
-      ref2 <- list(ref[,ind])
-      alt2 <- list(alt[,ind])
-      #bcoef_mat <- list(choose(ref2[[1]]+alt2[[1]],ref2[[1]]))
-      #Kab       <- list(bcoef_mat[[1]]*(1/2)^(ref2[[1]]+alt2[[1]]))
-      ## compute the rf's and LOD
-      rf.est1 <- rf_est_FS_2pt(0.2, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(5,5) + 2*(config[ind]==3))), seqErr=err)
-      rf.est2 <- rf_est_FS_2pt(0.2, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(5,6) + 2*(config[ind]==3))), seqErr=err)
-      rf.ind1 <- switch(which.max(c(rf.est1$loglik,rf.est2$loglik)), TRUE, FALSE)
-      if(rf.ind1){
-        rf[[1]][snp2] <- rf.est1$rf
-        rf[[2]][snp2] <- rf.est1$LOD
+  if(nSnps_PI > 0){
+    cat("Paternal informative SNPs\n")
+    ## Paternal informative SNPs
+    rf.PI <- foreach::foreach(snp1 = iterators::iter(seq(length.out=nSnps_PI)), .combine=comb) %dopar% {
+      rf <- replicate(2,numeric(nSnps_PI),simplify=F)
+      for(snp2 in seq_len(snp1-1)){
+        ind = indx_PI[c(snp1,snp2)]
+        ref2 <- list(ref[,ind])
+        alt2 <- list(alt[,ind])
+        #bcoef_mat <- list(choose(ref2[[1]]+alt2[[1]],ref2[[1]]))
+        #Kab       <- list(bcoef_mat[[1]]*(1/2)^(ref2[[1]]+alt2[[1]]))
+        ## compute the rf's and LOD
+        rf.est1 <- rf_est_FS_2pt(0.2, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(5,5) + 2*(config[ind]==3))), seqErr=err)
+        rf.est2 <- rf_est_FS_2pt(0.2, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(5,6) + 2*(config[ind]==3))), seqErr=err)
+        rf.ind1 <- switch(which.max(c(rf.est1$loglik,rf.est2$loglik)), TRUE, FALSE)
+        if(rf.ind1){
+          rf[[1]][snp2] <- rf.est1$rf
+          rf[[2]][snp2] <- rf.est1$LOD
+        }
+        else{
+          rf[[1]][snp2] <- rf.est2$rf
+          rf[[2]][snp2] <- rf.est2$LOD
+        }
       }
-      else{
-        rf[[1]][snp2] <- rf.est2$rf
-        rf[[2]][snp2] <- rf.est2$LOD
-      }
+      return(rf)
     }
-    return(rf)
-  }
-  for(i in 1:2){
-    rf.PI[[i]][upper.tri(rf.PI[[i]])] <- t(rf.PI[[i]])[upper.tri(rf.PI[[i]])]
-  }
-  
-  cat("Maternal informative SNPs\n")
-  ## Maternal informative SNPs
-  rf.MI <- foreach::foreach(snp1 = iterators::iter(seq(length.out=nSnps_MI)), .combine=comb) %dopar% {
-    rf <- replicate(2,numeric(nSnps_MI),simplify=F)
-    for(snp2 in seq_len(snp1-1)){
-      ind = indx_MI[c(snp1,snp2)]
-      ref2 <- list(ref[,ind])
-      alt2 <- list(alt[,ind])
-      rf.est1 <- rf_est_FS_2pt(0.2, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(9,9) + 2*(config[ind]==5))), seqErr=err)
-      rf.est2 <- rf_est_FS_2pt(0.2, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(9,10) + 2*(config[ind]==5))), seqErr=err)
-      rf.ind1 <- switch(which.max(c(rf.est1$loglik,rf.est2$loglik)), TRUE, FALSE)
-      if(rf.ind1){
-        rf[[1]][snp2] <- rf.est1$rf
-        rf[[2]][snp2] <- rf.est1$LOD
-      }
-      else{
-        rf[[1]][snp2] <- rf.est2$rf
-        rf[[2]][snp2] <- rf.est2$LOD
-      }
+    for(i in 1:2){
+      rf.PI[[i]][upper.tri(rf.PI[[i]])] <- t(rf.PI[[i]])[upper.tri(rf.PI[[i]])]
     }
-    return(rf)
-  }  
-  for(i in 1:2){
-    rf.MI[[i]][upper.tri(rf.MI[[i]])] <- t(rf.MI[[i]])[upper.tri(rf.MI[[i]])]
-  }
+  } else rf.PI = replicate(2, matrix(nrow=0, ncol=0))
   
-  cat("Both informative SNPs\n")
-  ### Both Informative
-  rf.BI <- foreach::foreach(snp1 = iterators::iter(seq(length.out=nSnps_BI)), .combine=comb) %dopar% {
-    rf <- replicate(2,numeric(nSnps_BI),simplify=F)
-    for(snp2 in seq_len(snp1-1)){
-      ind = indx_BI[c(snp1,snp2)]
-      ref2 <- list(ref[,ind])
-      alt2 <- list(alt[,ind])
-      # phase 1
-      temp1 <- rf_est_FS_2pt(0.1, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(1,1))), seqErr=err)
-      temp2 <- rf_est_FS_2pt(0.4, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(1,1))), seqErr=err)
-       rf.est1 <- switch(which.max(c(temp1$loglik,temp2$loglik)),temp1,temp2) 
-      # phase 2
-      temp1 <- rf_est_FS_2pt(0.1, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(1,2))), seqErr=err)
-      temp2 <- rf_est_FS_2pt(0.4, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(1,2))), seqErr=err)
-      rf.est2 <- switch(which.max(c(temp1$loglik,temp2$loglik)),temp1,temp2) 
-      # phase 3
-      temp1 <- rf_est_FS_2pt(0.1, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(1,4))), seqErr=err)
-      temp2 <- rf_est_FS_2pt(0.4, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(1,4))), seqErr=err)
-      rf.est4 <- switch(which.max(c(temp1$loglik,temp2$loglik)),temp1,temp2) 
-      ## work out which is best
-      rf.ind <- switch(which.max(c(rf.est1$loglik,rf.est2$loglik,rf.est4$loglik)), 1, 2, 3)
-      if(rf.ind == 1){
-        rf[[1]][snp2] <- rf.est1$rf
-        rf[[2]][snp2] <- rf.est1$LOD
+  if(nSnps_MI > 0){
+    cat("Maternal informative SNPs\n")
+    ## Maternal informative SNPs
+    rf.MI <- foreach::foreach(snp1 = iterators::iter(seq(length.out=nSnps_MI)), .combine=comb) %dopar% {
+      rf <- replicate(2,numeric(nSnps_MI),simplify=F)
+      for(snp2 in seq_len(snp1-1)){
+        ind = indx_MI[c(snp1,snp2)]
+        ref2 <- list(ref[,ind])
+        alt2 <- list(alt[,ind])
+        rf.est1 <- rf_est_FS_2pt(0.2, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(9,9) + 2*(config[ind]==5))), seqErr=err)
+        rf.est2 <- rf_est_FS_2pt(0.2, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(9,10) + 2*(config[ind]==5))), seqErr=err)
+        rf.ind1 <- switch(which.max(c(rf.est1$loglik,rf.est2$loglik)), TRUE, FALSE)
+        if(rf.ind1){
+          rf[[1]][snp2] <- rf.est1$rf
+          rf[[2]][snp2] <- rf.est1$LOD
+        }
+        else{
+          rf[[1]][snp2] <- rf.est2$rf
+          rf[[2]][snp2] <- rf.est2$LOD
+        }
       }
-      else if(rf.ind == 2){
-        rf[[1]][snp2] <- rf.est2$rf
-        rf[[2]][snp2] <- rf.est2$LOD
-      }
-      else {
-        rf[[1]][snp2] <- rf.est4$rf
-        rf[[2]][snp2] <- rf.est4$LOD
-      }
-     }
-    return(rf)
-  }
-  for(i in 1:2){
-    rf.BI[[i]][upper.tri(rf.BI[[i]])] <- t(rf.BI[[i]])[upper.tri(rf.BI[[i]])]
-  }
-  
-  cat("Paternal informative vs Both informative\n")
-  ## Paternal and Informative SNPs
-  rf.PI.BI <- foreach::foreach(snp.ps = iterators::iter(seq(length.out=nSnps_PI)), .combine=comb) %dopar% {
-    rf <- replicate(2,numeric(nSnps_BI),simplify=F)
-    for(snp.bi in 1:nSnps_BI){
-      ind <- c(indx_PI[snp.ps],indx_BI[snp.bi])
-      ref2 <- list(ref[,ind])
-      alt2 <- list(alt[,ind])
-      ## compute the rf's and LOD
-      rf.est1 <- rf_est_FS_2pt(0.2, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(5,1) + 2*c(config[ind[[1]]]==3,0))), seqErr=err)
-      rf.est2 <- rf_est_FS_2pt(0.2, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(5,2) + 2*c(config[ind[[1]]]==3,0))), seqErr=err)
-      rf.ind1 <- switch(which.max(c(rf.est1$loglik,rf.est2$loglik)), TRUE, FALSE)
-      if(rf.ind1){
-        rf[[1]][snp.bi] <- rf.est1$rf
-        rf[[2]][snp.bi] <- rf.est1$LOD
-      }
-      else{
-        rf[[1]][snp.bi] <- rf.est2$rf
-        rf[[2]][snp.bi] <- rf.est2$LOD
-      }
+      return(rf)
+    }  
+    for(i in 1:2){
+      rf.MI[[i]][upper.tri(rf.MI[[i]])] <- t(rf.MI[[i]])[upper.tri(rf.MI[[i]])]
     }
-    return(rf)
-  }
+  } else rf.MI = replicate(2, matrix(nrow=0, ncol=0))
   
-  cat("Maternal informative vs Both informative\n")
-  ## Maternal and Informative SNPs
-  rf.MI.BI <- foreach::foreach(snp.mi = iterators::iter(seq(length.out=nSnps_MI)), .combine=comb) %dopar% {
-    rf <- replicate(2,numeric(nSnps_BI),simplify=F)
-    for(snp.bi in 1:nSnps_BI){
-      ind <- c(indx_MI[snp.mi],indx_BI[snp.bi])
-      ref2 <- list(ref[,ind])
-      alt2 <- list(alt[,ind])
-      ## compute the rf's and LOD
-      rf.est1 <- rf_est_FS_2pt(0.2, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(9,1) + 2*c(config[ind[[1]]]==5,0))), seqErr=err)
-      rf.est2 <- rf_est_FS_2pt(0.2, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(9,3) + 2*c(config[ind[[1]]]==5,0))), seqErr=err)
-      rf.ind1 <- switch(which.max(c(rf.est1$loglik,rf.est2$loglik)), TRUE, FALSE)
-      if(rf.ind1){
-        rf[[1]][snp.bi] <- rf.est1$rf
-        rf[[2]][snp.bi] <- rf.est1$LOD
-      } else{
-        rf[[1]][snp.bi] <- rf.est2$rf
-        rf[[2]][snp.bi] <- rf.est2$LOD
-      }
+  if(nSnps_BI > 0){
+    cat("Both informative SNPs\n")
+    ### Both Informative
+    rf.BI <- foreach::foreach(snp1 = iterators::iter(seq(length.out=nSnps_BI)), .combine=comb) %dopar% {
+      rf <- replicate(2,numeric(nSnps_BI),simplify=F)
+      for(snp2 in seq_len(snp1-1)){
+        ind = indx_BI[c(snp1,snp2)]
+        ref2 <- list(ref[,ind])
+        alt2 <- list(alt[,ind])
+        # phase 1
+        temp1 <- rf_est_FS_2pt(0.1, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(1,1))), seqErr=err)
+        temp2 <- rf_est_FS_2pt(0.4, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(1,1))), seqErr=err)
+         rf.est1 <- switch(which.max(c(temp1$loglik,temp2$loglik)),temp1,temp2) 
+        # phase 2
+        temp1 <- rf_est_FS_2pt(0.1, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(1,2))), seqErr=err)
+        temp2 <- rf_est_FS_2pt(0.4, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(1,2))), seqErr=err)
+        rf.est2 <- switch(which.max(c(temp1$loglik,temp2$loglik)),temp1,temp2) 
+        # phase 3
+        temp1 <- rf_est_FS_2pt(0.1, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(1,4))), seqErr=err)
+        temp2 <- rf_est_FS_2pt(0.4, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(1,4))), seqErr=err)
+        rf.est4 <- switch(which.max(c(temp1$loglik,temp2$loglik)),temp1,temp2) 
+        ## work out which is best
+        rf.ind <- switch(which.max(c(rf.est1$loglik,rf.est2$loglik,rf.est4$loglik)), 1, 2, 3)
+        if(rf.ind == 1){
+          rf[[1]][snp2] <- rf.est1$rf
+          rf[[2]][snp2] <- rf.est1$LOD
+        }
+        else if(rf.ind == 2){
+          rf[[1]][snp2] <- rf.est2$rf
+          rf[[2]][snp2] <- rf.est2$LOD
+        }
+        else {
+          rf[[1]][snp2] <- rf.est4$rf
+          rf[[2]][snp2] <- rf.est4$LOD
+        }
+       }
+      return(rf)
     }
-    return(rf)
-  }
+    for(i in 1:2){
+      rf.BI[[i]][upper.tri(rf.BI[[i]])] <- t(rf.BI[[i]])[upper.tri(rf.BI[[i]])]
+    }
+  } else rf.BI = replicate(2, matrix(nrow=0, ncol=0))
+
+  if(nSnps_PI > 0 & nSnps_BI > 0){  
+    cat("Paternal informative vs Both informative\n")
+    ## Paternal and Informative SNPs
+    rf.PI.BI <- foreach::foreach(snp.ps = iterators::iter(seq(length.out=nSnps_PI)), .combine=comb) %dopar% {
+      rf <- replicate(2,numeric(nSnps_BI),simplify=F)
+      for(snp.bi in 1:nSnps_BI){
+        ind <- c(indx_PI[snp.ps],indx_BI[snp.bi])
+        ref2 <- list(ref[,ind])
+        alt2 <- list(alt[,ind])
+        ## compute the rf's and LOD
+        rf.est1 <- rf_est_FS_2pt(0.2, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(5,1) + 2*c(config[ind[[1]]]==3,0))), seqErr=err)
+        rf.est2 <- rf_est_FS_2pt(0.2, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(5,2) + 2*c(config[ind[[1]]]==3,0))), seqErr=err)
+        rf.ind1 <- switch(which.max(c(rf.est1$loglik,rf.est2$loglik)), TRUE, FALSE)
+        if(rf.ind1){
+          rf[[1]][snp.bi] <- rf.est1$rf
+          rf[[2]][snp.bi] <- rf.est1$LOD
+        }
+        else{
+          rf[[1]][snp.bi] <- rf.est2$rf
+          rf[[2]][snp.bi] <- rf.est2$LOD
+        }
+      }
+      return(rf)
+    }
+  } else rf.PI.BI = replicate(2, matrix(nrow=nSnps_PI, ncol=nSnps_BI))
+  
+  if(nSnps_MI > 0 & nSnps_BI > 0){
+    cat("Maternal informative vs Both informative\n")
+    ## Maternal and Informative SNPs
+    rf.MI.BI <- foreach::foreach(snp.mi = iterators::iter(seq(length.out=nSnps_MI)), .combine=comb) %dopar% {
+      rf <- replicate(2,numeric(nSnps_BI),simplify=F)
+      for(snp.bi in 1:nSnps_BI){
+        ind <- c(indx_MI[snp.mi],indx_BI[snp.bi])
+        ref2 <- list(ref[,ind])
+        alt2 <- list(alt[,ind])
+        ## compute the rf's and LOD
+        rf.est1 <- rf_est_FS_2pt(0.2, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(9,1) + 2*c(config[ind[[1]]]==5,0))), seqErr=err)
+        rf.est2 <- rf_est_FS_2pt(0.2, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(9,3) + 2*c(config[ind[[1]]]==5,0))), seqErr=err)
+        rf.ind1 <- switch(which.max(c(rf.est1$loglik,rf.est2$loglik)), TRUE, FALSE)
+        if(rf.ind1){
+          rf[[1]][snp.bi] <- rf.est1$rf
+          rf[[2]][snp.bi] <- rf.est1$LOD
+        } else{
+          rf[[1]][snp.bi] <- rf.est2$rf
+          rf[[2]][snp.bi] <- rf.est2$LOD
+        }
+      }
+      return(rf)
+    }
+  } else rf.MI.BI = replicate(2, matrix(nrow=nSnps_MI, ncol=nSnps_BI))
   
   ## For the non-informative computations
   ## Really done so that we can check that there is no miss identification of the group
-  cat("Maternal informative vs Paternal informative\n")
-  rf.MI.PI <- foreach::foreach(snp.mi = iterators::iter(seq(length.out=nSnps_MI)), .combine=comb) %dopar% {
-    rf <- replicate(2,numeric(nSnps_PI),simplify=F)
-    for(snp.pi in 1:nSnps_PI){
-      ind <- c(indx_MI[snp.mi],indx_PI[snp.pi])
-      ref2 <- list(ref[,ind])
-      alt2 <- list(alt[,ind])
-      ## compute the rf's and LOD
-      rf.est1 <- rf_est_FS_2pt(0.2, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(9,9) + 2*c(config[ind] %in% c(3,5)))), seqErr=err)
-      rf.est2 <- rf_est_FS_2pt(0.2, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(9,10) + 2*c(config[ind] %in% c(3,5)))), seqErr=err)
-      rf.ind1 <- switch(which.max(c(rf.est1$loglik,rf.est2$loglik)), TRUE, FALSE)
-      if(rf.ind1){
-        rf[[1]][snp.pi] <- rf.est1$rf
-        rf[[2]][snp.pi] <- rf.est1$LOD
-      } else{
-        rf[[1]][snp.pi] <- rf.est2$rf
-        rf[[2]][snp.pi] <- rf.est2$LOD
+  if(nSnps_MI > 0 & nSnps_PI > 0){
+    cat("Maternal informative vs Paternal informative\n")
+    rf.MI.PI <- foreach::foreach(snp.mi = iterators::iter(seq(length.out=nSnps_MI)), .combine=comb) %dopar% {
+      rf <- replicate(2,numeric(nSnps_PI),simplify=F)
+      for(snp.pi in 1:nSnps_PI){
+        ind <- c(indx_MI[snp.mi],indx_PI[snp.pi])
+        ref2 <- list(ref[,ind])
+        alt2 <- list(alt[,ind])
+        ## compute the rf's and LOD
+        rf.est1 <- rf_est_FS_2pt(0.2, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(9,9) + 2*c(config[ind] %in% c(3,5)))), seqErr=err)
+        rf.est2 <- rf_est_FS_2pt(0.2, ep=init_ep, ref=ref2,alt=alt2, OPGP=list(as.integer(c(9,10) + 2*c(config[ind] %in% c(3,5)))), seqErr=err)
+        rf.ind1 <- switch(which.max(c(rf.est1$loglik,rf.est2$loglik)), TRUE, FALSE)
+        if(rf.ind1){
+          rf[[1]][snp.pi] <- rf.est1$rf
+          rf[[2]][snp.pi] <- rf.est1$LOD
+        } else{
+          rf[[1]][snp.pi] <- rf.est2$rf
+          rf[[2]][snp.pi] <- rf.est2$LOD
+        }
       }
+      return(rf)
     }
-    return(rf)
-  }
-  #parallel::stopCluster(cl) 
+  } else rf.MI.PI = replicate(2, matrix(nrow=nSnps_MI, ncol=nSnps_PI))
   
   ## Build the rf and LOD matrices
   origOrder <- order(c(indx_BI,indx_PI,indx_MI))

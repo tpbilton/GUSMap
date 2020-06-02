@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap)
-# Copyright 2017-2020 Timothy P. Bilton <timothy.bilton@agresearch.co.nz>
+# Copyright 2017-2020 Timothy P. Bilton 
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,9 +20,8 @@
 #' Create an FS object from an RA object, perform standard filtering and compute statistics specific to full-sib family populations.
 #' 
 #' This function converts an RA object into an FS (full-sib) object. An FS object is a R6 type object 
-#' that contains RA data, various other statistics computed and functions (methods) for analyzing
-#' the full-sib family for performing linkage mapping. The statistics computed and data filtering are 
-#' specific to full-sib family populations and sequencing data.
+#' that contains RA data, various other statistics computed and functions (methods) for analyzing and performing linkage mapping
+#' on full-sib families. The statistics computed and data filtering are specific to full-sib family populations and sequencing data.
 #' 
 #' The filtering criteria currently implemented are:
 #' \itemize{
@@ -39,10 +38,15 @@
 #' }
 #' The segregation type of each SNP is inferred based on the genotypes of the parents. The parental genotypes are called homozygous for the 
 #' reference allele if there is only reference reads seen, heterozygous if at least one read for the reference and alternate allele are seen,
-#' and homozygous for the alternate allele if only reads for the alternate allele are seen. as a result, the parental genotype may be incorrectly inferred
+#' and homozygous for the alternate allele if only reads for the alternate allele are seen. As a result, the parental genotype may be incorrectly inferred
 #' if the read depth is too low (e.g., homozeygous genotype is called heterozygous) and hence why the \code{DEPTH} filter is implemented.
 #' The segregation test performed for the \code{PVALUE} filter is described in the supplementary methods 
 #' of the publication by \insertCite{bilton2018genetics1;textual}{GUSMap} (Section 4 of File S1).
+#' 
+#' If the argument \code{inferSNPs} is \code{TRUE}, an attempt to infer the segregation type of SNPs where the segregation type could 
+#' not be determined from the parental genotypes is made using the progeny data only. Note that using this approach, MI SNPs can not be 
+#' distinguished from PI SNPs (since we only know that one parent is heterozygous and one parent is homozygous but we don't know which is which)
+#' and so we collectively refer to the MI and PI SNPs inferred using this approach as semi-informative (SI) SNPs.
 #' 
 #' The pedigree file must be a csv file containing the five columns:
 #' \itemize{
@@ -68,7 +72,7 @@
 #' @param pedfile Character string giving the file name (relative to the current directory) of the pedigree file.
 #' @param family Vector of character strings giving the families to retain in the FS object. This allows a pedigree file with more than one family to be supplied.
 #' @param inferSNPs Logical value indicating whether to infer the segregation type of SNPs using the progeny information only
-#' in cases where the segregation typecould not be inferred from the parental genotypes.
+#' in cases where the segregation type could not be inferred from the parental genotypes.
 #' @param filter Named list of thresholds for various filtering criteria.
 #' See below for details.
 #'  
@@ -92,10 +96,10 @@
 #' @export
 
 ### Make a full-sib family population
-makeFS <- function(RAobj, pedfile, family=NULL, MNIF=1, inferSNPs=FALSE,
+makeFS <- function(RAobj, pedfile, family=NULL, inferSNPs=TRUE,
                    filter=list(MAF=0.05, MISS=0.2, BIN=100, DEPTH=5, PVALUE=0.01, MAXDEPTH=500)){
   #inferSNPs = FALSE, perInfFam=1){
-  perInfFam=1 # some variables for multiple familes needed for later
+  perInfFam=1; MNIF=1 # some variables for multiple familes needed for later
   ## Do some checks
   if(!all(class(RAobj) %in% c("RA","R6")))
     stop("First argument supplied is not of class 'R6' and 'RA'")
@@ -163,7 +167,7 @@ makeFS <- function(RAobj, pedfile, family=NULL, MNIF=1, inferSNPs=FALSE,
       stop("Family missing from the pedigree file. Please check the family ID suppied or the pedigree file.")
   }
   if(length(family)>1)
-    stop("Multiple are yet to be implemented")
+    stop("Multiple families are yet to be implemented")
   ## Create each family
   for(fam in family){
     progIndx <- which(ped$Family == fam)

@@ -2,8 +2,9 @@
 % Please edit documentation in R/addBIsnps.R
 \name{$addBIsnps}
 \alias{$addBIsnps}
-\title{FS method: Add BI SNPs to existing linkage groups}
+\title{BC and FS method: Add BI SNPs to existing linkage groups}
 \usage{
+BCobj$addBIsnps(LODthres = 10, nComp = 30)
 FSobj$addBIsnps(LODthres = 10, nComp = 30)
 }
 \arguments{
@@ -29,6 +30,18 @@ with the unmapped BI SNP.
   \item All the other average LOD scores are less than the LOD threshold.
   }
 }
+The performance of the linkage group algorithm depends on the value of \code{LODthres} and \code{nComp}. The user is
+advised to experiment with different values and examine the matrix of recombination fractions (using the \code{\link{$plotLG}}
+function).
+
+\code{BC} object:
+Each BI SNP is mapped to a MI linkage group and then independently to a PI linkage group using the above algorithm. 
+The linkage groups produced from this function are referred to as the "pseudo-testcross linkage groups with BI SNPs" 
+and are stored separately to the "pseudo-testcross linkage groups" produced by \code{\link{$createLG}} function. This means that 
+pseudo-testcross linkage groups with BI SNPs can be produced at any time from the pseudo-testcross linkage groups, even after major 
+edits to the pseudo-testcross linkage groups with BI SNPs have been made.
+
+\code{FS} object: 
 Each BI SNP is mapped to a MI linkage group and then independently to a PI linkage group using the above algorithm. The 
 MI and PI linkage groups are then merged together using the following algorithm:
 \enumerate{
@@ -42,13 +55,9 @@ can be merged to another non-merged linkage group.
 in common (provided there are any).
 \item Contiune step 4 until all linkage groups have been merged or until no more linkage groups can be merged.
 }
-The performance of the linkage group algorithm depends on the value of \code{LODthres} and \code{nComp}. The user is
-advised to experiment with different values and examine the matrix of recombination fractions (using the \code{\link{$plotLG}}
-function). 
-
-Note: The linkage groups produced from this function are referred to as the "combined linkage groups" and are stored separately
+The linkage groups produced are referred to as the "combined linkage groups" and are stored separately
 to the "pseudo-testcross linkage groups" produced by \code{\link{$createLG}} function. This means that combined linkage groups
-can produced at any time from the pseudo-testcross linkage groups, even after major edits to the combined linkage groups
+can be produced at any time from the pseudo-testcross linkage groups, even after major edits to the combined linkage groups
 have been made.
 }
 \examples{
@@ -65,7 +74,7 @@ F1data$createLG()
 F1data$addBIsnps()
 }
 \seealso{
-\code{\link{FS}}
+\code{\link{BC}}, \code{\link{FS}}
 }
 \author{
 Timothy P. Bilton

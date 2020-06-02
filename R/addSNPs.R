@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap)
-# Copyright 2017-2020 Timothy P. Bilton <timothy.bilton@agresearch.co.nz>
+# Copyright 2017-2020 Timothy P. Bilton
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,10 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
-#' BC and FS method: Add MI, PI and SI SNPs to an existing 
+#' BC and FS method: Add MI, PI and SI SNPs to existing linkage groups
 #' 
-#' Method for adding maternal-informative (MI), paternal-informative (PI) and semi-informative (SI) SNPS 
-#' to the paternal and maternal linkage groups.
+#' Method for adding maternal-informative (MI), paternal-informative (PI) and semi-informative (SI) SNPs 
+#' to the paternal and maternal (pseudo-testcross) linkage groups.
 #' 
 #' Each MI, PI or SI SNP is mapped to the maternal and paternal linkage groups using the following
 #' algorithm:
@@ -43,7 +43,7 @@
 #' 
 #' @author Timothy P. Bilton
 #' @name $addSNPs
-#' @seealso \code{\link{FS}}, \code{\link{BC}}
+#' @seealso \code{\link{BC}}, \code{\link{FS}}
 #' @examples 
 #' ## Simulate some sequencing data
 #' set.seed(6745)

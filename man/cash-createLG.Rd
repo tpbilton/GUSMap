@@ -2,23 +2,27 @@
 % Please edit documentation in R/createLG.R
 \name{$createLG}
 \alias{$createLG}
-\title{BC and FS method: Create linkage groups}
+\title{BC, FS and IC method: Create linkage groups}
 \usage{
-BCobj$createLG(parent = "both", LODthres = 10, nComp = 10)
-FSobj$createLG(parent = "both", LODthres = 10, nComp = 10)
+BCobj$createLG(parent = "both", LODthres = 10, nComp = 10, reset = FALSE)
+FSobj$createLG(parent = "both", LODthres = 10, nComp = 10, reset = FALSE)
+ICobj$createLG(LODthres = 10, nComp = 10)
 }
 \arguments{
 \item{parent}{A character vector specifying whether to create linakge groups using the maternal-informative (MI)
-SNPs (\code{"maternal"}), the paternal-informative (PI) SNPs (\code{"paternal"}), or MI and PI SNPs
+SNPs (\code{"maternal"}), the paternal-informative (PI) SNPs (\code{"paternal"}), or both the MI and PI SNPs
 (\code{"both"}).}
 
 \item{LODthres}{A positive numeric value specifying the LOD threshold used to add SNPs to the linkage groups.}
 
 \item{nComp}{A positive integer value specifying how many SNPs in the linakge group to compute the average LOD score 
 with the unmapped SNP.}
+
+\item{reset}{Logical value specifying whether to reset the linkage groups and linkage maps computed using the {\code{\link{$addBIsnps}}}, 
+{\code{\link{$computeMap}}} and {\code{\link{$orderLG}}} functions.}
 }
 \description{
-Method for creating maternal and paternal linkage groups using the computed LOD scores.
+Method for creating linkage groups using the computed LOD scores.
 }
 \details{
 Linkage groups are formed using the following algorithm
@@ -38,15 +42,15 @@ The performance of the linkage group algorithm depends on the value of \code{LOD
 advised to experiment with different values and examine the matrix of recombination fraction estimates (using the \code{\link{$plotLG}}
 function). 
 
-
 Notes: 
 \itemize{
 \item The LOD scores used in this function are computed using the {\code{\link{$rf_2pt}}} which needs to be
 run beforehand.
 \item A MI linkage group is one which only contains MI SNPs and a PI linkage group is one with only PI SNPs. These 
 linkage groups are referred to as the "puesdo-testcross linkage groups".
-\item Only MI and PI SNPs are used to construct linkage groups. The SI SNPs inferred in the {\code{\link{makeBC}}} or 
-{\code{\link{makeFS}}} function when the argument {\code{inferSNPs = TRUE}} are not used in the {\code{\link{$createLG}}} function.
+\item For BC and FS objects, only MI and PI SNPs are used to construct linkage groups. The SI SNPs inferred in the {\code{\link{makeBC}}} or 
+{\code{\link{makeFS}}} function when the argument {\code{inferSNPs = TRUE}} are not used in the {\code{\link{$createLG}}} function. For an IC
+object, all the inferred BI SNPs are used to construct linkage groups.
 }
 }
 \examples{
@@ -61,7 +65,7 @@ F1data$rf_2pt(nClust=1)
 F1data$createLG()
 }
 \seealso{
-\code{\link{BC}}, \code{\link{FS}}
+\code{\link{BC}}, \code{\link{FS}}, \code{\link{IC}}
 }
 \author{
 Timothy P. Bilton

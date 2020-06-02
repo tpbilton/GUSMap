@@ -10,21 +10,22 @@ FSobj <- makeFS(RAobj, pedfile, family=NULL, inferSNPs = FALSE,
 
 ## Functions (Methods) of an FS object
 FSobj$addBIsnps(LODthres = 10, nComp = 10)
-FSobj$computeMap(chrom=NULL, init_r=0.01, ep=0.001, method="optim", sexSpec=F, err=T, mapped=T, nThreads=1)
+FSobj$addSNPs(LODthres = 10, nComp = 10)
+FSobj$computeMap(chrom = NULL, init_r = 0.01, ep = 0.001, method = "optim", sexSpec = F, err = T, mapped = T, nThreads = 1)
 FSobj$createLG(parent = "both", LODthres = 10, nComp = 10)
 FSobj$maskSNP(snps)
 FSobj$mergeLG(LG, where = NULL, mergeTo = NULL)
-FSobj$orderLG(chrom = NULL, mapfun = "haldane", weight="LOD2", ndim=30, spar = NULL)
-FSobj$plotChr(parent = "maternal", mat="rf", filename=NULL, chrS=2, lmai=2)
-FSobj$plotLG(parent  = "maternal", LG=NULL, mat="rf", filename=NULL, interactive=TRUE, what = NULL)
-FSobj$plotLM(LG = NULL, fun="haldane", col="black")
+FSobj$orderLG(chrom = NULL, mapfun = "haldane", weight = "LOD2", ndim = 30, spar = NULL)
+FSobj$plotChr(parent = "maternal", mat = "rf", filename = NULL, chrS = 2, lmai = 2)
+FSobj$plotLG(parent = "maternal", LG = NULL, mat = "rf", filename = NULL, interactive = TRUE, what = NULL)
+FSobj$plotLM(LG = NULL, fun = "haldane", col = "black")
 FSobj$plotSyn()
 FSobj$print(what = NULL, ...)
 FSobj$removeLG(LG, where = NULL)
 FSobj$removeSNP(snps, where = NULL)
-FSobj$rf_2pt(nClust = 2, err=FALSE)
+FSobj$rf_2pt(nClust = 2, err = FALSE)
 FSobj$unmaskSNP(snps)
-FSobj$writeLM(file, direct = "./", LG = NULL, what = NULL)
+FSobj$writeLM(file, direct = "./", LG = NULL, what = NULL, inferGeno=TRUE)
 }
 \description{
 Class for storing RA data and associated functions for analysis of full-sib family populations.
@@ -278,13 +279,14 @@ Timothy P. Bilton
   chrom = NULL,
   init_r = 0.001,
   ep = 0.001,
-  method = "optim",
+  method = NULL,
   sexSpec = FALSE,
   err = TRUE,
   multiErr = FALSE,
   mapped = TRUE,
   nThreads = 1,
-  inferOPGP = FALSE
+  inferOPGP = TRUE,
+  rfthres = 0.1
 )}\if{html}{\out{</div>}}
 }
 
@@ -294,7 +296,7 @@ Timothy P. Bilton
 \if{latex}{\out{\hypertarget{method-writeLM}{}}}
 \subsection{Method \code{writeLM()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{FS$writeLM(file, direct = "./", LG = NULL, what = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{FS$writeLM(file, direct = "./", LG = NULL, what = NULL, inferGeno = TRUE)}\if{html}{\out{</div>}}
 }
 
 }

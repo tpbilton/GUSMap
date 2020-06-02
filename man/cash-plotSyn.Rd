@@ -2,9 +2,11 @@
 % Please edit documentation in R/plotSyn.R
 \name{$plotSyn}
 \alias{$plotSyn}
-\title{FS method: Produce synteny plot}
+\title{BC, FS and IC method: Produce synteny plot}
 \usage{
+BCobj$plotSyn()
 FSobj$plotSyn()
+ICobj$plotSyn()
 }
 \description{
 Method for plotting the combined linkage group SNP ordering against the original SNP order
@@ -12,8 +14,16 @@ from the genomic assembly.
 }
 \details{
 This function produces a scatter plot of the SNP order as obtained from the linkage analysis
-against the SNP order given by the genomic assembly. Note that the SNP order from the linkage analysis
-is from the combined linkage groups obtained using \code{\link{$plotSyn}} and ordered via \code{\link{$orderLG}}.
+against the SNP order given by the genomic assembly. 
+
+\code{BC} object: The SNP order from the linkage analysis is from the pseudo-testcross linkage groups with BI SNPs
+constructed from the \code{\link{addBIsnps}} function and ordered via the \code{\link{$orderLG}} function.
+
+\code{FS} object: The SNP order from the linkage analysis is from the combined linkage groups 
+obtained from the \code{\link{$addBIsnps}} function and ordered via the \code{\link{$orderLG}} function.
+
+\code{IC} object: The SNP order from the linkage analysis is from the linkage groups 
+computed from the \code{\link{$computeLG}} function and ordered via the \code{\link{$orderLG}} function.
 }
 \examples{
 ## Simulate some sequencing data
@@ -33,7 +43,7 @@ F1data$orderLG(ndim=5)
 F1data$plotSyn()
 }
 \seealso{
-\code{\link{FS}}
+\code{\link{BC}}, \code{\link{FS}}, \code{\link{IC}}
 }
 \author{
 Timothy P. Bilton

@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and linkage MAPping
-# Copyright 2017-2018 Timothy P. Bilton <tbilton@maths.otago.ac.nz>
+# Copyright 2017-2020 Timothy P. Bilton <timothy.bilton@agresearch.co.nz>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
-#' FS method: Compute ordered linkage maps
+#' BC, FS and IC method: Compute ordered linkage maps
 #' 
 #' Method for inferring parental phase (e.g., ordered parental genotype pair (OPGP)) and
 #' estimating recombination fractions in full-sib families.
@@ -25,7 +25,8 @@
 #' described in \insertCite{bilton2018genetics1;textual}{GUSMap}. 
 #' 
 #' The optimization of the likelihood for the HMM is performed using either the Expectation-Maximumization (EM) algorithm
-#' (\code{method="EM"}) or using direct numeric optimization via the \code{\link{optim}} function (\code{method="optim"}).
+#' (\code{method="EM"}), direct numeric optimization via the \code{\link{optim}} function (\code{method="optim"}), or using
+#' 20 iterations of the EM algorithm followed by optimization via direct numeric optimization (\code{method=NULL}).
 #' The likelihood computations (and computation of derivatives if required) are scaled using 
 #' forward and backward recursion to avoid overflow issues and are performed in C. These computations 
 #' are also parallelization via the OpenMP package, where the argument \code{nThreads} specifies
@@ -37,8 +38,12 @@
 #' first (and preferably ordered from the \code{\link{$orderLG}} function).
 #' 
 #' @usage 
-#' FSobj$computeMap(chrom=NULL, init_r=0.01, ep=0.001, method="optim", sexSpec=FALSE, 
-#'                     err=TRUE, mapped=TRUE, nThreads=1)
+#' BCobj$computeMap(chrom = NULL, init_r = 0.01, ep = 0.001, method = NULL, err = TRUE,
+#'                  multiErr = FALSE, mapped = TRUE, nThreads = 1, inferOPGP = TRUE, rfthres = 0.1)
+#' FSobj$computeMap(chrom = NULL, init_r = 0.01, ep = 0.001, method = NULL, sexSpec = FALSE, err = TRUE,
+#'                  multiErr = FALSE, mapped = TRUE, nThreads = 1, inferOPGP = TRUE, rfthres = 0.1)
+#' ICobj$computeMap(chrom = NULL, init_r = 0.01, ep = 0.001, method = "EM", err = TRUE, 
+#'                  multiErr = FALSE, mapped = TRUE, nThreads = 1, inferOPGP = TRUE, rfthres = 0.1)
 #' 
 #' @param chrom A integer vector giving the indices of the chromosomes (or linkage groups) to be computed.
 #' @param init_r A numeric value giving the initial values for the recombination fractions. Each 
@@ -50,13 +55,19 @@
 #' are estimated.
 #' @param err Locical value. If \code{TRUE}, the sequencing error parameter is estimated. Otherwise, the
 #' sequenicng error parameter is fixed to the value of the \code{ep} argument.
+#' @param multiErr Locical value. If \code{TRUE}, a separate sequencing error rate is used for each SNP, otherwise a common error rate is 
+#' used for each SNP.
 #' @param mapped Locial value. If \code{TRUE}, the maps are computed using the marker order given 
 #' in the combined linkage groups. Otherwise, the maps are computed using the original marker order  
 #' given by the genomic assembly.
 #' @param nThreads An integer value giving the number of threads to use in computing the likelihood in parallel.
+#' @param inferOPGP Logical value. If \code{inferOPGP=TRUE} then the OPGPs will always be inferred, otherwise the OPGPs
+#' will only be inferred if required. 
+#' @param rfthres Numeric value. Print output highlighting SNP pairs with high recombination fraction estimates.
+#' Helpfully for identifying potentially probmatic SNPs.
 #' @name $computeMap
 #' @author Timothy P. Bilton and Chris Scott
-#' @seealso \code{\link{FS}}
+#' @seealso \code{\link{BC}}, \code{\link{FS}}, \code{\link{IC}}
 #' @references
 #' \insertRef{bilton2018genetics1}{GUSMap}
 #' @examples
@@ -179,8 +190,11 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP, noFam=as.integer(1)
       else pindx = numeric(0)
       if(npar[2] > 0) mindx = npar[1]+1:npar[2]
       else mindx = numeric(0)
-      rfReturn <- list(rf_p=GUSbase::inv.logit2(optim.MLE$par[pindx]),
-                       rf_m=GUSbase::inv.logit2(optim.MLE$par[mindx]))
+      rfReturn = list(rf_p = rep(0,nSnps - 1), rf_m = rep(0,nSnps - 1))
+      rfReturn$rf_p[ps] = GUSbase::inv.logit2(optim.MLE$par[pindx])
+      rfReturn$rf_m[ms] = GUSbase::inv.logit2(optim.MLE$par[mindx])
+      #rfReturn <- list(rf_p=GUSbase::inv.logit2(optim.MLE$par[1:(nSnps-1)]),
+      #                 rf_m=GUSbase::inv.logit2(optim.MLE$par[1:(nSnps-1) + nSnps - 1]))
     }
     else
       rfReturn <- list(rf=GUSbase::inv.logit2(optim.MLE$par[1:(nSnps-1)]))
@@ -249,7 +263,7 @@ rf_est_FS <- function(init_r=0.01, ep=0.001, ref, alt, OPGP, noFam=as.integer(1)
     EMout[[3]] = EMout[[3]] + sum(log(choose(ref_mat+alt_mat,ref_mat)))
     
     if(sexSpec){
-      return(list(rf_p=EMout[[1]][ps],rf_m=EMout[[1]][nSnps-1+ms],
+      return(list(rf_p=EMout[[1]][1:(nSnps-1)],rf_m=EMout[[1]][1:(nSnps-1) + nSnps-1],
                   ep=EMout[[2]],
                   loglik=EMout[[3]]))
     }

@@ -12,7 +12,7 @@ sequencing methods \insertCite{@see @bilton2018genetics1}{GUSMap}.
 }
 \details{
 \tabular{ll}{ Package: \tab GUSMap\cr Type: \tab Package\cr Version: \tab
-2.1.0\cr Date: \tab 2020-04-08\cr License: \tab GPL 3\cr }
+2.2.0\cr Date: \tab 2020-06-01\cr License: \tab GPL 3\cr }
 }
 \references{
 \insertAllCited{}

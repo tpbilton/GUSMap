@@ -4,13 +4,13 @@
 \alias{BC}
 \title{BC object}
 \usage{
-## Create FS object
+## Create BC object
 BCobj <- makeBC(RAobj, pedfile, family=NULL, inferSNPs=FALSE,
                 filter=list(MAF=0.05, MISS=0.2, BIN=100, DEPTH=5, PVALUE=0.01, MAXDEPTH=500))
 
 ## Functions (Methods) of an BC object
-BCobj$addBIsnps(parent = "both", LODthres = 10, nComp = 10)
-BCobj$addSNPs(LODthres = 10, nComp = 10)
+BCobj$addBIsnps(LODthres = 10, nComp = 10)
+BCobj$s(LODthres = 10, nComp = 10)
 BCobj$computeMap(chrom = NULL, init_r = 0.01, ep = 0.001, method = NULL, err = T, mapped = T, nThreads = 1, rfthres = 0.1)
 BCobj$createLG(parent = "both", LODthres = 10, nComp = 10, reset = FALSE)
 BCobj$maskSNP(snps)
@@ -25,7 +25,7 @@ BCobj$removeLG(LG, where = NULL)
 BCobj$removeSNP(snps, where = NULL)
 BCobj$rf_2pt(nClust = 2, err = FALSE)
 BCobj$unmaskSNP(snps)
-BCobj$writeLM(file, direct = "./", LG = NULL, what = NULL)
+BCobj$writeLM(file, direct = "./", LG = NULL, what = NULL, inferGeno = TRUE)
 }
 \description{
 Class for storing BC data and associated functions for analysis of backcross family populations.
@@ -225,7 +225,7 @@ Timothy P. Bilton
 \subsection{Method \code{plotLG()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{BC$plotLG(
-  parent = "bothl",
+  parent = "both",
   LG = NULL,
   mat = "rf",
   filename = NULL,
@@ -342,7 +342,7 @@ Timothy P. Bilton
 \if{latex}{\out{\hypertarget{method-writeLM}{}}}
 \subsection{Method \code{writeLM()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{BC$writeLM(file, direct = "./", LG = NULL, what = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{BC$writeLM(file, direct = "./", LG = NULL, what = NULL, inferGeno = TRUE)}\if{html}{\out{</div>}}
 }
 
 }

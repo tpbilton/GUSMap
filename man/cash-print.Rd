@@ -2,23 +2,42 @@
 % Please edit documentation in R/print.R
 \name{$print}
 \alias{$print}
-\title{FS method: Print summary information}
+\title{BC, FS and IC method: Print summary information}
 \usage{
+BCobj$print(what = NULL, ...)
 FSobj$print(what = NULL, ...)
+ICobj$print(what = NULL, ...)
 }
 \arguments{
 \item{what}{Character vector giving the type of information to be printed. IF \code{NULL}, then all the 
 information is printed.}
 }
 \description{
-Method for printing summary information of an FS object
+Method for printing summary information of an BC, FS or IC object
 }
 \details{
 There are four types of information availabe to be printed for an object (as specified by the \code{what} argument).
+
+\code{BC} object: 
+\describe{
+\item{\code{"data"}}{Summary information of the data as process by the \code{\link{makeBC}} function.}
+\item{\code{"LG-pts"}}{Summary information of the pesudo-testcross linkage groups produced by the \code{\link{$createLG}} function.}
+\item{\code{"LG-bi"}}{Summary information of the combined linkage groups produced by either the \code{\link{$addBIsnps}} or \code{\link{$orderLG}} functions.}
+\item{\code{"map"}}{Summary information of the linkage maps produced by the \code{\link{$computeMap}} function.}
+}
+
+\code{FS} object:
 \describe{
 \item{\code{"data"}}{Summary information of the data as process by the \code{\link{makeFS}} function.}
 \item{\code{"LG-pts"}}{Summary information of the pesudo-testcross linkage groups produced by the \code{\link{$createLG}} function.}
 \item{\code{"LG-comb"}}{Summary information of the combined linkage groups produced by the \code{\link{$addBIsnps}} function.}
+\item{\code{"map"}}{Summary information of the linkage maps produced by the \code{\link{$computeMap}} function.}
+}
+
+\code{IC} object:
+\describe{
+\item{\code{"data"}}{Summary information of the data as process by the \code{\link{makeFS}} function.}
+\item{\code{"LG"}}{Summary information of the pesudo-testcross linkage groups produced by the \code{\link{$createLG}} function.}
 \item{\code{"map"}}{Summary information of the linkage maps produced by the \code{\link{$computeMap}} function.}
 }
 }
@@ -43,7 +62,7 @@ F1data$print(what = "LG-comb")
 F1data$print(what = c("data", "LG-pts"))
 }
 \seealso{
-\code{\link{FS}}
+\code{\link{BC}}, \code{\link{FS}}, \code{\link{IC}}
 }
 \author{
 Timothy P. Bilton

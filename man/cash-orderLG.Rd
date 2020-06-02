@@ -2,9 +2,11 @@
 % Please edit documentation in R/orderLG.R
 \name{$orderLG}
 \alias{$orderLG}
-\title{FS method: Order linkage groups}
+\title{BC, FS and IC method: Order linkage groups}
 \usage{
+BCobj$orderLG(chrom = NULL, mapfun = "haldane", weight="LOD2", ndim=30)
 FSobj$orderLG(chrom = NULL, mapfun = "haldane", weight="LOD2", ndim=30)
+ICobj$orderLG(chrom = NULL, mapfun = "haldane", weight="LOD2", ndim=30)
 }
 \arguments{
 \item{chrom}{An integer vector of the indices for the linkage group(s) that are to be ordered.}
@@ -21,17 +23,25 @@ see \code{\link{mfun}}.}
 Method for ordering markers in a linkage group
 }
 \details{
-The combined linkage groups created using the \code{\link{$addBIsnps}} are ordered using the multidimensional scaling (MDS)
+Linkage groups are ordered using the multidimensional scaling (MDS)
 approach described by \insertCite{preedy2016tag;textual}{GUSMap}. In brief, the MDS approach starts by performing weighted unconstrained 
 MDS on the matrix of genetic map distances, where the dimension of the weighted unconstrained MDS is controlled by the \code{ndim} argument.
 In the second step, a principal curve is fitted and the projection of the markers into the first principal curve gives the marker order.
 
+\code{BC} object: The pseudo-testcross linkage groups with BI SNPs created from the \code{\link{$addBIsnps}} function are ordered by this function. 
+If the pseudo-testcross linkage groups do not have any BI SNPs, then the ordering is performed on the pseudo-testcross linkage groups created
+by the \code{\link{$createLG}} function.
+
+\code{FS} object: The combined linkage groups created from the \code{\link{$addBIsnps}} function are ordered using this function.
+
+\code{IC} object: The linkage groups created from the \code{\link{$createLG}} function are ordered using this function.
+
 There are three different types weigthing matrix that can be used:
 \itemize{
-\item{No weights \code{"none"}: }{The weight of each SNP pair is set to 1 with the expection that the weigths between 
+\item{No weights \code{"none"}: }{The weight of each SNP pair is set to 1 with the expection that the weights between 
 a MI and PI pair are set to 0 since there is not information of recombination in these SNP pairs.}
-\item{LOD score \code{"LOD"}: }{The weighting matrix corresponds to the matrix of pariwise LOD scores.}
-\item{Squared LOD scores \code{"LOD"}:}{The weighting matrix corresponds to the matrix of squared pariwise LOD scores.}
+\item{LOD score \code{"LOD"}: }{The weighting matrix corresponds to the matrix of pairwise LOD scores.}
+\item{Squared LOD scores \code{"LOD"}:}{The weighting matrix corresponds to the matrix of squared pairwise LOD scores.}
 }
 }
 \examples{
@@ -53,7 +63,7 @@ F1data$orderLG(ndim=5)
 \insertRef{preedy2016tag}{GUSMap}
 }
 \seealso{
-\code{\link{FS}}, \code{\link{mfun}}
+\code{\link{BC}}, \code{\link{FS}}, \code{\link{IC}}, \code{\link{mfun}}
 }
 \author{
 Timothy P. Bilton. Code adapted from some R functions associated with the 

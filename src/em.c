@@ -1007,8 +1007,8 @@ SEXP EM_HMM_UP(SEXP r, SEXP ep, SEXP ref, SEXP alt, SEXP config, SEXP noFam, SEX
             b = palt[indx + nTotal*snp];
             for(s1 = 0; s1 < 4; s1++){
               g = Iindx_up(pconfig[snp*noFam_c + fam], s1 + 1);
-              sumA = sumA + uProb[s1][snp]*(b*Iaa(g) +  a*Ibb(g));
-              sumB = sumB + uProb[s1][snp]*(a*Iaa(g) +  b*Ibb(g));
+              sumA += uProb[s1][snp]*(b*Iaa(g) +  a*Ibb(g));
+              sumB += uProb[s1][snp]*(a*Iaa(g) +  b*Ibb(g));
             }
           }
         }

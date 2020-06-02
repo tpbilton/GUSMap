@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap)
-# Copyright 2017-2020 Timothy P. Bilton <timothy.bilton@agresearch.co.nz>
+# Copyright 2017-2020 Timothy P. Bilton
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,9 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
-#' BC and FS method: Create linkage groups
+#' BC, FS and IC method: Create linkage groups
 #' 
-#' Method for creating maternal and paternal linkage groups using the computed LOD scores.
+#' Method for creating linkage groups using the computed LOD scores.
 #' 
 #' Linkage groups are formed using the following algorithm
 #' \enumerate{
@@ -36,31 +36,34 @@
 #' advised to experiment with different values and examine the matrix of recombination fraction estimates (using the \code{\link{$plotLG}}
 #' function). 
 #' 
-#' 
 #' Notes: 
 #' \itemize{
 #' \item The LOD scores used in this function are computed using the {\code{\link{$rf_2pt}}} which needs to be
 #' run beforehand.
 #' \item A MI linkage group is one which only contains MI SNPs and a PI linkage group is one with only PI SNPs. These 
 #' linkage groups are referred to as the "puesdo-testcross linkage groups".
-#' \item Only MI and PI SNPs are used to construct linkage groups. The SI SNPs inferred in the {\code{\link{makeBC}}} or 
-#' {\code{\link{makeFS}}} function when the argument {\code{inferSNPs = TRUE}} are not used in the {\code{\link{$createLG}}} function.
+#' \item For BC and FS objects, only MI and PI SNPs are used to construct linkage groups. The SI SNPs inferred in the {\code{\link{makeBC}}} or 
+#' {\code{\link{makeFS}}} function when the argument {\code{inferSNPs = TRUE}} are not used in the {\code{\link{$createLG}}} function. For an IC
+#' object, all the inferred BI SNPs are used to construct linkage groups.
 #' }
 #' 
 #' @usage
-#' BCobj$createLG(parent = "both", LODthres = 10, nComp = 10)
-#' FSobj$createLG(parent = "both", LODthres = 10, nComp = 10)
+#' BCobj$createLG(parent = "both", LODthres = 10, nComp = 10, reset = FALSE)
+#' FSobj$createLG(parent = "both", LODthres = 10, nComp = 10, reset = FALSE)
+#' ICobj$createLG(LODthres = 10, nComp = 10)
 #' 
 #' @param parent A character vector specifying whether to create linakge groups using the maternal-informative (MI)
-#' SNPs (\code{"maternal"}), the paternal-informative (PI) SNPs (\code{"paternal"}), or MI and PI SNPs
+#' SNPs (\code{"maternal"}), the paternal-informative (PI) SNPs (\code{"paternal"}), or both the MI and PI SNPs
 #' (\code{"both"}).
 #' @param LODthres A positive numeric value specifying the LOD threshold used to add SNPs to the linkage groups.
 #' @param nComp A positive integer value specifying how many SNPs in the linakge group to compute the average LOD score 
 #' with the unmapped SNP.
+#' @param reset Logical value specifying whether to reset the linkage groups and linkage maps computed using the {\code{\link{$addBIsnps}}}, 
+#' {\code{\link{$computeMap}}} and {\code{\link{$orderLG}}} functions.
 #' 
 #' @name $createLG
 #' @author Timothy P. Bilton
-#' @seealso \code{\link{BC}}, \code{\link{FS}}
+#' @seealso \code{\link{BC}}, \code{\link{FS}}, \code{\link{IC}}
 #' @examples 
 #' ## Simulate some sequencing data
 #' set.seed(6745)
@@ -96,16 +99,19 @@ createLG <- function(group, LOD, parent, LODthres, nComp, masked){
   
   ## check that the parent argument is correct
   if(!is.character(parent) || length(parent) != 1 || 
-     !(parent %in% c("maternal","paternal")))
+     !(parent %in% c("maternal", "paternal", "both")))
     stop("parent argument is not a string of of length one or is incorrect:
          Please select one of the following:
          maternal: Only MI SNPs
-         paternal: Only PI SNPs")
+         paternal: Only PI SNPs
+         both: Only BI SNPs")
   
   if(parent == "maternal")
     unmapped <- sort(group$MI[which(group$MI %in% which(!masked))])
   else if(parent == "paternal")
     unmapped <- sort(group$PI[which(group$PI %in% which(!masked))])
+  else if(parent == "both")
+    unmapped <- sort(group$BI[which(group$BI %in% which(!masked))])
   
   if(length(unmapped) < 2)
     stop("There are no SNPs available to create linkage groups with.")

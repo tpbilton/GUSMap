@@ -31,13 +31,13 @@ See below for details.}
 An R6 object of class \code{\link{BC}}
 }
 \description{
-Create an BC object from an RA object, perform standard filtering and compute statistics specific to full-sib family populations.
+Create an BC object from an RA object, perform standard filtering and compute statistics specific to backcross populations.
 }
 \details{
 This function converts an RA object into an BC (backcross) object. An BC object is a R6 type object 
-that contains RA data, various other statistics computed and functions (methods) for analyzing
-the full-sib family for performing linkage mapping. The statistics computed and data filtering are 
-specific to full-sib family populations and sequencing data.
+that contains RA data, various other statistics computed and functions (methods) for analyzing and 
+performing linkage mapping for backcross populations. The statistics computed and data filtering are 
+specific to backcross populations and sequencing data.
 
 The filtering criteria currently implemented are:
 \itemize{
@@ -58,6 +58,11 @@ and homozygous for the alternate allele if only reads for the alternate allele a
 if the read depth is too low (e.g., homozeygous genotype is called heterozygous) and hence why the \code{DEPTH} filter is implemented.
 The segregation test performed for the \code{PVALUE} filter is described in the supplementary methods 
 of the publication by \insertCite{bilton2018genetics1;textual}{GUSMap} (Section 4 of File S1).
+
+If the argument \code{inferSNPs} is \code{TRUE}, an attempt to infer the segregation type of SNPs where the segregation type could 
+not be determined from the parental genotypes is made using the progeny data only. Note that using this approach, MI SNPs can not be 
+distinguished from PI SNPs (since we only know that one parent is heterozygous and one parent is homozygous but we don't know which is which)
+and so we collectively refer to the MI and PI SNPs inferred using this approach as semi-informative (SI) SNPs.
 
 The pedigree file must be a csv file containing the five columns:
 \itemize{

@@ -2,9 +2,11 @@
 % Please edit documentation in R/plotLM.R
 \name{$plotLM}
 \alias{$plotLM}
-\title{FS method: Plot linkage maps}
+\title{BC, FS and IC method: Plot linkage maps}
 \usage{
+BCobj$plotLM(LG = NULL, fun="haldane", col="black")
 FSobj$plotLM(LG = NULL, fun="haldane", col="black")
+ICobj$plotLM(LG = NULL, fun="haldane", col="black")
 }
 \arguments{
 \item{LG}{An integer vector specifying the indices of the linkage groups for which their linkage maps are to be plotted.}
@@ -17,8 +19,7 @@ FSobj$plotLM(LG = NULL, fun="haldane", col="black")
 Method for plotting linkage maps in GUSMap
 }
 \details{
-Function produces linkage maps of the combined linkage groups produced from the \code{\link{$computeMap}}
-function.
+Function displays linkage maps computed using the \code{\link{$computeMap}} function.
 
 For a list of mapping functions available, see \code{\link{mfun}}.
 }
@@ -42,7 +43,7 @@ F1data$computeMap()
 F1data$plotLM()
 }
 \seealso{
-\code{\link{FS}}, \code{\link{mfun}}
+\code{\link{BC}}, \code{\link{FS}}, \code{\link{IC}}, \code{\link{mfun}}
 }
 \author{
 Timothy P. Bilton

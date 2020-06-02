@@ -2,9 +2,11 @@
 % Please edit documentation in R/plotChr.R
 \name{$plotChr}
 \alias{$plotChr}
-\title{FS method: Heatmap of 2-point rf and LOD estimates from chromosome order}
+\title{BC, FS and IC method: Heatmap of 2-point rf and LOD estimates from chromosome order}
 \usage{
+BCobj$plotChr(parent = "maternal", mat="rf", filename=NULL, chrS=2, lmai=2)
 FSobj$plotChr(parent = "maternal", mat="rf", filename=NULL, chrS=2, lmai=2)
+ICobj$plotChr(mat="rf", filename=NULL, chrS=2, lmai=2)
 }
 \arguments{
 \item{parent}{Character value specifying whether the SNPs segreagting in the maternal parent should be 
@@ -27,10 +29,7 @@ Method for plotting 2-point recombination fraction and LOD score estimates when 
 }
 \details{
 This function plots the heatmap of the matrix of 2-point recombination fraction estimates (or 2-point LOD scores)
-as computed from the \code{\link{$rf_2pt}} function when the SNPs are ordered according to the genomic assembly (as given in the VCF file). 
-
-
-Note:
+as computed from the \code{\link{$rf_2pt}} function when the SNPs are ordered according to the genomic assembly (as given in the VCF file).
 }
 \examples{
 ## Simulate some sequencing data
@@ -45,7 +44,7 @@ F1data$plotChr()
 
 }
 \seealso{
-\code{\link{FS}}
+\code{\link{BC}}, \code{\link{FS}}, \code{\link{IC}}
 }
 \author{
 Timothy P. Bilton
