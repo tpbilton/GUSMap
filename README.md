@@ -26,6 +26,8 @@ There are three different types of mapping populations that are available GUSMap
 * A full-sib family. See the [FS Introduction](http://htmlpreview.github.io/?https://github.com/tpbilton/GUSMap/blob/master/inst/doc/Introduction_FS.html) tutorial.
 * An intercross/F2 (IC) population. See the [IC Introduction](http://htmlpreview.github.io/?https://github.com/tpbilton/GUSMap/blob/master/inst/doc/Introduction_IC.html) tutorial.
 
+Please note that GUSMap is not suitable for recombinant inbred lines (RILs) populations.
+
 ### Development:
 
 This package is under continued development. If you have any suggests for improvement or additional features you like to see, I'd suggest posting a question under the Issues. I'm also happy for people to suggest changes via a pull request provided it fits within the favour of the package.
