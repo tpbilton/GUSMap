@@ -1191,7 +1191,7 @@ Please select one of the following:
                           snp1 = indx_chrom[highrf]
                           snp2 = indx_chrom[highrf+1]
                           junk = sapply(1:length(highrf),function(x) {
-                            cat("RF-", highrf[x]," is ", round(MLE$rf[x],4)," (between SNPs ",snp1[x]," and ",snp2[x],")\n", sep="")
+                            cat("RF-", highrf[x]," is ", round(MLE$rf[highrf[x]],4)," (between SNPs ",snp1[x]," and ",snp2[x],")\n", sep="")
                             return(invisible())
                           })
                         }
