@@ -1020,7 +1020,7 @@ Please select one of the following:
                   ## determine the breask on the plot
                   temp <- cumsum(unlist(lapply(private$LG, length)))
                   LGbreaks <- orgOrder[temp[-length(temp)]] + 0.5
-                  chrBreaks <- which(diff(as.numeric(as.factor(private$chrom)))==1) + 0.5
+                  chrBreaks <- which(diff(as.numeric(factor(private$chrom, levels=unique(private$chrom))))==1) + 0.5
                   ## plot the synteny plot
                   temp_par <- graphics::par(no.readonly = TRUE) # save the current plot margins
                   graphics::par(mfrow=c(1,1))
