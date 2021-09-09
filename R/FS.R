@@ -543,7 +543,7 @@ FS <- R6::R6Class("FS",
                   return(invisible())
                 },
                 ## Function for adding the informative SNPs to the LGs
-                addBIsnps = function(LODthres=10, nComp=10){
+                addBIsnps = function(LODthres=10, nComp=10, binsize=0){
                   
                   ## Do some checks
                   if(is.null(private$rf) || is.null(private$LOD))
@@ -559,6 +559,34 @@ FS <- R6::R6Class("FS",
                   if(!is.numeric(nComp) || !is.vector(nComp) || length(nComp) != 1 || nComp < 0 || !is.finite(nComp) ||
                      round(nComp) != nComp)
                     stop("The number of comparsion points (argument 2) needs to be a finite positive integer number.")
+                  if(is.null(binsize) || GUSbase::checkVector(binsize, minv=0, type="pos_numeric", equal=FALSE) || length(binsize) != 1){
+                    warning("Minimum distance between adjacent SNPs is not specified or is invalid. Setting to 0:")
+                    binsize <- 0 
+                  }
+                  
+                  # ## Use the bin information to work out which SNPs are on the same Tag and merge LGs this way
+                  # if(binsize > 0){
+                  #   ## determine bins
+                  #   temp_bins = sapply(unique(private$chrom), function(x){
+                  #     if(sum(private$chrom == x) == 1)
+                  #       return(1)
+                  #     else
+                  #       return(cumsum(c(1,diff(private$pos[which(private$chrom == x)]) < binsize)))
+                  #   })
+                  #   bin_size = cumsum(unlist(lapply(temp_bins, function(y) length(unique(y)))))
+                  #   bins = unlist(c(temp_bins[1], sapply(2:length(temp_bins), function(x){
+                  #     temp_bins[[x]] + bin_size[x-1]
+                  #   })))
+                  #   
+                  #   ## combine the LGs together:
+                  #   for(lgmat in 1:length(private$LG_mat)){
+                  #     snps = private$LG_mat[[lgmat]]
+                  #     whichbins = bins[snps]
+                  #     which
+                  #     
+                  #   }
+                  #   
+                  # }
 
                   ## Find the unmapped loci
                   unmapped <- sort(unlist(c(private$group$BI,private$group_infer$BI)))
@@ -673,7 +701,7 @@ FS <- R6::R6Class("FS",
                   return(invisible(NULL))
                 },
                 ## Function for ordering linkage groups
-                orderLG = function(LG = NULL, mapfun = "haldane", weight="LOD2", ndim=30, spar=NULL, filename=NULL){
+                orderLG = function(LG = NULL, mapfun = "haldane", weight="LOD2", binsize=0, ndim=30, spar=NULL, filename=NULL){
                   ## do some checks
                   if(is.null(private$LG))
                     stop("There are no combined linkage groups. Please use the $addBISNPs to create combined LGs")
@@ -685,7 +713,10 @@ FS <- R6::R6Class("FS",
                     stop("Unknown mapping function")
                   if(!(weight %in% c("LOD","LOD2","none")))
                     stop("Unknown weighting function")
-
+                  if(is.null(binsize) || GUSbase::checkVector(binsize, minv=0, type="pos_numeric", equal=FALSE) || length(binsize) != 1){
+                    warning("Minimum distance between adjacent SNPs is not specified or is invalid. Setting to 0:")
+                    binsize <- 0 
+                  }
                   if(!is.null(filename) && (!is.vector(filename) || !is.character(filename) || length(filename) != 1))
                     stop("Specified filename is invalid")
                   if(!is.null(filename)){
@@ -694,11 +725,29 @@ FS <- R6::R6Class("FS",
                       stop("Error in filename. Cannot create pdf")
                   }
                   nChr = length(LG)
+                  tmp_config = private$config[[1]]
+                  tmp_config[which(is.na(tmp_config))] = private$config_infer[[1]][!is.na(private$config_infer[[1]])]
+                  ## if binning SNPs then work out the bins
+                  if(binsize > 0){
+                    ## determine bins
+                    temp_bins = sapply(unique(private$chrom), function(x){
+                      if(sum(private$chrom == x) == 1)
+                        return(1)
+                      else
+                        return(cumsum(c(1,diff(private$pos[which(private$chrom == x)]) > binsize)))
+                    })
+                    bin_size = cumsum(unlist(lapply(temp_bins, function(y) length(unique(y)))))
+                    bins = unlist(c(temp_bins[1], sapply(2:length(temp_bins), function(x){
+                      temp_bins[[x]] + bin_size[x-1]
+                    })))
+                    tmp_depth = private$ref[[1]] + private$alt[[1]]
+                  }
                   ## order the linkage groups
                   for(lg in LG){
                     ind <- private$LG[[lg]]
-                    ind_mi <- which(ind %in% private$group$MI)
-                    ind_pi <- which(ind %in% private$group$PI)
+                    ind_mi <- which(ind %in% which(tmp_config %in% c(4,5)))
+                    ind_pi <- which(ind %in% which(tmp_config %in% c(2,3)))
+                    ind_bi = which(ind %in% which(tmp_config %in% 1))
                     ## set up the weighting matrix
                     if(weight == "LOD")
                       wmat <- matrix(private$LOD[ind,ind],nrow=length(ind), ncol=length(ind))
@@ -712,10 +761,58 @@ FS <- R6::R6Class("FS",
                     ## set of the distance matrix
                     dmat <- mfun(private$rf[ind,ind], fun = mapfun, centiM=FALSE)
                     dmat[which(is.infinite(dmat))] <- 18.3684
-                    ## unconstrainted MDS
-                    MDS <- smacof::smacofSym(delta=dmat, ndim=ndim, weightmat = wmat, itmax = 1e+05)
-                    ## principal curve
-                    pcurve <- princurve::principal_curve(MDS$conf, maxit = 150, spar = spar)
+                    ## if we are combining information from SNPs on the same tag
+                    if(binsize > 0){
+                      bins_mi = bins[ind[ind_mi]]
+                      bins_pi = bins[ind[ind_pi]]
+                      bin_index = bins[ind]
+                      #all_bins = unique(bin_index)
+                      bins_in_common = names(which(table(bin_index)>1))
+                      #bins_in_common = all_bins[which((all_bins %in% bins_mi) & (all_bins %in% bins_pi))]
+                      newmat.indx = which(!(bin_index %in% bins_in_common))
+                      ## now iterate over the bins to combine
+                      for(bin in bins_in_common){
+                        tmp2 = which(bin_index == bin)
+                        tmp = ind[tmp2]
+                        tag_pi = tmp_config[tmp] %in% c(2,3)
+                        tag_mi = tmp_config[tmp] %in% c(4,5)
+                        tag_bi = tmp_config[tmp] %in% 1
+                        if(any(tag_mi) & any(tag_pi)){
+                          tmp_indx_mi = which(tag_mi)[which.max(colMeans(tmp_depth[,tmp][,which(tag_mi), drop=FALSE]))]
+                          tmp_indx_pi = which(tag_pi)[which.max(colMeans(tmp_depth[,tmp][,which(tag_pi), drop=FALSE]))]
+                          wmat[tmp2[tmp_indx_mi],ind_pi] = wmat[tmp2[tmp_indx_pi],ind_pi]
+                          wmat[tmp2[tmp_indx_mi],ind_bi] = colMeans(wmat[tmp2[c(tmp_indx_mi, tmp_indx_pi)],ind_bi])
+                          dmat[tmp2[tmp_indx_mi],ind_pi] = dmat[tmp2[tmp_indx_pi],ind_pi]
+                          dmat[tmp2[tmp_indx_mi],ind_bi] = colMeans(dmat[tmp2[c(tmp_indx_mi, tmp_indx_pi)],ind_bi])
+                          newmat.indx = c(newmat.indx, tmp2[tmp_indx_mi])
+                        } else if(any(tag_bi)){
+                          tmp_indx_bi = which(tag_bi)[which.max(colMeans(tmp_depth[,tmp][,which(tag_bi), drop=FALSE]))]
+                          newmat.indx = c(newmat.indx, tmp2[tmp_indx_bi])
+                        } else if(all(tag_mi)){
+                          newmat.indx = c(newmat.indx, tmp2[which.max(colMeans(tmp_depth[,tmp][,which(tag_mi), drop=FALSE]))])
+                        } else if(all(tag_pi)){
+                          newmat.indx = c(newmat.indx, tmp2[which.max(colMeans(tmp_depth[,tmp][,which(tag_pi), drop=FALSE]))])
+                        } else if(all(tag_bi)){
+                          newmat.indx = c(newmat.indx, tmp2[which.max(colMeans(tmp_depth[,tmp][,which(tag_bi), drop=FALSE]))])
+                        } else
+                          stop("Error in code.")
+                      }
+                      tmp.wmat = wmat[newmat.indx,newmat.indx]
+                      tmp.dmat = dmat[newmat.indx,newmat.indx]
+                      tmp.binID = bins[ind[newmat.indx]]
+                      ## unconstrainted MDS
+                      MDS <- smacof::smacofSym(delta=tmp.dmat, ndim=ndim, weightmat = tmp.wmat, itmax = 1e+05)
+                      ## principal curve
+                      pcurve <- princurve::principal_curve(MDS$conf, maxit = 150, spar = spar)
+                      neworder = pcurve$ord
+                      neworder = order(as.numeric(factor(bin_index, levels = tmp.binID[neworder])))
+                    } else{ ## original approach
+                      ## unconstrainted MDS
+                      MDS <- smacof::smacofSym(delta=dmat, ndim=ndim, weightmat = wmat, itmax = 1e+05)
+                      ## principal curve
+                      pcurve <- princurve::principal_curve(MDS$conf, maxit = 150, spar = spar)
+                      neworder = pcurve$ord
+                    }
                     ## plot the results
                     if(is.null(filename)) temp_par <- par(no.readonly=T)
                     else grDevices::pdf(paste0(filename,"_LG",lg,".pdf"), width=8, height=8)
@@ -723,12 +820,12 @@ FS <- R6::R6Class("FS",
                     graphics::plot(MDS$conf[,1],MDS$conf[,2], ylab="Dimension 2", xlab="Dimension 1", type="n")
                     graphics::text(MDS$conf, labels=ind)
                     graphics::lines(pcurve)
-                    graphics::image(private$rf[ind,ind][pcurve$ord,pcurve$ord], axes=F,
+                    graphics::image(private$rf[ind,ind][neworder,neworder], axes=F,
                                     col=grDevices::heat.colors(100))
                     if(is.null(filename)) graphics::par(temp_par)
                     else grDevices::dev.off()
                     ## Set the new order
-                    private$LG[[lg]] <- ind[pcurve$ord]
+                    private$LG[[lg]] <- ind[neworder]
                   }
                   ## Acknowledge paper we are using algorithm from
                   cat("Using the MDS scaling algorithm to order SNPs.\n",

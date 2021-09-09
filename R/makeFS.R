@@ -65,6 +65,10 @@
 #' the full-sib population. Note that this argument using the "Family" column in the pedigree file and
 #' so pedigree file needs to be set-up correctly.
 #' 
+#' The \code{keepSNPs} will over-ride any filtering criteria specified in \code{filter} but does require that the segregation type can be inferred. 
+#' That is, a SNP will be retained in the dataset if its indices is in the \code{keepSNPs} vector even though it may fail one or more of the filtering 
+#' criteria as defined in \code{filter}, except in the case where the segregation type cannot be inferred.
+#' 
 #' Note: Only a single full-sib family can be processed at present. There are future plans to extend this out to include
 #' multiple families.
 #' 
@@ -73,6 +77,7 @@
 #' @param family Vector of character strings giving the families to retain in the FS object. This allows a pedigree file with more than one family to be supplied.
 #' @param inferSNPs Logical value indicating whether to infer the segregation type of SNPs using the progeny information only
 #' in cases where the segregation type could not be inferred from the parental genotypes.
+#' @param keepSNPs Vector of indices of the SNPs in the RA to retain in the full-sib population.
 #' @param filter Named list of thresholds for various filtering criteria.
 #' See below for details.
 #'  
@@ -95,43 +100,46 @@
 #' \insertRef{bilton2018genetics1}{GUSMap}
 #' @export
 
+#### Note: need to add a check that the SNPs are in order (within a chromosome) somewhere:
+
+
 ### Make a full-sib family population
-makeFS <- function(RAobj, pedfile, family=NULL, inferSNPs=TRUE,
+makeFS <- function(RAobj, pedfile, family=NULL, inferSNPs=TRUE, keepSNPs=NULL,
                    filter=list(MAF=0.05, MISS=0.2, BIN=100, DEPTH=5, PVALUE=0.01, MAXDEPTH=500)){
   #inferSNPs = FALSE, perInfFam=1){
-  perInfFam=1; MNIF=1 # some variables for multiple familes needed for later
+  perInfFam=1; MNIF=1 # some variables for multiple families needed for later
   ## Do some checks
   if(!all(class(RAobj) %in% c("RA","R6")))
     stop("First argument supplied is not of class 'R6' and 'RA'")
-  if(is.null(filter$MAF) || filter$MAF<0 || filter$MAF>1 || !is.numeric(filter$MAF)){
+  if(is.null(filter$MAF) || GUSbase::checkVector(filter$MISS, minv=0, maxv=1, type="pos_numeric", equal=FALSE) || length(filter$MISS) != 1){
     warning("Minor allele filter has not be specified or is invalid. Setting to 5%:")
     filter$MAF <- 0.05
   }
   if(perInfFam <= 0.5 || perInfFam > 1)
     stop("The of the percentage of families which are informative for each SNP must greater than 50% and leass than equal to 100%.")
-  if(is.null(filter$MISS) || filter$MISS<0 || filter$MISS>1 || !is.numeric(filter$MISS)){
+  if(is.null(filter$MISS) ||  GUSbase::checkVector(filter$MISS, minv=0, maxv=1, type="pos_numeric", equal=FALSE) || length(filter$MISS) != 1){
     warning("Proportion of missing data filter has not be specified or is invalid. Setting to 20%:")
     filter$MISS <- 0.2
   }
-  if(is.null(filter$BIN) || filter$BIN<0 || !is.finite(filter$BIN) || !is.numeric(filter$BIN)){
+  if(is.null(filter$BIN) || GUSbase::checkVector(filter$BIN, minv=0, type="pos_numeric", equal=FALSE) || length(filter$BIN) != 1){
     warning("Minimum distance between adjacent SNPs is not specified or is invalid. Setting to 0:")
     filter$BIN <- 0 
   }
-  if(is.null(filter$DEPTH) || filter$DEPTH<0 || is.infinite(filter$DEPTH) || !is.numeric(filter$DEPTH)){
+  if(is.null(filter$DEPTH) || GUSbase::checkVector(filter$DEPTH, minv=0, type="pos_numeric", equal=FALSE) || length(filter$DEPTH) != 1){
     warning("Minimum depth on the parental genotypes filter has not be specified or is invalid. Setting to a depth of 5")
     filter$DEPTH <- 5
   }
-  if(is.null(filter$PVALUE) || filter$PVALUE<0 || filter$PVALUE > 1 || !is.numeric(filter$PVALUE)){
+  if(is.null(filter$PVALUE) || GUSbase::checkVector(filter$PVALUE, minv=0, maxv=1, type="pos_numeric", equal=FALSE) || length(filter$PVALUE) != 1){
     warning("P-value for segregation test is not specified or invalid. Setting a P-value of 0.01:")
     filter$PVALUE <- 0.01
   }
-  if(is.null(filter$MAXDEPTH) || filter$MAXDEPTH<0 || is.infinite(filter$MAXDEPTH) || !is.numeric(filter$MAXDEPTH)){
+  if(is.null(filter$MAXDEPTH) || GUSbase::checkVector(filter$MAXDEPTH, minv=0, type="pos_numeric", equal=FALSE) || length(filter$MAXDEPTH) != 1){
     warning("Maximum SNP depth filter is invalid. Setting to 500 by defualt.")
     filter$MAXDEPTH <- 500
   }
   if(!is.logical(inferSNPs) || !is.vector(inferSNPs) || length(inferSNPs) != 1)
     stop("Argument for `inferSNPs` not a logical value.")
-  
+
   ## initalize the UR object
   FSobj <- FS$new(RAobj)
   
@@ -149,6 +157,18 @@ makeFS <- function(RAobj, pedfile, family=NULL, inferSNPs=TRUE,
   ## Extract the private variables we want
   indID <- FSobj$.__enclos_env__$private$indID
   nSnps <- FSobj$.__enclos_env__$private$nSnps
+  
+  ## check if there are not specific SNPs to keep
+  if(is.null(keepSNPs))
+    keepSNPs = rep(FALSE, nSnps)
+  else if(GUSbase::checkVector(keepSNPs, type="pos_integer", minv=1, maxv=nSnps))
+    stop(paste0("Argument for `keepSNPs` is not a vecotr of integers between 0 and the number of SNPs "),nSnps)
+  else{
+    tmplog = rep(FALSE, nSnps)
+    tmplog[keepSNPs] = TRUE
+    keepSNPs = tmplog
+    rm(tmplog)
+  }
   
   ## sort out the pedigree
   ped <- utils::read.csv(pedfile, stringsAsFactors=F)
@@ -269,7 +289,7 @@ makeFS <- function(RAobj, pedfile, family=NULL, inferSNPs=TRUE,
     miss <- apply(genon,2, function(x) sum(is.na(x))/length(x))
     maxdepth <- colMeans(ref + alt)
     indx_temp <- rep(TRUE, nSnps)
-    indx_temp[which(MAF < filter$MAF | miss > filter$MISS | maxdepth > filter$MAXDEPTH)] <- FALSE
+    indx_temp[which((MAF < filter$MAF | miss > filter$MISS | maxdepth > filter$MAXDEPTH) & !keepSNPs)] <- FALSE
     
     ## fix max depth to be at 500 total reads
     ## Run into numeric issues otherwise
@@ -372,7 +392,7 @@ makeFS <- function(RAobj, pedfile, family=NULL, inferSNPs=TRUE,
         }
       }
     },simplify = T)
-    config[which(seg_Dis)] <- NA
+    config[which(seg_Dis & !keepSNPs)] <- NA
 
     ## Infer geotypes for over SNPs that have passed the MAF and MISS thresholds
     #propHeter <- sapply(1:nSnps, function(x) sum(genon[,x] == 1,na.rm=T)/sum(!is.na(genon[,x])))
@@ -436,6 +456,7 @@ makeFS <- function(RAobj, pedfile, family=NULL, inferSNPs=TRUE,
           return(ind[keepPos])
         } else return(NULL)
       },USE.NAMES = F ))] <- TRUE
+      oneSNP[which(keepSNPs)] = TRUE
     } else oneSNP <- rep(TRUE,nSnps)
     
     indx_temp[which(indx_temp & (!oneSNP | (is.na(config) & is.na(config_infer))))] <- FALSE
