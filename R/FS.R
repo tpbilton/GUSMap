@@ -1252,12 +1252,18 @@ Please select one of the following:
                       indx_chrom <- private$LG[[i]]
                       ref_temp <- lapply(private$ref, function(x) x[,indx_chrom])
                       alt_temp <- lapply(private$alt, function(x) x[,indx_chrom])
+                      config_temp <- lapply(private$config, function(x) x[indx_chrom])
+                      for(fam in 1:private$noFam){
+                        tempIndx <- !is.na(private$config_infer[[fam]][indx_chrom])
+                        config_temp[[fam]][tempIndx] <- private$config_infer[[fam]][indx_chrom[tempIndx]]
+                      }
+                      
                       ## estimate OPGP's
                       curOPGP <- private$para$OPGP[i]
                       if(inferOPGP || !is.list(curOPGP) || length(curOPGP[[1]]) != length(indx_chrom)){
                         tempOPGP <- list()
                         for(fam in 1:private$noFam){
-                          tempOPGP <- c(tempOPGP,list(as.integer(infer_OPGP_FS(ref_temp[[fam]],alt_temp[[fam]],private$config[[fam]][indx_chrom], method="EM", nThreads=nThreads))))
+                          tempOPGP <- c(tempOPGP,list(as.integer(infer_OPGP_FS(ref_temp[[fam]],alt_temp[[fam]],config_temp[[fam]], method="EM", nThreads=nThreads))))
                         }
                         private$para$OPGP[i] <- tempOPGP
                       }
@@ -1381,7 +1387,9 @@ Please select one of the following:
                       chrom <- private$chrom[unlist(LGlist)]
                       pos <- private$pos[unlist(LGlist)]
                       depth <- colMeans(private$ref[[1]][,unlist(LGlist)] + private$alt[[1]][,unlist(LGlist)])
-                      segType <- (c("BI","PI","PI","MI","MI","U"))[private$config[[1]][unlist(private$LG_map[LG])]]
+                      config_temp <- private$config[[1]]
+                      config_temp[!is.na(private$config_infer[[1]])] <- private$config_infer[[1]][!is.na(private$config_infer[[1]])] 
+                      segType <- (c("BI","PI","PI","MI","MI","U"))[config_temp[unlist(LGlist)]]
                       temp <- private$ref[[1]][,unlist(LGlist)] > 0 | private$alt[[1]][,unlist(LGlist)] > 0
                       callrate <- colMeans(temp)
                       rf_p <- unlist(lapply(private$para$rf_p[LG], function(y) {if(!is.na(y[1])) return(format(round(cumsum(c(0,y)),6),digits=6,scientific=F))} ))

@@ -26,7 +26,7 @@
 #'
 #' ## Functions (Methods) of an BC object
 #' BCobj$addBIsnps(LODthres = 10, nComp = 10)
-#' BCobj$s(LODthres = 10, nComp = 10)
+#' BCobj$iaddSNPs(LODthres = 10, nComp = 10)
 #' BCobj$computeMap(chrom = NULL, init_r = 0.01, ep = 0.001, method = NULL, err = T, mapped = T, nThreads = 1, rfthres = 0.1)
 #' BCobj$createLG(parent = "both", LODthres = 10, nComp = 10, reset = FALSE)
 #' BCobj$maskSNP(snps)
