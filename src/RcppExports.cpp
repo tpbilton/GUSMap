@@ -5,6 +5,11 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // viterbi_fs_err
 Rcpp::NumericMatrix viterbi_fs_err(Rcpp::NumericVector rf, Rcpp::NumericVector ep, int nInd, int nSnps, Rcpp::IntegerMatrix ref, Rcpp::IntegerMatrix alt, Rcpp::IntegerVector OPGP);
 RcppExport SEXP _GUSMap_viterbi_fs_err(SEXP rfSEXP, SEXP epSEXP, SEXP nIndSEXP, SEXP nSnpsSEXP, SEXP refSEXP, SEXP altSEXP, SEXP OPGPSEXP) {

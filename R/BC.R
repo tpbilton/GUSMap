@@ -779,7 +779,7 @@ BC <- R6::R6Class("BC",
                       if(GUSbase::checkVector(LG, type="pos_integer", minv=min(LGnum), maxv=max(LGnum)))
                         stop(paste0("At least one linkage group number does not exist. Indices must be between ",
                                     min(LGnum)," and ",max(LGnum)," for ",parent," LGs\n"))
-                      LGlist <- LGlist[which(LG %in% LGnum)]
+                      LGlist <- LGlist[which(LGnum %in% LG)]
                       names(LGlist) <- LG
                     }
                     else

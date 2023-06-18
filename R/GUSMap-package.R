@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap)
-# Copyright 2017-2020 Timothy P. Bilton
+# Copyright 2017-2023 Timothy P. Bilton
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 #' sequencing methods \insertCite{@see @bilton2018genetics1}{GUSMap}.
 #'
 #' \tabular{ll}{ Package: \tab GUSMap\cr Type: \tab Package\cr Version: \tab
-#' 2.2.0\cr Date: \tab 2020-06-01\cr License: \tab GPL 3\cr }
+#' 2.2.1\cr Date: \tab 2023-06-10\cr License: \tab GPL 3\cr }
 #'
 #' @name GUSMap-package
 #' @aliases GUSMap

@@ -70,43 +70,43 @@ Timothy P. Bilton
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-new}{\code{FS$new()}}
-\item \href{#method-print}{\code{FS$print()}}
-\item \href{#method-removeSNP}{\code{FS$removeSNP()}}
-\item \href{#method-removeLG}{\code{FS$removeLG()}}
-\item \href{#method-mergeLG}{\code{FS$mergeLG()}}
-\item \href{#method-maskSNP}{\code{FS$maskSNP()}}
-\item \href{#method-unmaskSNP}{\code{FS$unmaskSNP()}}
-\item \href{#method-rf_2pt}{\code{FS$rf_2pt()}}
-\item \href{#method-createLG}{\code{FS$createLG()}}
-\item \href{#method-addSNPs}{\code{FS$addSNPs()}}
-\item \href{#method-addBIsnps}{\code{FS$addBIsnps()}}
-\item \href{#method-orderLG}{\code{FS$orderLG()}}
-\item \href{#method-plotLG}{\code{FS$plotLG()}}
-\item \href{#method-plotChr}{\code{FS$plotChr()}}
-\item \href{#method-plotLM}{\code{FS$plotLM()}}
-\item \href{#method-plotSyn}{\code{FS$plotSyn()}}
-\item \href{#method-computeMap}{\code{FS$computeMap()}}
-\item \href{#method-writeLM}{\code{FS$writeLM()}}
-\item \href{#method-cometPlot}{\code{FS$cometPlot()}}
-\item \href{#method-rocketPlot}{\code{FS$rocketPlot()}}
-\item \href{#method-RDDPlot}{\code{FS$RDDPlot()}}
-\item \href{#method-clone}{\code{FS$clone()}}
+\item \href{#method-FS-new}{\code{FS$new()}}
+\item \href{#method-FS-print}{\code{FS$print()}}
+\item \href{#method-FS-removeSNP}{\code{FS$removeSNP()}}
+\item \href{#method-FS-removeLG}{\code{FS$removeLG()}}
+\item \href{#method-FS-mergeLG}{\code{FS$mergeLG()}}
+\item \href{#method-FS-maskSNP}{\code{FS$maskSNP()}}
+\item \href{#method-FS-unmaskSNP}{\code{FS$unmaskSNP()}}
+\item \href{#method-FS-rf_2pt}{\code{FS$rf_2pt()}}
+\item \href{#method-FS-createLG}{\code{FS$createLG()}}
+\item \href{#method-FS-addSNPs}{\code{FS$addSNPs()}}
+\item \href{#method-FS-addBIsnps}{\code{FS$addBIsnps()}}
+\item \href{#method-FS-orderLG}{\code{FS$orderLG()}}
+\item \href{#method-FS-plotLG}{\code{FS$plotLG()}}
+\item \href{#method-FS-plotChr}{\code{FS$plotChr()}}
+\item \href{#method-FS-plotLM}{\code{FS$plotLM()}}
+\item \href{#method-FS-plotSyn}{\code{FS$plotSyn()}}
+\item \href{#method-FS-computeMap}{\code{FS$computeMap()}}
+\item \href{#method-FS-writeLM}{\code{FS$writeLM()}}
+\item \href{#method-FS-cometPlot}{\code{FS$cometPlot()}}
+\item \href{#method-FS-rocketPlot}{\code{FS$rocketPlot()}}
+\item \href{#method-FS-RDDPlot}{\code{FS$RDDPlot()}}
+\item \href{#method-FS-clone}{\code{FS$clone()}}
 }
 }
-\if{html}{
-\out{<details open ><summary>Inherited methods</summary>}
-\itemize{
-\item \out{<span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="extractVar">}\href{../../GUSbase/html/RA.html#method-extractVar}{\code{GUSbase::RA$extractVar()}}\out{</span>}
-\item \out{<span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="mergeSamples">}\href{../../GUSbase/html/RA.html#method-mergeSamples}{\code{GUSbase::RA$mergeSamples()}}\out{</span>}
-\item \out{<span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="writeRA">}\href{../../GUSbase/html/RA.html#method-writeRA}{\code{GUSbase::RA$writeRA()}}\out{</span>}
-\item \out{<span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="writeVCF">}\href{../../GUSbase/html/RA.html#method-writeVCF}{\code{GUSbase::RA$writeVCF()}}\out{</span>}
-}
-\out{</details>}
-}
+\if{html}{\out{
+<details open><summary>Inherited methods</summary>
+<ul>
+<li><span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="extractVar"><a href='../../GUSbase/html/RA.html#method-RA-extractVar'><code>GUSbase::RA$extractVar()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="mergeSamples"><a href='../../GUSbase/html/RA.html#method-RA-mergeSamples'><code>GUSbase::RA$mergeSamples()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="writeRA"><a href='../../GUSbase/html/RA.html#method-RA-writeRA'><code>GUSbase::RA$writeRA()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="writeVCF"><a href='../../GUSbase/html/RA.html#method-RA-writeVCF'><code>GUSbase::RA$writeVCF()</code></a></span></li>
+</ul>
+</details>
+}}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-new"></a>}}
-\if{latex}{\out{\hypertarget{method-new}{}}}
+\if{html}{\out{<a id="method-FS-new"></a>}}
+\if{latex}{\out{\hypertarget{method-FS-new}{}}}
 \subsection{Method \code{new()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$new(R6obj)}\if{html}{\out{</div>}}
@@ -114,8 +114,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-print"></a>}}
-\if{latex}{\out{\hypertarget{method-print}{}}}
+\if{html}{\out{<a id="method-FS-print"></a>}}
+\if{latex}{\out{\hypertarget{method-FS-print}{}}}
 \subsection{Method \code{print()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$print(what = NULL, ...)}\if{html}{\out{</div>}}
@@ -123,8 +123,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-removeSNP"></a>}}
-\if{latex}{\out{\hypertarget{method-removeSNP}{}}}
+\if{html}{\out{<a id="method-FS-removeSNP"></a>}}
+\if{latex}{\out{\hypertarget{method-FS-removeSNP}{}}}
 \subsection{Method \code{removeSNP()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$removeSNP(snps, where = NULL)}\if{html}{\out{</div>}}
@@ -132,8 +132,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-removeLG"></a>}}
-\if{latex}{\out{\hypertarget{method-removeLG}{}}}
+\if{html}{\out{<a id="method-FS-removeLG"></a>}}
+\if{latex}{\out{\hypertarget{method-FS-removeLG}{}}}
 \subsection{Method \code{removeLG()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$removeLG(LG, where = NULL)}\if{html}{\out{</div>}}
@@ -141,8 +141,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-mergeLG"></a>}}
-\if{latex}{\out{\hypertarget{method-mergeLG}{}}}
+\if{html}{\out{<a id="method-FS-mergeLG"></a>}}
+\if{latex}{\out{\hypertarget{method-FS-mergeLG}{}}}
 \subsection{Method \code{mergeLG()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$mergeLG(LG, where = NULL, mergeTo = NULL)}\if{html}{\out{</div>}}
@@ -150,8 +150,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-maskSNP"></a>}}
-\if{latex}{\out{\hypertarget{method-maskSNP}{}}}
+\if{html}{\out{<a id="method-FS-maskSNP"></a>}}
+\if{latex}{\out{\hypertarget{method-FS-maskSNP}{}}}
 \subsection{Method \code{maskSNP()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$maskSNP(snps)}\if{html}{\out{</div>}}
@@ -159,8 +159,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-unmaskSNP"></a>}}
-\if{latex}{\out{\hypertarget{method-unmaskSNP}{}}}
+\if{html}{\out{<a id="method-FS-unmaskSNP"></a>}}
+\if{latex}{\out{\hypertarget{method-FS-unmaskSNP}{}}}
 \subsection{Method \code{unmaskSNP()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$unmaskSNP(snps)}\if{html}{\out{</div>}}
@@ -168,8 +168,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-rf_2pt"></a>}}
-\if{latex}{\out{\hypertarget{method-rf_2pt}{}}}
+\if{html}{\out{<a id="method-FS-rf_2pt"></a>}}
+\if{latex}{\out{\hypertarget{method-FS-rf_2pt}{}}}
 \subsection{Method \code{rf_2pt()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$rf_2pt(nClust = 2, err = FALSE)}\if{html}{\out{</div>}}
@@ -177,17 +177,17 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-createLG"></a>}}
-\if{latex}{\out{\hypertarget{method-createLG}{}}}
+\if{html}{\out{<a id="method-FS-createLG"></a>}}
+\if{latex}{\out{\hypertarget{method-FS-createLG}{}}}
 \subsection{Method \code{createLG()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{FS$createLG(parent = "both", LODthres = 10, nComp = 10)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{FS$createLG(parent = "both", LODthres = 10, nComp = 10, reset = FALSE)}\if{html}{\out{</div>}}
 }
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-addSNPs"></a>}}
-\if{latex}{\out{\hypertarget{method-addSNPs}{}}}
+\if{html}{\out{<a id="method-FS-addSNPs"></a>}}
+\if{latex}{\out{\hypertarget{method-FS-addSNPs}{}}}
 \subsection{Method \code{addSNPs()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$addSNPs(LODthres = 10, nComp = 10)}\if{html}{\out{</div>}}
@@ -195,23 +195,24 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-addBIsnps"></a>}}
-\if{latex}{\out{\hypertarget{method-addBIsnps}{}}}
+\if{html}{\out{<a id="method-FS-addBIsnps"></a>}}
+\if{latex}{\out{\hypertarget{method-FS-addBIsnps}{}}}
 \subsection{Method \code{addBIsnps()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{FS$addBIsnps(LODthres = 10, nComp = 10)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{FS$addBIsnps(LODthres = 10, nComp = 10, binsize = 0)}\if{html}{\out{</div>}}
 }
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-orderLG"></a>}}
-\if{latex}{\out{\hypertarget{method-orderLG}{}}}
+\if{html}{\out{<a id="method-FS-orderLG"></a>}}
+\if{latex}{\out{\hypertarget{method-FS-orderLG}{}}}
 \subsection{Method \code{orderLG()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$orderLG(
   LG = NULL,
   mapfun = "haldane",
   weight = "LOD2",
+  binsize = 0,
   ndim = 30,
   spar = NULL,
   filename = NULL
@@ -220,8 +221,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-plotLG"></a>}}
-\if{latex}{\out{\hypertarget{method-plotLG}{}}}
+\if{html}{\out{<a id="method-FS-plotLG"></a>}}
+\if{latex}{\out{\hypertarget{method-FS-plotLG}{}}}
 \subsection{Method \code{plotLG()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$plotLG(
@@ -237,8 +238,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-plotChr"></a>}}
-\if{latex}{\out{\hypertarget{method-plotChr}{}}}
+\if{html}{\out{<a id="method-FS-plotChr"></a>}}
+\if{latex}{\out{\hypertarget{method-FS-plotChr}{}}}
 \subsection{Method \code{plotChr()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$plotChr(
@@ -253,8 +254,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-plotLM"></a>}}
-\if{latex}{\out{\hypertarget{method-plotLM}{}}}
+\if{html}{\out{<a id="method-FS-plotLM"></a>}}
+\if{latex}{\out{\hypertarget{method-FS-plotLM}{}}}
 \subsection{Method \code{plotLM()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$plotLM(LG = NULL, fun = "haldane", col = "black")}\if{html}{\out{</div>}}
@@ -262,8 +263,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-plotSyn"></a>}}
-\if{latex}{\out{\hypertarget{method-plotSyn}{}}}
+\if{html}{\out{<a id="method-FS-plotSyn"></a>}}
+\if{latex}{\out{\hypertarget{method-FS-plotSyn}{}}}
 \subsection{Method \code{plotSyn()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$plotSyn()}\if{html}{\out{</div>}}
@@ -271,8 +272,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-computeMap"></a>}}
-\if{latex}{\out{\hypertarget{method-computeMap}{}}}
+\if{html}{\out{<a id="method-FS-computeMap"></a>}}
+\if{latex}{\out{\hypertarget{method-FS-computeMap}{}}}
 \subsection{Method \code{computeMap()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$computeMap(
@@ -292,8 +293,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-writeLM"></a>}}
-\if{latex}{\out{\hypertarget{method-writeLM}{}}}
+\if{html}{\out{<a id="method-FS-writeLM"></a>}}
+\if{latex}{\out{\hypertarget{method-FS-writeLM}{}}}
 \subsection{Method \code{writeLM()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$writeLM(file, direct = "./", LG = NULL, what = NULL, inferGeno = TRUE)}\if{html}{\out{</div>}}
@@ -301,8 +302,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-cometPlot"></a>}}
-\if{latex}{\out{\hypertarget{method-cometPlot}{}}}
+\if{html}{\out{<a id="method-FS-cometPlot"></a>}}
+\if{latex}{\out{\hypertarget{method-FS-cometPlot}{}}}
 \subsection{Method \code{cometPlot()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$cometPlot(
@@ -320,8 +321,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-rocketPlot"></a>}}
-\if{latex}{\out{\hypertarget{method-rocketPlot}{}}}
+\if{html}{\out{<a id="method-FS-rocketPlot"></a>}}
+\if{latex}{\out{\hypertarget{method-FS-rocketPlot}{}}}
 \subsection{Method \code{rocketPlot()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$rocketPlot(
@@ -338,8 +339,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-RDDPlot"></a>}}
-\if{latex}{\out{\hypertarget{method-RDDPlot}{}}}
+\if{html}{\out{<a id="method-FS-RDDPlot"></a>}}
+\if{latex}{\out{\hypertarget{method-FS-RDDPlot}{}}}
 \subsection{Method \code{RDDPlot()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{FS$RDDPlot(filename = NULL, maxdepth = 500, maxSNPs = 1e+05, ...)}\if{html}{\out{</div>}}
@@ -347,8 +348,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-clone}{}}}
+\if{html}{\out{<a id="method-FS-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-FS-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{

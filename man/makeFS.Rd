@@ -9,6 +9,7 @@ makeFS(
   pedfile,
   family = NULL,
   inferSNPs = TRUE,
+  keepSNPs = NULL,
   filter = list(MAF = 0.05, MISS = 0.2, BIN = 100, DEPTH = 5, PVALUE = 0.01, MAXDEPTH =
     500)
 )
@@ -22,6 +23,8 @@ makeFS(
 
 \item{inferSNPs}{Logical value indicating whether to infer the segregation type of SNPs using the progeny information only
 in cases where the segregation type could not be inferred from the parental genotypes.}
+
+\item{keepSNPs}{Vector of indices of the SNPs in the RA to retain in the full-sib population.}
 
 \item{filter}{Named list of thresholds for various filtering criteria.
 See below for details.}
@@ -78,6 +81,10 @@ when the associated read depth is greater than or equal the threshold \code{DEPT
 The \code{family} argument allows the user to specify the family to be used in the creation of
 the full-sib population. Note that this argument using the "Family" column in the pedigree file and
 so pedigree file needs to be set-up correctly.
+
+The \code{keepSNPs} will over-ride any filtering criteria specified in \code{filter} but does require that the segregation type can be inferred. 
+That is, a SNP will be retained in the dataset if its indices is in the \code{keepSNPs} vector even though it may fail one or more of the filtering 
+criteria as defined in \code{filter}, except in the case where the segregation type cannot be inferred.
 
 Note: Only a single full-sib family can be processed at present. There are future plans to extend this out to include
 multiple families.

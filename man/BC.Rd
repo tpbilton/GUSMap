@@ -10,7 +10,7 @@ BCobj <- makeBC(RAobj, pedfile, family=NULL, inferSNPs=FALSE,
 
 ## Functions (Methods) of an BC object
 BCobj$addBIsnps(LODthres = 10, nComp = 10)
-BCobj$s(LODthres = 10, nComp = 10)
+BCobj$iaddSNPs(LODthres = 10, nComp = 10)
 BCobj$computeMap(chrom = NULL, init_r = 0.01, ep = 0.001, method = NULL, err = T, mapped = T, nThreads = 1, rfthres = 0.1)
 BCobj$createLG(parent = "both", LODthres = 10, nComp = 10, reset = FALSE)
 BCobj$maskSNP(snps)
@@ -70,43 +70,43 @@ Timothy P. Bilton
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-new}{\code{BC$new()}}
-\item \href{#method-print}{\code{BC$print()}}
-\item \href{#method-removeSNP}{\code{BC$removeSNP()}}
-\item \href{#method-removeLG}{\code{BC$removeLG()}}
-\item \href{#method-mergeLG}{\code{BC$mergeLG()}}
-\item \href{#method-maskSNP}{\code{BC$maskSNP()}}
-\item \href{#method-unmaskSNP}{\code{BC$unmaskSNP()}}
-\item \href{#method-rf_2pt}{\code{BC$rf_2pt()}}
-\item \href{#method-createLG}{\code{BC$createLG()}}
-\item \href{#method-addSNPs}{\code{BC$addSNPs()}}
-\item \href{#method-addBIsnps}{\code{BC$addBIsnps()}}
-\item \href{#method-orderLG}{\code{BC$orderLG()}}
-\item \href{#method-plotLG}{\code{BC$plotLG()}}
-\item \href{#method-plotChr}{\code{BC$plotChr()}}
-\item \href{#method-plotLM}{\code{BC$plotLM()}}
-\item \href{#method-plotSyn}{\code{BC$plotSyn()}}
-\item \href{#method-computeMap}{\code{BC$computeMap()}}
-\item \href{#method-cometPlot}{\code{BC$cometPlot()}}
-\item \href{#method-rocketPlot}{\code{BC$rocketPlot()}}
-\item \href{#method-RDDPlot}{\code{BC$RDDPlot()}}
-\item \href{#method-writeLM}{\code{BC$writeLM()}}
-\item \href{#method-clone}{\code{BC$clone()}}
+\item \href{#method-BC-new}{\code{BC$new()}}
+\item \href{#method-BC-print}{\code{BC$print()}}
+\item \href{#method-BC-removeSNP}{\code{BC$removeSNP()}}
+\item \href{#method-BC-removeLG}{\code{BC$removeLG()}}
+\item \href{#method-BC-mergeLG}{\code{BC$mergeLG()}}
+\item \href{#method-BC-maskSNP}{\code{BC$maskSNP()}}
+\item \href{#method-BC-unmaskSNP}{\code{BC$unmaskSNP()}}
+\item \href{#method-BC-rf_2pt}{\code{BC$rf_2pt()}}
+\item \href{#method-BC-createLG}{\code{BC$createLG()}}
+\item \href{#method-BC-addSNPs}{\code{BC$addSNPs()}}
+\item \href{#method-BC-addBIsnps}{\code{BC$addBIsnps()}}
+\item \href{#method-BC-orderLG}{\code{BC$orderLG()}}
+\item \href{#method-BC-plotLG}{\code{BC$plotLG()}}
+\item \href{#method-BC-plotChr}{\code{BC$plotChr()}}
+\item \href{#method-BC-plotLM}{\code{BC$plotLM()}}
+\item \href{#method-BC-plotSyn}{\code{BC$plotSyn()}}
+\item \href{#method-BC-computeMap}{\code{BC$computeMap()}}
+\item \href{#method-BC-cometPlot}{\code{BC$cometPlot()}}
+\item \href{#method-BC-rocketPlot}{\code{BC$rocketPlot()}}
+\item \href{#method-BC-RDDPlot}{\code{BC$RDDPlot()}}
+\item \href{#method-BC-writeLM}{\code{BC$writeLM()}}
+\item \href{#method-BC-clone}{\code{BC$clone()}}
 }
 }
-\if{html}{
-\out{<details open ><summary>Inherited methods</summary>}
-\itemize{
-\item \out{<span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="extractVar">}\href{../../GUSbase/html/RA.html#method-extractVar}{\code{GUSbase::RA$extractVar()}}\out{</span>}
-\item \out{<span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="mergeSamples">}\href{../../GUSbase/html/RA.html#method-mergeSamples}{\code{GUSbase::RA$mergeSamples()}}\out{</span>}
-\item \out{<span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="writeRA">}\href{../../GUSbase/html/RA.html#method-writeRA}{\code{GUSbase::RA$writeRA()}}\out{</span>}
-\item \out{<span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="writeVCF">}\href{../../GUSbase/html/RA.html#method-writeVCF}{\code{GUSbase::RA$writeVCF()}}\out{</span>}
-}
-\out{</details>}
-}
+\if{html}{\out{
+<details open><summary>Inherited methods</summary>
+<ul>
+<li><span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="extractVar"><a href='../../GUSbase/html/RA.html#method-RA-extractVar'><code>GUSbase::RA$extractVar()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="mergeSamples"><a href='../../GUSbase/html/RA.html#method-RA-mergeSamples'><code>GUSbase::RA$mergeSamples()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="writeRA"><a href='../../GUSbase/html/RA.html#method-RA-writeRA'><code>GUSbase::RA$writeRA()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="writeVCF"><a href='../../GUSbase/html/RA.html#method-RA-writeVCF'><code>GUSbase::RA$writeVCF()</code></a></span></li>
+</ul>
+</details>
+}}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-new"></a>}}
-\if{latex}{\out{\hypertarget{method-new}{}}}
+\if{html}{\out{<a id="method-BC-new"></a>}}
+\if{latex}{\out{\hypertarget{method-BC-new}{}}}
 \subsection{Method \code{new()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{BC$new(R6obj)}\if{html}{\out{</div>}}
@@ -114,8 +114,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-print"></a>}}
-\if{latex}{\out{\hypertarget{method-print}{}}}
+\if{html}{\out{<a id="method-BC-print"></a>}}
+\if{latex}{\out{\hypertarget{method-BC-print}{}}}
 \subsection{Method \code{print()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{BC$print(what = NULL, ...)}\if{html}{\out{</div>}}
@@ -123,8 +123,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-removeSNP"></a>}}
-\if{latex}{\out{\hypertarget{method-removeSNP}{}}}
+\if{html}{\out{<a id="method-BC-removeSNP"></a>}}
+\if{latex}{\out{\hypertarget{method-BC-removeSNP}{}}}
 \subsection{Method \code{removeSNP()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{BC$removeSNP(snps, where = NULL)}\if{html}{\out{</div>}}
@@ -132,8 +132,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-removeLG"></a>}}
-\if{latex}{\out{\hypertarget{method-removeLG}{}}}
+\if{html}{\out{<a id="method-BC-removeLG"></a>}}
+\if{latex}{\out{\hypertarget{method-BC-removeLG}{}}}
 \subsection{Method \code{removeLG()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{BC$removeLG(LG, where = NULL)}\if{html}{\out{</div>}}
@@ -141,8 +141,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-mergeLG"></a>}}
-\if{latex}{\out{\hypertarget{method-mergeLG}{}}}
+\if{html}{\out{<a id="method-BC-mergeLG"></a>}}
+\if{latex}{\out{\hypertarget{method-BC-mergeLG}{}}}
 \subsection{Method \code{mergeLG()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{BC$mergeLG(LG, where = NULL, mergeTo = NULL)}\if{html}{\out{</div>}}
@@ -150,8 +150,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-maskSNP"></a>}}
-\if{latex}{\out{\hypertarget{method-maskSNP}{}}}
+\if{html}{\out{<a id="method-BC-maskSNP"></a>}}
+\if{latex}{\out{\hypertarget{method-BC-maskSNP}{}}}
 \subsection{Method \code{maskSNP()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{BC$maskSNP(snps)}\if{html}{\out{</div>}}
@@ -159,8 +159,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-unmaskSNP"></a>}}
-\if{latex}{\out{\hypertarget{method-unmaskSNP}{}}}
+\if{html}{\out{<a id="method-BC-unmaskSNP"></a>}}
+\if{latex}{\out{\hypertarget{method-BC-unmaskSNP}{}}}
 \subsection{Method \code{unmaskSNP()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{BC$unmaskSNP(snps)}\if{html}{\out{</div>}}
@@ -168,8 +168,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-rf_2pt"></a>}}
-\if{latex}{\out{\hypertarget{method-rf_2pt}{}}}
+\if{html}{\out{<a id="method-BC-rf_2pt"></a>}}
+\if{latex}{\out{\hypertarget{method-BC-rf_2pt}{}}}
 \subsection{Method \code{rf_2pt()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{BC$rf_2pt(nClust = 2, err = FALSE)}\if{html}{\out{</div>}}
@@ -177,8 +177,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-createLG"></a>}}
-\if{latex}{\out{\hypertarget{method-createLG}{}}}
+\if{html}{\out{<a id="method-BC-createLG"></a>}}
+\if{latex}{\out{\hypertarget{method-BC-createLG}{}}}
 \subsection{Method \code{createLG()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{BC$createLG(parent = "both", LODthres = 10, nComp = 10, reset = FALSE)}\if{html}{\out{</div>}}
@@ -186,8 +186,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-addSNPs"></a>}}
-\if{latex}{\out{\hypertarget{method-addSNPs}{}}}
+\if{html}{\out{<a id="method-BC-addSNPs"></a>}}
+\if{latex}{\out{\hypertarget{method-BC-addSNPs}{}}}
 \subsection{Method \code{addSNPs()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{BC$addSNPs(LODthres = 10, nComp = 10)}\if{html}{\out{</div>}}
@@ -195,8 +195,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-addBIsnps"></a>}}
-\if{latex}{\out{\hypertarget{method-addBIsnps}{}}}
+\if{html}{\out{<a id="method-BC-addBIsnps"></a>}}
+\if{latex}{\out{\hypertarget{method-BC-addBIsnps}{}}}
 \subsection{Method \code{addBIsnps()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{BC$addBIsnps(LODthres = 10, nComp = 10)}\if{html}{\out{</div>}}
@@ -204,8 +204,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-orderLG"></a>}}
-\if{latex}{\out{\hypertarget{method-orderLG}{}}}
+\if{html}{\out{<a id="method-BC-orderLG"></a>}}
+\if{latex}{\out{\hypertarget{method-BC-orderLG}{}}}
 \subsection{Method \code{orderLG()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{BC$orderLG(
@@ -220,8 +220,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-plotLG"></a>}}
-\if{latex}{\out{\hypertarget{method-plotLG}{}}}
+\if{html}{\out{<a id="method-BC-plotLG"></a>}}
+\if{latex}{\out{\hypertarget{method-BC-plotLG}{}}}
 \subsection{Method \code{plotLG()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{BC$plotLG(
@@ -237,8 +237,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-plotChr"></a>}}
-\if{latex}{\out{\hypertarget{method-plotChr}{}}}
+\if{html}{\out{<a id="method-BC-plotChr"></a>}}
+\if{latex}{\out{\hypertarget{method-BC-plotChr}{}}}
 \subsection{Method \code{plotChr()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{BC$plotChr(
@@ -253,8 +253,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-plotLM"></a>}}
-\if{latex}{\out{\hypertarget{method-plotLM}{}}}
+\if{html}{\out{<a id="method-BC-plotLM"></a>}}
+\if{latex}{\out{\hypertarget{method-BC-plotLM}{}}}
 \subsection{Method \code{plotLM()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{BC$plotLM(LG = NULL, fun = "haldane", col = "black")}\if{html}{\out{</div>}}
@@ -262,8 +262,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-plotSyn"></a>}}
-\if{latex}{\out{\hypertarget{method-plotSyn}{}}}
+\if{html}{\out{<a id="method-BC-plotSyn"></a>}}
+\if{latex}{\out{\hypertarget{method-BC-plotSyn}{}}}
 \subsection{Method \code{plotSyn()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{BC$plotSyn()}\if{html}{\out{</div>}}
@@ -271,8 +271,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-computeMap"></a>}}
-\if{latex}{\out{\hypertarget{method-computeMap}{}}}
+\if{html}{\out{<a id="method-BC-computeMap"></a>}}
+\if{latex}{\out{\hypertarget{method-BC-computeMap}{}}}
 \subsection{Method \code{computeMap()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{BC$computeMap(
@@ -292,8 +292,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-cometPlot"></a>}}
-\if{latex}{\out{\hypertarget{method-cometPlot}{}}}
+\if{html}{\out{<a id="method-BC-cometPlot"></a>}}
+\if{latex}{\out{\hypertarget{method-BC-cometPlot}{}}}
 \subsection{Method \code{cometPlot()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{BC$cometPlot(
@@ -311,8 +311,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-rocketPlot"></a>}}
-\if{latex}{\out{\hypertarget{method-rocketPlot}{}}}
+\if{html}{\out{<a id="method-BC-rocketPlot"></a>}}
+\if{latex}{\out{\hypertarget{method-BC-rocketPlot}{}}}
 \subsection{Method \code{rocketPlot()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{BC$rocketPlot(
@@ -329,8 +329,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-RDDPlot"></a>}}
-\if{latex}{\out{\hypertarget{method-RDDPlot}{}}}
+\if{html}{\out{<a id="method-BC-RDDPlot"></a>}}
+\if{latex}{\out{\hypertarget{method-BC-RDDPlot}{}}}
 \subsection{Method \code{RDDPlot()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{BC$RDDPlot(filename = NULL, maxdepth = 500, maxSNPs = 1e+05, ...)}\if{html}{\out{</div>}}
@@ -338,8 +338,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-writeLM"></a>}}
-\if{latex}{\out{\hypertarget{method-writeLM}{}}}
+\if{html}{\out{<a id="method-BC-writeLM"></a>}}
+\if{latex}{\out{\hypertarget{method-BC-writeLM}{}}}
 \subsection{Method \code{writeLM()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{BC$writeLM(file, direct = "./", LG = NULL, what = NULL, inferGeno = TRUE)}\if{html}{\out{</div>}}
@@ -347,8 +347,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-clone}{}}}
+\if{html}{\out{<a id="method-BC-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-BC-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{

@@ -1,3 +1,13 @@
+# GUSMap 2.2.1
+
+## Updates
+* Major changes to the `makeFS` function. Added functionality for determining how many SNPs are discarded based on the different filtering criteria
+* Modified how the genotypes in the parents are being called. Now allow for 5% error in calling a homozygous genotype (i.e., if the major/minor allele is between 0% and 5%, then the genotype call is homozygous for the prominent allele)
+
+## Bugs fixed:
+* Issue with `computeMap` when `inferSNPs=TRUE`. Now fixed.
+* BIN filter was not being implemented correctly. Suspect this would have resulted in fewer SNPs being returned at the end of the process. Now fixed.
+
 # GUSMap 2.2.0
 
 ## New Features 

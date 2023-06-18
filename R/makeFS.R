@@ -1,6 +1,6 @@
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap)
-# Copyright 2017-2020 Timothy P. Bilton 
+# Copyright 2017-2023 Timothy P. Bilton 
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -139,7 +139,7 @@ makeFS <- function(RAobj, pedfile, family=NULL, inferSNPs=TRUE, keepSNPs=NULL,
   }
   if(!is.logical(inferSNPs) || !is.vector(inferSNPs) || length(inferSNPs) != 1)
     stop("Argument for `inferSNPs` not a logical value.")
-
+  
   ## initalize the UR object
   FSobj <- FS$new(RAobj)
   
@@ -203,20 +203,20 @@ makeFS <- function(RAobj, pedfile, family=NULL, inferSNPs=TRUE, keepSNPs=NULL,
     famInfo[[as.character(fam)]]$parents <- list(Father=ped$SampleID[which(ped$IndividualID==father)],
                                                  Mother=ped$SampleID[which(ped$IndividualID==mother)])
     ## Check to see if there are any grandparents
-    grandparents = unique(ped[which(ped$IndividualID==father),c("Mother","Father")])
-    if(nrow(grandparents) == 1){
-      famInfo[[as.character(fam)]]$grandparents$paternalGrandFather <- ped$SampleID[which(ped$IndividualID == grandparents[,"Father"])]
-      famInfo[[as.character(fam)]]$grandparents$paternalGrandMother <- ped$SampleID[which(ped$IndividualID == grandparents[,"Mother"])]
-    }
-    else if(nrow(grandparents) > 1)
-      stop("Father of family ",fam," has mutiple parents. Please check the pedigree file.")
-    grandparents = unique(ped[which(ped$IndividualID==mother),c("Mother","Father")])
-    if(nrow(grandparents) == 1){
-      famInfo[[as.character(fam)]]$grandparents$maternalGrandFather <- ped$SampleID[which(ped$IndividualID == grandparents[,"Father"])]
-      famInfo[[as.character(fam)]]$grandparents$maternalGrandMother <- ped$SampleID[which(ped$IndividualID == grandparents[,"Mother"])]
-    }   
-    else if(nrow(grandparents) > 1)
-      stop("Mother of family ",fam," has mutiple parents. Please check the pedigree file.")
+    # grandparents = unique(ped[which(ped$IndividualID==father),c("Mother","Father")])
+    # if(nrow(grandparents) == 1){
+    #   famInfo[[as.character(fam)]]$grandparents$paternalGrandFather <- ped$SampleID[which(ped$IndividualID == grandparents[,"Father"])]
+    #   famInfo[[as.character(fam)]]$grandparents$paternalGrandMother <- ped$SampleID[which(ped$IndividualID == grandparents[,"Mother"])]
+    # }
+    # else if(nrow(grandparents) > 1)
+    #   stop("Father of family ",fam," has mutiple parents. Please check the pedigree file.")
+    # grandparents = unique(ped[which(ped$IndividualID==mother),c("Mother","Father")])
+    # if(nrow(grandparents) == 1){
+    #   famInfo[[as.character(fam)]]$grandparents$maternalGrandFather <- ped$SampleID[which(ped$IndividualID == grandparents[,"Father"])]
+    #   famInfo[[as.character(fam)]]$grandparents$maternalGrandMother <- ped$SampleID[which(ped$IndividualID == grandparents[,"Mother"])]
+    # }   
+    # else if(nrow(grandparents) > 1)
+    #   stop("Mother of family ",fam," has mutiple parents. Please check the pedigree file.")
   }
   
   noFam <- length(famInfo)
@@ -228,10 +228,10 @@ makeFS <- function(RAobj, pedfile, family=NULL, inferSNPs=TRUE, keepSNPs=NULL,
     cat("Processing Family ",names(famInfo)[fam],".\n\n",sep="")
     mum <- famInfo[[fam]]$parents$Mother
     dad <- famInfo[[fam]]$parents$Father
-    patgrandmum <- famInfo[[fam]]$grandparents$paternalGrandMother
-    patgranddad <- famInfo[[fam]]$grandparents$paternalGrandFather
-    matgrandmum <- famInfo[[fam]]$grandparents$maternalGrandMother
-    matgranddad <- famInfo[[fam]]$grandparents$maternalGrandFather
+    # patgrandmum <- famInfo[[fam]]$grandparents$paternalGrandMother
+    # patgranddad <- famInfo[[fam]]$grandparents$paternalGrandFather
+    # matgrandmum <- famInfo[[fam]]$grandparents$maternalGrandMother
+    # matgranddad <- famInfo[[fam]]$grandparents$maternalGrandFather
     ## index the parents
     mumIndx <- which(indID %in% mum)
     if(length(mumIndx) == 0)
@@ -240,15 +240,15 @@ makeFS <- function(RAobj, pedfile, family=NULL, inferSNPs=TRUE, keepSNPs=NULL,
     if(length(dadIndx) == 0)
       stop(paste0("Father ID not found family ",fam,"."))
     ## index the grandparents
-    patgrandparents <- matgrandparents <- FALSE
-    patgrandmumIndx <- which(indID %in% patgrandmum)
-    patgranddadIndx <- which(indID %in% patgranddad)
-    matgrandmumIndx <- which(indID %in% matgrandmum)
-    matgranddadIndx <- which(indID %in% matgranddad)
-    if((!is.null(patgrandmumIndx) & length(patgrandmumIndx)>0) && (!is.null(patgranddadIndx) & length(patgranddadIndx)>0))
-      patgrandparents <- TRUE
-    if((!is.null(matgrandmumIndx) & length(matgrandmumIndx)>0) && (!is.null(matgranddadIndx) & length(matgranddadIndx)>0))
-      matgrandparents <- TRUE
+    # patgrandparents <- matgrandparents <- FALSE
+    # patgrandmumIndx <- which(indID %in% patgrandmum)
+    # patgranddadIndx <- which(indID %in% patgranddad)
+    # matgrandmumIndx <- which(indID %in% matgrandmum)
+    # matgranddadIndx <- which(indID %in% matgranddad)
+    # if((!is.null(patgrandmumIndx) & length(patgrandmumIndx)>0) && (!is.null(patgranddadIndx) & length(patgranddadIndx)>0))
+    #   patgrandparents <- TRUE
+    # if((!is.null(matgrandmumIndx) & length(matgrandmumIndx)>0) && (!is.null(matgranddadIndx) & length(matgranddadIndx)>0))
+    #   matgrandparents <- TRUE
     ## index the progeny
     progIndx <- which(indID %in% famInfo[[fam]]$progeny)
     nInd <- length(progIndx)
@@ -259,38 +259,58 @@ makeFS <- function(RAobj, pedfile, family=NULL, inferSNPs=TRUE, keepSNPs=NULL,
     alt <- FSobj$.__enclos_env__$private$alt[progIndx,]
     
     ## Determine the segregation types of the loci
-    genon_mum <- matrix(FSobj$.__enclos_env__$private$genon[mumIndx,], nrow=length(mumIndx), ncol=nSnps) 
-    genon_dad <- matrix(FSobj$.__enclos_env__$private$genon[dadIndx,], nrow=length(mumIndx), ncol=nSnps)
-    depth_mum <- matrix(FSobj$.__enclos_env__$private$ref[mumIndx,] +
-                          FSobj$.__enclos_env__$private$alt[mumIndx,], nrow=length(mumIndx), ncol=nSnps)
-    depth_dad <- matrix(FSobj$.__enclos_env__$private$ref[dadIndx,] +
-                          FSobj$.__enclos_env__$private$alt[dadIndx,], nrow=length(mumIndx), ncol=nSnps)
+    ref_mum = FSobj$.__enclos_env__$private$ref[mumIndx,,drop=FALSE]
+    depth_mum = ref_mum + FSobj$.__enclos_env__$private$alt[mumIndx,,drop=FALSE]
+    ref_mum = colSums(ref_mum)
+    depth_mum = colSums(depth_mum)
+    ratio_mum = ref_mum/depth_mum
+    genon_mum = (ratio_mum > (1-0.05)) + (ratio_mum > 0.05)
+    genon_mum[(depth_mum <= filter$DEPTH) & (genon_mum != 1)] = NA
     
-    if(patgrandparents){
-      genon_patgrandmum <- matrix(FSobj$.__enclos_env__$private$genon[patgrandmumIndx,], nrow=length(patgrandmumIndx), ncol=nSnps) 
-      depth_patgrandmum <- matrix(FSobj$.__enclos_env__$private$ref[patgrandmumIndx,] +
-                                    FSobj$.__enclos_env__$private$alt[patgrandmumIndx,], nrow=length(patgrandmumIndx), ncol=nSnps)
-      genon_patgranddad <- matrix(FSobj$.__enclos_env__$private$genon[patgranddadIndx,], nrow=length(patgranddadIndx), ncol=nSnps) 
-      depth_patgranddad <- matrix(FSobj$.__enclos_env__$private$ref[patgranddadIndx,] +
-                                    FSobj$.__enclos_env__$private$alt[patgranddadIndx,], nrow=length(patgranddadIndx), ncol=nSnps)
-    }
-    if(matgrandparents){
-      genon_matgrandmum <- matrix(FSobj$.__enclos_env__$private$genon[matgrandmumIndx,], nrow=length(matgrandmumIndx), ncol=nSnps) 
-      depth_matgrandmum <- matrix(FSobj$.__enclos_env__$private$ref[matgrandmumIndx,] +
-                                    FSobj$.__enclos_env__$private$alt[matgrandmumIndx,], nrow=length(matgrandmumIndx), ncol=nSnps)
-      genon_matgranddad <- matrix(FSobj$.__enclos_env__$private$genon[matgranddadIndx,], nrow=length(matgranddadIndx), ncol=nSnps) 
-      depth_matgranddad <- matrix(FSobj$.__enclos_env__$private$ref[matgranddadIndx,] +
-                                    FSobj$.__enclos_env__$private$alt[matgranddadIndx,], nrow=length(matgranddadIndx), ncol=nSnps)
-    }
+    ref_dad = FSobj$.__enclos_env__$private$ref[dadIndx,,drop=FALSE]
+    depth_dad = ref_dad + FSobj$.__enclos_env__$private$alt[dadIndx,,drop=FALSE]
+    ref_dad = colSums(ref_dad)
+    depth_dad = colSums(depth_dad)
+    ratio_dad = ref_dad/depth_dad
+    genon_dad = (ratio_dad > (1-0.05)) + (ratio_dad > 0.05)
+    genon_dad[(depth_dad <= filter$DEPTH) & (genon_dad != 1)] = NA
+    
+    # if(patgrandparents){
+    #   genon_patgrandmum <- matrix(FSobj$.__enclos_env__$private$genon[patgrandmumIndx,], nrow=length(patgrandmumIndx), ncol=nSnps) 
+    #   depth_patgrandmum <- matrix(FSobj$.__enclos_env__$private$ref[patgrandmumIndx,] +
+    #                                 FSobj$.__enclos_env__$private$alt[patgrandmumIndx,], nrow=length(patgrandmumIndx), ncol=nSnps)
+    #   genon_patgranddad <- matrix(FSobj$.__enclos_env__$private$genon[patgranddadIndx,], nrow=length(patgranddadIndx), ncol=nSnps) 
+    #   depth_patgranddad <- matrix(FSobj$.__enclos_env__$private$ref[patgranddadIndx,] +
+    #                                 FSobj$.__enclos_env__$private$alt[patgranddadIndx,], nrow=length(patgranddadIndx), ncol=nSnps)
+    # }
+    # if(matgrandparents){
+    #   genon_matgrandmum <- matrix(FSobj$.__enclos_env__$private$genon[matgrandmumIndx,], nrow=length(matgrandmumIndx), ncol=nSnps) 
+    #   depth_matgrandmum <- matrix(FSobj$.__enclos_env__$private$ref[matgrandmumIndx,] +
+    #                                 FSobj$.__enclos_env__$private$alt[matgrandmumIndx,], nrow=length(matgrandmumIndx), ncol=nSnps)
+    #   genon_matgranddad <- matrix(FSobj$.__enclos_env__$private$genon[matgranddadIndx,], nrow=length(matgranddadIndx), ncol=nSnps) 
+    #   depth_matgranddad <- matrix(FSobj$.__enclos_env__$private$ref[matgranddadIndx,] +
+    #                                 FSobj$.__enclos_env__$private$alt[matgranddadIndx,], nrow=length(matgranddadIndx), ncol=nSnps)
+    # }
     
     ## Run the filtering of the progeny SNPs
     MAF <- colMeans(genon, na.rm=T)/2
+    MAF[which(is.na(MAF))] = 0.5
     MAF <- pmin(MAF,1-MAF)
+    # Check in case SNPs with no genotypes.
+    if(any(is.na(MAF))) MAF[is.na(MAF)] = 1
     miss <- apply(genon,2, function(x) sum(is.na(x))/length(x))
     maxdepth <- colMeans(ref + alt)
     indx_temp <- rep(TRUE, nSnps)
-    indx_temp[which((MAF < filter$MAF | miss > filter$MISS | maxdepth > filter$MAXDEPTH) & !keepSNPs)] <- FALSE
+    indx_temp[which((MAF < filter$MAF | (miss > filter$MISS) | (miss == 1) | maxdepth > filter$MAXDEPTH) & !keepSNPs)] <- FALSE
     
+    ## create file for showing which SNPs fail the filtering threshold.
+    SNPfilt = data.frame(CHROM=FSobj$.__enclos_env__$private$chrom, 
+                         POS=FSobj$.__enclos_env__$private$pos,
+                         SNP_Name=FSobj$.__enclos_env__$private$SNP_Names)
+    SNPfilt$MAF = MAF < filter$MAF
+    SNPfilt$MISS = (miss > filter$MISS) | (miss == 1)
+    SNPfilt$MAXDEPTH = maxdepth > filter$MAXDEPTH
+
     ## fix max depth to be at 500 total reads
     ## Run into numeric issues otherwise
     high_depth <- which((ref+alt) > 500)
@@ -298,61 +318,13 @@ makeFS <- function(RAobj, pedfile, family=NULL, inferSNPs=TRUE, keepSNPs=NULL,
     alt_temp <- alt[high_depth]
     ref[high_depth] <- as.integer(ref_temp/(ref_temp+alt_temp)*500)
     alt[high_depth] <- as.integer(alt_temp/(ref_temp+alt_temp)*500)
-   
-    ## Determine segregation type
-    parHap_pat <- sapply(1:nSnps,function(x){
-      x_p = genon_dad[,x]; d_p = depth_dad[,x]
-      if(any(x_p==1,na.rm=T))
-        return("AB")
-      else if(sum(d_p) > filter$DEPTH){
-        if(all(x_p==2, na.rm=T))
-          return("AA")
-        else if(all(x_p==0, na.rm=T))
-          return("BB")
-        else if(patgrandparents){
-          if(sum(depth_patgranddad[,x])>filter$DEPTH && sum(depth_patgrandmum)>filter$DEPTH){
-            x_gp = genon_patgranddad[,x]; x_gm = genon_patgrandmum[,x]
-            if((x_gp == 2 & x_gm == 0) || (x_gp == 0 & x_gm == 2))
-              return("AB")
-            else if(x_gp == 2 & x_gm == 2)
-              return("AA")
-            else if(x_gp == 0 & x_gm == 0)
-              return("BB")
-          }
-        }
-        else
-          return(NA)
-      }
-      else
-        return(NA)
-    })
     
-    parHap_mat <- sapply(1:nSnps,function(x){
-      x_m = genon_mum[,x]; d_m = depth_mum[,x]
-      if(any(x_m==1,na.rm=T))
-        return("AB")
-      else if(sum(d_m) > filter$DEPTH){
-        if(all(x_m==2, na.rm=T))
-          return("AA")
-        else if(all(x_m==0, na.rm=T))
-          return("BB")
-        else if(matgrandparents){
-          if(sum(depth_matgranddad[,x])>filter$DEPTH && sum(depth_matgrandmum)>filter$DEPTH){
-            x_gp = genon_matgranddad[,x]; x_gm = genon_matgrandmum[,x]
-            if((x_gp == 2 & x_gm == 0) || (x_gp == 0 & x_gm == 2))
-              return("AB")
-            else if(x_gp == 2 & x_gm == 2)
-              return("AA")
-            else if(x_gp == 0 & x_gm == 0)
-              return("BB")
-          }
-        }
-        else
-          return(NA)
-      }
-      else
-        return(NA)
-    })
+    ## Determine segregation type
+    parHap_pat = c("BB","AB","AA")[genon_dad + 1]
+    parHap_pat[!indx_temp] = NA
+    
+    parHap_mat = c("BB","AB","AA")[genon_mum + 1]
+    parHap_mat[!indx_temp] = NA
     
     config <- rep(NA,nSnps)
     config[which(parHap_pat == "AB" & parHap_mat == "AB")] <- 1
@@ -360,6 +332,10 @@ makeFS <- function(RAobj, pedfile, family=NULL, inferSNPs=TRUE, keepSNPs=NULL,
     config[which(parHap_pat == "AB" & parHap_mat == "BB")] <- 3
     config[which(parHap_pat == "AA" & parHap_mat == "AB")] <- 4
     config[which(parHap_pat == "BB" & parHap_mat == "AB")] <- 5
+    
+    SNPfilt$DEPTH = is.na(config)
+    SNPfilt$DEPTH[SNPfilt$MAF | SNPfilt$MISS | SNPfilt$MAXDEPTH] = NA
+    SNPfilt$PVALUE = !SNPfilt$DEPTH
     
     #### Segregation test to determine if the SNPs have been miss-classified
     seg_Dis <- sapply(1:nSnps,function(x){
@@ -393,7 +369,9 @@ makeFS <- function(RAobj, pedfile, family=NULL, inferSNPs=TRUE, keepSNPs=NULL,
       }
     },simplify = T)
     config[which(seg_Dis & !keepSNPs)] <- NA
-
+    
+    SNPfilt$PVALUE[!is.na(SNPfilt$PVALUE)] = is.na(config[!is.na(SNPfilt$PVALUE)])
+    
     ## Infer geotypes for over SNPs that have passed the MAF and MISS thresholds
     #propHeter <- sapply(1:nSnps, function(x) sum(genon[,x] == 1,na.rm=T)/sum(!is.na(genon[,x])))
     config_infer <- rep(NA, nSnps)
@@ -430,12 +408,15 @@ makeFS <- function(RAobj, pedfile, family=NULL, inferSNPs=TRUE, keepSNPs=NULL,
           return(NA)
       },simplify = T)
       config_infer[toInfer] <- seg_Infer
+      SNPfilt$PVALUE_infer = is.na(config_infer)
+      SNPfilt$PVALUE_infer[which(!SNPfilt$MAF & !SNPfilt$MISS & !SNPfilt$MAXDEPTH & !SNPfilt$DEPTH & !SNPfilt$PVALUE)] = NA
+      SNPfilt$PVALUE_infer[which(SNPfilt$MAF | SNPfilt$MISS | SNPfilt$MAXDEPTH )] = NA
     }
     
     chrom <- FSobj$.__enclos_env__$private$chrom
-    chrom[!(indx_temp | (is.na(config) & is.na(config_infer)))] <- NA
+    chrom[(!indx_temp) | (is.na(config) & is.na(config_infer))] <- NA
     pos <- FSobj$.__enclos_env__$private$pos
-    pos[!(indx_temp | (is.na(config) & is.na(config_infer)))] <- NA
+    pos[(!indx_temp) | (is.na(config) & is.na(config_infer))] <- NA
     ## Extract one SNP from each read.
     set.seed(36475)
     if(filter$BIN > 0){
@@ -459,10 +440,42 @@ makeFS <- function(RAobj, pedfile, family=NULL, inferSNPs=TRUE, keepSNPs=NULL,
       oneSNP[which(keepSNPs)] = TRUE
     } else oneSNP <- rep(TRUE,nSnps)
     
+    SNPfilt$BIN = !oneSNP
+    if(inferSNPs) SNPfilt$BIN[(is.na(SNPfilt$PVALUE) | SNPfilt$PVALUE) & (SNPfilt$PVALUE_infer | is.na(SNPfilt$PVALUE_infer))] = NA
+    else  SNPfilt$BIN[is.na(SNPfilt$PVALUE) | SNPfilt$PVALUE] = NA
+    
     indx_temp[which(indx_temp & (!oneSNP | (is.na(config) & is.na(config_infer))))] <- FALSE
     indx[[fam]] <- indx_temp
     config[!indx_temp] <- config_infer[!indx_temp] <- NA
-
+    
+    ## Output summary of SNPs filtering:
+    cat("Minor allele frequency (MAF) < ", filter$MAF,"\n", sep="")
+    cat("Percentage of missing genotypes > ", filter$MISS*100,"%\n", sep="")
+    cat("Distance for binning SNPs <= ", filter$BIN," bp\n", sep="")
+    cat("Read depth associated with at least one parental genotype <= ", filter$DEPTH,"\n", sep="")
+    cat("P-value for segregation test < ", filter$PVALUE,"\n", sep="")
+    cat("Average SNP depth is > ", filter$MAXDEPTH,"\n\n", sep="")
+    
+    cat("Filtering SNPs: Number of SNPs failing filtering criteria:\n")
+    cat("  MAF:                   ", sum(SNPfilt$MAF & !SNPfilt$MISS & !SNPfilt$MAXDEPTH),"\n", sep="")
+    cat("  MISS:                  ", sum(!SNPfilt$MAF & SNPfilt$MISS & !SNPfilt$MAXDEPTH),"\n", sep="")
+    cat("  MAXDEPTH:              ", sum(!SNPfilt$MAF & !SNPfilt$MISS & SNPfilt$MAXDEPTH),"\n", sep="")
+    cat("  MAF & MISS:            ", sum(SNPfilt$MAF & SNPfilt$MISS & !SNPfilt$MAXDEPTH),"\n", sep="")
+    cat("  MAF & MAXDEPTH:        ", sum(SNPfilt$MAF & !SNPfilt$MISS & SNPfilt$MAXDEPTH),"\n", sep="")
+    cat("  MISS & MAXDEPTH:       ", sum(!SNPfilt$MAF & SNPfilt$MISS & SNPfilt$MAXDEPTH),"\n", sep="")
+    cat("  MAF & MISS & MAXDEPTH: ", sum(SNPfilt$MAF & SNPfilt$MISS & SNPfilt$MAXDEPTH),"\n", sep="")
+    cat("  Total discarded:       ",sum(SNPfilt$MAF | SNPfilt$MISS | SNPfilt$MAXDEPTH),"\n",sep="")
+    
+    cat("Checking remaining SNPs: Number of additional SNPs removed based on:\n")
+    cat("  DEPTH:           ",sum(SNPfilt$DEPTH, na.rm=T),"\n",sep="")
+    cat("  PVALUE:          ",sum(SNPfilt$PVALUE, na.rm=T),"\n",sep="")
+    cat("  Total discarded: ",sum(SNPfilt$PVALUE, na.rm=T) + sum(SNPfilt$DEPTH, na.rm=T),"\n",sep="")
+    if(inferSNPs) cat("\nNumber of SNPs with inferred segregation ratio: ",sum(!SNPfilt$PVALUE_infer, na.rm=T),"\n",sep="")
+    
+    if(filter$BIN > 0) cat("\nA further ",sum(SNPfilt$BIN, na.rm=TRUE)," SNPs were removed based on the BIN filter\n", sep="")
+    
+    write.csv(SNPfilt, file = "SNP_filtering_GUSMap.csv", row.names=FALSE, quote=FALSE)
+    
     ## Determine the segregation groups
     config_all[[fam]] <- config
     config_infer_all[[fam]] <- config_infer

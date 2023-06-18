@@ -65,41 +65,41 @@ Timothy P. Bilton
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-new}{\code{IC$new()}}
-\item \href{#method-print}{\code{IC$print()}}
-\item \href{#method-removeSNP}{\code{IC$removeSNP()}}
-\item \href{#method-removeLG}{\code{IC$removeLG()}}
-\item \href{#method-mergeLG}{\code{IC$mergeLG()}}
-\item \href{#method-maskSNP}{\code{IC$maskSNP()}}
-\item \href{#method-unmaskSNP}{\code{IC$unmaskSNP()}}
-\item \href{#method-rf_2pt}{\code{IC$rf_2pt()}}
-\item \href{#method-createLG}{\code{IC$createLG()}}
-\item \href{#method-orderLG}{\code{IC$orderLG()}}
-\item \href{#method-plotLG}{\code{IC$plotLG()}}
-\item \href{#method-plotChr}{\code{IC$plotChr()}}
-\item \href{#method-plotLM}{\code{IC$plotLM()}}
-\item \href{#method-plotSyn}{\code{IC$plotSyn()}}
-\item \href{#method-computeMap}{\code{IC$computeMap()}}
-\item \href{#method-writeLM}{\code{IC$writeLM()}}
-\item \href{#method-cometPlot}{\code{IC$cometPlot()}}
-\item \href{#method-rocketPlot}{\code{IC$rocketPlot()}}
-\item \href{#method-RDDPlot}{\code{IC$RDDPlot()}}
-\item \href{#method-clone}{\code{IC$clone()}}
+\item \href{#method-IC-new}{\code{IC$new()}}
+\item \href{#method-IC-print}{\code{IC$print()}}
+\item \href{#method-IC-removeSNP}{\code{IC$removeSNP()}}
+\item \href{#method-IC-removeLG}{\code{IC$removeLG()}}
+\item \href{#method-IC-mergeLG}{\code{IC$mergeLG()}}
+\item \href{#method-IC-maskSNP}{\code{IC$maskSNP()}}
+\item \href{#method-IC-unmaskSNP}{\code{IC$unmaskSNP()}}
+\item \href{#method-IC-rf_2pt}{\code{IC$rf_2pt()}}
+\item \href{#method-IC-createLG}{\code{IC$createLG()}}
+\item \href{#method-IC-orderLG}{\code{IC$orderLG()}}
+\item \href{#method-IC-plotLG}{\code{IC$plotLG()}}
+\item \href{#method-IC-plotChr}{\code{IC$plotChr()}}
+\item \href{#method-IC-plotLM}{\code{IC$plotLM()}}
+\item \href{#method-IC-plotSyn}{\code{IC$plotSyn()}}
+\item \href{#method-IC-computeMap}{\code{IC$computeMap()}}
+\item \href{#method-IC-writeLM}{\code{IC$writeLM()}}
+\item \href{#method-IC-cometPlot}{\code{IC$cometPlot()}}
+\item \href{#method-IC-rocketPlot}{\code{IC$rocketPlot()}}
+\item \href{#method-IC-RDDPlot}{\code{IC$RDDPlot()}}
+\item \href{#method-IC-clone}{\code{IC$clone()}}
 }
 }
-\if{html}{
-\out{<details open ><summary>Inherited methods</summary>}
-\itemize{
-\item \out{<span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="extractVar">}\href{../../GUSbase/html/RA.html#method-extractVar}{\code{GUSbase::RA$extractVar()}}\out{</span>}
-\item \out{<span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="mergeSamples">}\href{../../GUSbase/html/RA.html#method-mergeSamples}{\code{GUSbase::RA$mergeSamples()}}\out{</span>}
-\item \out{<span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="writeRA">}\href{../../GUSbase/html/RA.html#method-writeRA}{\code{GUSbase::RA$writeRA()}}\out{</span>}
-\item \out{<span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="writeVCF">}\href{../../GUSbase/html/RA.html#method-writeVCF}{\code{GUSbase::RA$writeVCF()}}\out{</span>}
-}
-\out{</details>}
-}
+\if{html}{\out{
+<details open><summary>Inherited methods</summary>
+<ul>
+<li><span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="extractVar"><a href='../../GUSbase/html/RA.html#method-RA-extractVar'><code>GUSbase::RA$extractVar()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="mergeSamples"><a href='../../GUSbase/html/RA.html#method-RA-mergeSamples'><code>GUSbase::RA$mergeSamples()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="writeRA"><a href='../../GUSbase/html/RA.html#method-RA-writeRA'><code>GUSbase::RA$writeRA()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="GUSbase" data-topic="RA" data-id="writeVCF"><a href='../../GUSbase/html/RA.html#method-RA-writeVCF'><code>GUSbase::RA$writeVCF()</code></a></span></li>
+</ul>
+</details>
+}}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-new"></a>}}
-\if{latex}{\out{\hypertarget{method-new}{}}}
+\if{html}{\out{<a id="method-IC-new"></a>}}
+\if{latex}{\out{\hypertarget{method-IC-new}{}}}
 \subsection{Method \code{new()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{IC$new(R6obj)}\if{html}{\out{</div>}}
@@ -107,8 +107,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-print"></a>}}
-\if{latex}{\out{\hypertarget{method-print}{}}}
+\if{html}{\out{<a id="method-IC-print"></a>}}
+\if{latex}{\out{\hypertarget{method-IC-print}{}}}
 \subsection{Method \code{print()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{IC$print(what = NULL, ...)}\if{html}{\out{</div>}}
@@ -116,8 +116,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-removeSNP"></a>}}
-\if{latex}{\out{\hypertarget{method-removeSNP}{}}}
+\if{html}{\out{<a id="method-IC-removeSNP"></a>}}
+\if{latex}{\out{\hypertarget{method-IC-removeSNP}{}}}
 \subsection{Method \code{removeSNP()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{IC$removeSNP(snps)}\if{html}{\out{</div>}}
@@ -125,8 +125,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-removeLG"></a>}}
-\if{latex}{\out{\hypertarget{method-removeLG}{}}}
+\if{html}{\out{<a id="method-IC-removeLG"></a>}}
+\if{latex}{\out{\hypertarget{method-IC-removeLG}{}}}
 \subsection{Method \code{removeLG()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{IC$removeLG(LG)}\if{html}{\out{</div>}}
@@ -134,8 +134,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-mergeLG"></a>}}
-\if{latex}{\out{\hypertarget{method-mergeLG}{}}}
+\if{html}{\out{<a id="method-IC-mergeLG"></a>}}
+\if{latex}{\out{\hypertarget{method-IC-mergeLG}{}}}
 \subsection{Method \code{mergeLG()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{IC$mergeLG(LG)}\if{html}{\out{</div>}}
@@ -143,8 +143,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-maskSNP"></a>}}
-\if{latex}{\out{\hypertarget{method-maskSNP}{}}}
+\if{html}{\out{<a id="method-IC-maskSNP"></a>}}
+\if{latex}{\out{\hypertarget{method-IC-maskSNP}{}}}
 \subsection{Method \code{maskSNP()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{IC$maskSNP(snps)}\if{html}{\out{</div>}}
@@ -152,8 +152,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-unmaskSNP"></a>}}
-\if{latex}{\out{\hypertarget{method-unmaskSNP}{}}}
+\if{html}{\out{<a id="method-IC-unmaskSNP"></a>}}
+\if{latex}{\out{\hypertarget{method-IC-unmaskSNP}{}}}
 \subsection{Method \code{unmaskSNP()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{IC$unmaskSNP(snps)}\if{html}{\out{</div>}}
@@ -161,8 +161,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-rf_2pt"></a>}}
-\if{latex}{\out{\hypertarget{method-rf_2pt}{}}}
+\if{html}{\out{<a id="method-IC-rf_2pt"></a>}}
+\if{latex}{\out{\hypertarget{method-IC-rf_2pt}{}}}
 \subsection{Method \code{rf_2pt()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{IC$rf_2pt(nClust = 2, err = FALSE)}\if{html}{\out{</div>}}
@@ -170,8 +170,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-createLG"></a>}}
-\if{latex}{\out{\hypertarget{method-createLG}{}}}
+\if{html}{\out{<a id="method-IC-createLG"></a>}}
+\if{latex}{\out{\hypertarget{method-IC-createLG}{}}}
 \subsection{Method \code{createLG()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{IC$createLG(LODthres = 10, nComp = 10, reset = FALSE)}\if{html}{\out{</div>}}
@@ -179,8 +179,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-orderLG"></a>}}
-\if{latex}{\out{\hypertarget{method-orderLG}{}}}
+\if{html}{\out{<a id="method-IC-orderLG"></a>}}
+\if{latex}{\out{\hypertarget{method-IC-orderLG}{}}}
 \subsection{Method \code{orderLG()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{IC$orderLG(
@@ -195,8 +195,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-plotLG"></a>}}
-\if{latex}{\out{\hypertarget{method-plotLG}{}}}
+\if{html}{\out{<a id="method-IC-plotLG"></a>}}
+\if{latex}{\out{\hypertarget{method-IC-plotLG}{}}}
 \subsection{Method \code{plotLG()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{IC$plotLG(LG = NULL, mat = "rf", filename = NULL, interactive = TRUE, ...)}\if{html}{\out{</div>}}
@@ -204,8 +204,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-plotChr"></a>}}
-\if{latex}{\out{\hypertarget{method-plotChr}{}}}
+\if{html}{\out{<a id="method-IC-plotChr"></a>}}
+\if{latex}{\out{\hypertarget{method-IC-plotChr}{}}}
 \subsection{Method \code{plotChr()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{IC$plotChr(chrom = NULL, mat = c("rf"), filename = NULL, chrS = 2, lmai = 2)}\if{html}{\out{</div>}}
@@ -213,8 +213,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-plotLM"></a>}}
-\if{latex}{\out{\hypertarget{method-plotLM}{}}}
+\if{html}{\out{<a id="method-IC-plotLM"></a>}}
+\if{latex}{\out{\hypertarget{method-IC-plotLM}{}}}
 \subsection{Method \code{plotLM()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{IC$plotLM(LG = NULL, fun = "haldane", col = "black")}\if{html}{\out{</div>}}
@@ -222,8 +222,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-plotSyn"></a>}}
-\if{latex}{\out{\hypertarget{method-plotSyn}{}}}
+\if{html}{\out{<a id="method-IC-plotSyn"></a>}}
+\if{latex}{\out{\hypertarget{method-IC-plotSyn}{}}}
 \subsection{Method \code{plotSyn()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{IC$plotSyn()}\if{html}{\out{</div>}}
@@ -231,8 +231,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-computeMap"></a>}}
-\if{latex}{\out{\hypertarget{method-computeMap}{}}}
+\if{html}{\out{<a id="method-IC-computeMap"></a>}}
+\if{latex}{\out{\hypertarget{method-IC-computeMap}{}}}
 \subsection{Method \code{computeMap()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{IC$computeMap(
@@ -252,8 +252,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-writeLM"></a>}}
-\if{latex}{\out{\hypertarget{method-writeLM}{}}}
+\if{html}{\out{<a id="method-IC-writeLM"></a>}}
+\if{latex}{\out{\hypertarget{method-IC-writeLM}{}}}
 \subsection{Method \code{writeLM()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{IC$writeLM(file, direct = "./", LG = NULL, what = NULL, inferGeno = TRUE)}\if{html}{\out{</div>}}
@@ -261,8 +261,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-cometPlot"></a>}}
-\if{latex}{\out{\hypertarget{method-cometPlot}{}}}
+\if{html}{\out{<a id="method-IC-cometPlot"></a>}}
+\if{latex}{\out{\hypertarget{method-IC-cometPlot}{}}}
 \subsection{Method \code{cometPlot()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{IC$cometPlot(
@@ -280,8 +280,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-rocketPlot"></a>}}
-\if{latex}{\out{\hypertarget{method-rocketPlot}{}}}
+\if{html}{\out{<a id="method-IC-rocketPlot"></a>}}
+\if{latex}{\out{\hypertarget{method-IC-rocketPlot}{}}}
 \subsection{Method \code{rocketPlot()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{IC$rocketPlot(
@@ -298,8 +298,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-RDDPlot"></a>}}
-\if{latex}{\out{\hypertarget{method-RDDPlot}{}}}
+\if{html}{\out{<a id="method-IC-RDDPlot"></a>}}
+\if{latex}{\out{\hypertarget{method-IC-RDDPlot}{}}}
 \subsection{Method \code{RDDPlot()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{IC$RDDPlot(filename = NULL, maxdepth = 500, maxSNPs = 1e+05, ...)}\if{html}{\out{</div>}}
@@ -307,8 +307,8 @@ Timothy P. Bilton
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-clone}{}}}
+\if{html}{\out{<a id="method-IC-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-IC-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{

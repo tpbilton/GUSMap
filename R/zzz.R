@@ -3,12 +3,12 @@
      packageStartupMessage(
 #"-----------------------------------------------------------------------      
 #Genotyping Uncertainty with Sequencing data for linkage MAPping (GUSMap)
-#Copyright (C) 2017-2020 Timothy P. Bilton
+#Copyright (C) 2017-2023 Timothy P. Bilton
 #This program comes with ABSOLUTELY NO WARRANTY.
 #This is free software, and you are welcome to redistribute it
 #under certain conditions.
 #------------------------------------------------------------------------
-"Welcome to GUSMap v2.2.0"
+"Welcome to GUSMap v2.2.1"
      )}
 }
 

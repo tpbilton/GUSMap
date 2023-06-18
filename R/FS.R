@@ -111,7 +111,7 @@ FS <- R6::R6Class("FS",
                   } else if(!is.vector(what) || !is.character(what) ||
                             any(!(what %in% c("data","LG-pts","LG-comb","map"))))
                     stop("Argument for what output to print is invalid")
-                  ## printe the required output
+                  ## print the required output
                   if(private$noFam == 1){
                     if(any(what == "data"))
                       cat(private$summaryInfo$data, sep="")
@@ -543,7 +543,7 @@ FS <- R6::R6Class("FS",
                   return(invisible())
                 },
                 ## Function for adding the informative SNPs to the LGs
-                addBIsnps = function(LODthres=10, nComp=10, binsize=0){
+                addBIsnps = function(LODthres=10, nComp=10, binsize=0, minSNPs=0){
                   
                   ## Do some checks
                   if(is.null(private$rf) || is.null(private$LOD))
@@ -562,6 +562,10 @@ FS <- R6::R6Class("FS",
                   if(is.null(binsize) || GUSbase::checkVector(binsize, minv=0, type="pos_numeric", equal=FALSE) || length(binsize) != 1){
                     warning("Minimum distance between adjacent SNPs is not specified or is invalid. Setting to 0:")
                     binsize <- 0 
+                  }
+                  if(is.null(minSNPs) || GUSbase::checkVector(minSNPs, minv=0, type="pos_numeric", equal=FALSE) || length(minSNPs) != 1){
+                    warning("Minimum Number of SNPs for merging linkage groups is not specified or invalid. Setting to 0:")
+                    minSNPs <- 0 
                   }
                   
                   # ## Use the bin information to work out which SNPs are on the same Tag and merge LGs this way
@@ -629,7 +633,7 @@ FS <- R6::R6Class("FS",
                         indcol <- which(!(indpat %in% mappedLG_pat))
                         tempBI <- matrix(tabBI[indrow,indcol], nrow=length(indrow), ncol=length(indcol))
                         maxv <- max(tempBI, na.rm=T)
-                        if(maxv == 0){
+                        if(maxv <= minSNPs){
                           finish = TRUE
                           next
                         }
@@ -644,24 +648,24 @@ FS <- R6::R6Class("FS",
                       ## Check whether there are still any lingering LGs that could be mapped
                       if(unique(length(mappedLG_mat)) < nmat){
                         tomap <- which(!(1:nmat %in% mappedLG_mat))
-                        if(max(tabBI[tomap,], na.rm=T) > 0){
-                          for(matlg in tomap){
-                            patlg <- which.max(tabBI[matlg,])
+                        for(matlg in tomap){
+                          if(max(tabBI[matlg,sort(mappedLG_pat[1:nmapped])]) > minSNPs){
+                            patlg <- sort(mappedLG_pat[1:nmapped])[which.max(tabBI[matlg,sort(mappedLG_pat[1:nmapped])])]
                             mappedLG_mat <- c(mappedLG_mat,matlg)
                             mappedLG_pat <- c(mappedLG_pat,patlg)
-                            tabBI[matlg,patlg] <- NA
-                          }
+                            tabBI[matlg,patlg] = NA
+                          } else next
                         }
                       }
                       if(unique(length(mappedLG_pat)) < npat){
                         tomap <- which(!(1:npat %in% mappedLG_pat))
-                        if(max(tabBI[,tomap], na.rm=T) > 0){
-                          for(patlg in tomap){
-                            matlg <- which.max(tabBI[,patlg])
+                        for(patlg in tomap){
+                          if(max(tabBI[sort(mappedLG_mat[1:nmapped]),patlg]) > minSNPs){
+                            matlg <- sort(mappedLG_mat[1:nmapped])[which.max(tabBI[sort(mappedLG_mat[1:nmapped]),patlg])]
                             mappedLG_mat <- c(mappedLG_mat,matlg)
                             mappedLG_pat <- c(mappedLG_pat,patlg)
-                            tabBI[matlg,patlg]
-                          }
+                            tabBI[matlg,patlg] = NA
+                          } else next
                         }
                       }
                       ## Now combine groups with only the BIs mapped to same groups
@@ -682,7 +686,7 @@ FS <- R6::R6Class("FS",
                       }
                       ## Clean-up: remove BI SNPs which only mapped to one LG and remove duplicates
                       for(lg in 1:length(LGmerged)){
-                        bi_indx <- LGmerged[[lg]] %in% private$group$BI
+                        bi_indx <- LGmerged[[lg]] %in% c(private$group$BI, private$group_infer$BI)
                         bisnps <- LGmerged[[lg]][which(bi_indx)]
                         LGmerged[[lg]] <- c(LGmerged[[lg]][which(!bi_indx)],unique(bisnps[duplicated(bisnps)]))
                       }
