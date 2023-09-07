@@ -189,7 +189,7 @@ BC <- R6::R6Class("BC",
                     stop(paste0("Input must be a vector of indices between 1 and ", private$nSnps))
                   snps <- unique(snps) ## make sure no double ups in SNPs
                   if(is.null(where)){
-                    if(is.null(private$LG)) where = "LG-pts"
+                    if(is.null(private$LG_mat_bi) & is.null(private$LG_pat_bi)) where = "LG-pts"
                     else where = "LG-comb"
                   }
                   if(where == "LG-pts"){
@@ -405,9 +405,9 @@ BC <- R6::R6Class("BC",
                       private$LG_pat_bi[[patgroups[1]]] <- unlist(private$LG_pat_bi[patgroups])
                     ## remove the LGs that were merged
                     if(length(matgroups) > 1)
-                      private$LG_mat[matgroups[-1]] <- NULL
+                      private$LG_mat_bi[matgroups[-1]] <- NULL
                     if(length(patgroups) > 1)
-                      private$LG_pat[patgroups[-1]] <- NULL
+                      private$LG_pat_bi[patgroups[-1]] <- NULL
                   } 
                   else
                     stop("invalid second argument ('where').")
@@ -1143,7 +1143,7 @@ BC <- R6::R6Class("BC",
                       }
                       ## estimate the rf's
                       if(!is.null(method))
-                        MLE <- rf_est_FS(init_r=MLE_init$rf, ep=MLE_init$ep, ref=ref_temp, alt=alt_temp, OPGP=private$para$OPGP[i],
+                        MLE <- rf_est_FS(init_r=init_r, ep=ep, ref=ref_temp, alt=alt_temp, OPGP=private$para$OPGP[i],
                                          sexSpec=F, seqErr=err, method=method, nThreads=nThreads, multiErr=multiErr)
                       else{
                         MLE_init <- rf_est_FS(init_r=init_r, ep=ep, ref=ref_temp, alt=alt_temp, OPGP=private$para$OPGP[i],
