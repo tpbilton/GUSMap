@@ -192,7 +192,7 @@ Once the linkage groups have been formed, it is a good idea to look how well the
 mySpecies$plotLG(parent = "both", interactive = F, LG = NULL)
 ```
 
-The heatmap shows that there are four MI linkage groups and two PI linkage groups. We would expect there to be three MI linkage groups and three PI linkage groups since there are 3 chromosomes, and thus there is one extra MI linkage group and one missing PI linkage group. In general, the linkage between SNPs from different linkage groups appears relatively low with high recombination fraction estimates. However,  we see that linkage group 2 has high recombination fraction estimates with linkage group 6 which suggests that these two linkage groups should be joined together. Since linkage group 6 has many more SNPs that linkage group 2, it seems most likely that the segregation type for the SNPs in linkage group 2 were incorrectly inferred to be MI instead of PI (possibly due to sequencing errors and/or low read depth). Lastly, the heatmap suggests that linkage group 5 is actually two separate linkage groups (thus the missing linkage group) and so linkage group 5 needs to be split up into two separate linkage groups. 
+The heatmap shows that there are four MI linkage groups and two PI linkage groups. We would expect there to be three MI linkage groups and three PI linkage groups since there are 3 chromosomes, and thus there is one extra MI linkage group and one missing PI linkage group. In general, the linkage between SNPs from different linkage groups appears relatively low with high recombination fraction estimates. However,  we see that linkage group 3 has high recombination fraction estimates with linkage group 5 which suggests that these two linkage groups should be joined together. Since linkage group 5 has many more SNPs that linkage group 3, it seems most likely that the segregation type for the SNPs in linkage group 3 were incorrectly inferred to be MI instead of PI (possibly due to sequencing errors and/or low read depth). Lastly, the heatmap suggests that linkage group 5 is actually two separate linkage groups (thus the missing linkage group) and so linkage group 5 needs to be split up into two separate linkage groups. 
 
 Note:
 
@@ -217,10 +217,32 @@ Note: the `parent` argument is set to `"paternal"` which means that we are only 
 mySpecies$plotLG(parent = "both", interactive = F)
 ```
 
-So, the second PI linkage group (linkage group 6) with 2 SNPs appears to have some linkage with SNPs in linkage group 5. However, the linkage is only with a few SNPs and has recombination fraction values close to 0.5 with most of the other SNPs, so the linkage between linkage groups 5 and 6 may be spurious. There are two options that should be considered here; to merge linkage groups 5 and 6 or to discard linkage group 6. We will take the latter option and remove linkage group 6. There are two ways of achieving this. One is to remove the entire linkage group.
-```{r removeLG}
-mySpecies$removeLG(LG = 6)
+<!-- So, the second PI linkage group (linkage group 6) with 2 SNPs appears to have some linkage with SNPs in linkage group 5. However, the linkage is only with a few SNPs and has recombination fraction values close to 0.5 with most of the other SNPs, so the linkage between linkage groups 5 and 6 may be spurious. There are two options that should be considered here; to merge linkage groups 5 and 6 or to discard linkage group 6. We will take the latter option and remove linkage group 6. There are two ways of achieving this. One is to remove the entire linkage group. -->
+<!-- ```{r removeLG} -->
+<!-- mySpecies$removeLG(LG = 6) -->
+<!-- mySpecies$print(what = "LG-pts") -->
+<!-- ``` -->
+
+<!-- Alternatively, one could have also remove the SNPs in the linkage group. -->
+<!-- ```{r removeSNP, eval=FALSE} -->
+<!-- mySpecies$removeSNP(snps = c(526,527)) -->
+<!-- ``` -->
+
+<!-- Note that the `$removeSNPs` function is more useful for removing SNP(s) from a linkage group if they appear problematic without deleting the entire linkage group. This will be demonstrated later. -->
+
+So what was previously linkage group 5 has now been split into 2 (linkage group 5 and linkage group 7). We see that the two SNPs in linkage group 3 are in linkage with SNPs on linkage group 7. We can merge these two linkage groups using the `$mergeLG` function.
+```{r mergeLG}
+mySpecies$mergeLG(LG = c(3,7), mergeTo="paternal")
 mySpecies$print(what = "LG-pts")
+```
+
+Since linkage groups 3 and 7 are from different parental lines, the `mergeTo` argument specifies whether the resulting merged linkage group should be considered as PI SNPs (`mergeTo="paternal"`) or MI SNPs (`mergeTo="maternal"`).
+
+**Note:** At this stage there is no undo functionality in GUSMap. So, once you have removed a SNP or linkage group, or merge two linkage groups, you cannot reverse what you have done. However, in the case where you want to undo edits to your linkage group, then the best thing is to recreate the linkage groups using the `$createLG` function and proceed as you were doing before (and hence it helps to save you code in a script).
+
+In many cases, small linkage groups can have no obvious linkage with any other linkage groups and so may be spurious. In this case, a linkage group can be remove using the `$removeSNPs` function. For example, say we wanted to remove what was linkage group 3 (with two SNPs) instead of merging with what was linkage group 7, then we could remove the linkage group using 
+```{r removeLG, eval=FALSE}
+mySpecies$removeLG(LG = 3)
 ```
 
 Alternatively, one could have also remove the SNPs in the linkage group.
@@ -230,16 +252,6 @@ mySpecies$removeSNP(snps = c(526,527))
 
 Note that the `$removeSNPs` function is more useful for removing SNP(s) from a linkage group if they appear problematic without deleting the entire linkage group. This will be demonstrated later.
 
-The previous heatmaps also suggest that linkage group 2 should be combined with linkage group 7. We can merge these two linkage groups using the `$mergeLG` function.
-```{r mergeLG}
-mySpecies$mergeLG(LG = c(2,7), mergeTo="paternal")
-mySpecies$print(what = "LG-pts")
-```
-
-Since linkage groups 2 and 7 are from different parental lines, the `mergeTo` argument specifies whether the resulting merged linkage group should be considered as PI SNPs (`mergeTo="paternal"`) or MI SNPs (`mergeTo="maternal"`).
-
-**Note:** At this stage there is no undo functionality in GUSMap. So, once you have removed a SNP or linkage group, or merge two linkage groups, you cannot reverse what you have done. However, in the case where you want to undo edits to your linkage group, then the best thing is to recreate the linkage groups using the `$createLG` function and proceed as you were doing before (and hence it helps to save you code in a script).
-
 ##### Adding more SNPs to existing linkage groups
 
 Additional MI and PI SNPs (not currently in a linkage group) and the SI SNPs (which are not used in the `$createLG` function) can be added to the linkage groups using the `$addSNPs` function. 
@@ -247,7 +259,7 @@ Additional MI and PI SNPs (not currently in a linkage group) and the SI SNPs (wh
 mySpecies$addSNPs(LODthres = 10, nComp = 10)
 ```
 
-SNPs are added to the existing groups in a similar fashion as in the `$createLG` function. A couple of points to note: 
+SNPs are added to the existing linkage groups in a similar fashion as in the `$createLG` function. A couple of points to note: 
 
 * The algorithm used in `$addSNPs` is similar to the algorithm used for creating the paternal and maternal linkage groups (see the package documentation via `?$addSNPs` for more details), and so the arguments `LODthres` and `nComp` have the same functionality as in the `$createLG` function.
 * The SI SNPs that are inferred from progeny genetypes when `inferSNPs=TRUE` in the `makeFS` function are only ever added to the analysis using the `$addSNPs`.
