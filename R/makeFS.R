@@ -147,13 +147,6 @@ makeFS <- function(RAobj, pedfile, family=NULL, inferSNPs=TRUE, keepSNPs=NULL,
   cat("-------------\n")
   cat("Processing Data.\n\n")
   
-  cat("Filtering criteria for removing SNPs:\n")
-  cat("Minor allele frequency (MAF) < ", filter$MAF,"\n", sep="")
-  cat("Percentage of missing genotypes > ", filter$MISS*100,"%\n", sep="")
-  cat("Distance for binning SNPs <= ", filter$BIN," bp\n", sep="")
-  cat("Read depth associated with at least one parental genotype <= ", filter$DEPTH,"\n", sep="")
-  cat("P-value for segregation test < ", filter$PVALUE,"\n", sep="")
-  cat("Average SNP depth is > ", filter$MAXDEPTH,"\n\n", sep="")
   ## Extract the private variables we want
   indID <- FSobj$.__enclos_env__$private$indID
   nSnps <- FSobj$.__enclos_env__$private$nSnps
@@ -335,11 +328,12 @@ makeFS <- function(RAobj, pedfile, family=NULL, inferSNPs=TRUE, keepSNPs=NULL,
     
     SNPfilt$DEPTH = is.na(config)
     SNPfilt$DEPTH[SNPfilt$MAF | SNPfilt$MISS | SNPfilt$MAXDEPTH] = NA
-    SNPfilt$PVALUE = !SNPfilt$DEPTH
+    SNPfilt$PVALUE = FALSE
+    SNPfilt$PVALUE[which(SNPfilt$DEPTH | is.na(SNPfilt$DEPTH))] = NA
     
     #### Segregation test to determine if the SNPs have been miss-classified
     seg_Dis <- sapply(1:nSnps,function(x){
-      if(is.na(config[x]))
+      if(is.na(SNPfilt$PVALUE[x]))
         return(NA)
       else{
         d = ref[,x] + alt[,x]
@@ -449,13 +443,14 @@ makeFS <- function(RAobj, pedfile, family=NULL, inferSNPs=TRUE, keepSNPs=NULL,
     config[!indx_temp] <- config_infer[!indx_temp] <- NA
     
     ## Output summary of SNPs filtering:
+    cat("Filtering criteria for removing SNPs:\n")
     cat("Minor allele frequency (MAF) < ", filter$MAF,"\n", sep="")
     cat("Percentage of missing genotypes > ", filter$MISS*100,"%\n", sep="")
     cat("Distance for binning SNPs <= ", filter$BIN," bp\n", sep="")
     cat("Read depth associated with at least one parental genotype <= ", filter$DEPTH,"\n", sep="")
     cat("P-value for segregation test < ", filter$PVALUE,"\n", sep="")
     cat("Average SNP depth is > ", filter$MAXDEPTH,"\n\n", sep="")
-    
+  
     cat("Filtering SNPs: Number of SNPs failing filtering criteria:\n")
     cat("  MAF:                   ", sum(SNPfilt$MAF & !SNPfilt$MISS & !SNPfilt$MAXDEPTH),"\n", sep="")
     cat("  MISS:                  ", sum(!SNPfilt$MAF & SNPfilt$MISS & !SNPfilt$MAXDEPTH),"\n", sep="")

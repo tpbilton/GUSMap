@@ -1,3 +1,9 @@
+# GUSMap 2.2.2
+
+## Bugs fixed
+* Bug in the `makeFS` function showing the number of SNPs filtered for PVALUE was incorrect. Now fixed
+* Fixed some bugs in the BC object. Would have been copy and paste errors
+
 # GUSMap 2.2.1
 
 ## Updates

@@ -190,7 +190,7 @@ BC <- R6::R6Class("BC",
                   snps <- unique(snps) ## make sure no double ups in SNPs
                   if(is.null(where)){
                     if(is.null(private$LG_mat_bi) & is.null(private$LG_pat_bi)) where = "LG-pts"
-                    else where = "LG-comb"
+                    else where = "LG-bi"
                   }
                   if(where == "LG-pts"){
                     if (is.null(private$LG_mat) & is.null(private$LG_pat))

@@ -1,6 +1,6 @@
 Package: GUSMap
-Version: 2.2.1
-Date: 2020-06-01
+Version: 2.2.2
+Date: 2020-09-12
 Title: Genotyping Uncertainty with Sequencing Data and Linkage Mapping (GUSMap)
 Authors@R: person("Timothy P.", "Bilton", role = c("aut", "cre"), email = "timothy.bilton@agresearch.co.nz")
 Author: Timothy P. Bilton [aut, cre]

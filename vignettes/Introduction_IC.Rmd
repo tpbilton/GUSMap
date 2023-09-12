@@ -235,6 +235,9 @@ These plots are helpful for examining how well the algorithm has ordered the SNP
 ?`$orderLG`
 ```
 
+Some further checks on the order linkage maps for suspicious SNPs was performed and removed:
+
+
 ### Compute Linkage Maps
 
 Now that we have finished ordering and tidying up the linkage groups, we proceed to compute the linkage maps using the `$computeMap` function.
@@ -251,9 +254,9 @@ The `rfthres` argument specifies what recombination fraction threshold to highli
 
 ```{r computeMap2}
 ## remove SNP 173
-mySpecies$removeSNP(c(173,89))
+mySpecies$removeSNP(c(124,133,89))
 ## Recompute linkage map
-mySpecies$computeMap(chrom = NULL, nThreads = 3, rfthres=0.1, LG=c(1,2))
+mySpecies$computeMap(chrom = c(1,2), nThreads = 3, rfthres=0.1)
 ```
 
 The overall map distances now look reasonable and although there are a few largish recombination fraction estimates, they are not a concern as there appears to be large distances between SNPs at these sections of the maps.

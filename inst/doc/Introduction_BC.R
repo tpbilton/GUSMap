@@ -59,16 +59,15 @@ mySpecies$createLG(parent = "paternal", LODthres = 10, nComp = 10)
 ## ----plotLG_pat2--------------------------------------------------------------
 mySpecies$plotLG(parent = "both", interactive = F)
 
-## ----removeLG-----------------------------------------------------------------
-mySpecies$removeLG(LG = 6)
+## ----mergeLG------------------------------------------------------------------
+mySpecies$mergeLG(LG = c(3,7), mergeTo="paternal")
 mySpecies$print(what = "LG-pts")
+
+## ----removeLG, eval=FALSE-----------------------------------------------------
+#  mySpecies$removeLG(LG = 3)
 
 ## ----removeSNP, eval=FALSE----------------------------------------------------
 #  mySpecies$removeSNP(snps = c(526,527))
-
-## ----mergeLG------------------------------------------------------------------
-mySpecies$mergeLG(LG = c(2,7), mergeTo="paternal")
-mySpecies$print(what = "LG-pts")
 
 ## ----addSNPs------------------------------------------------------------------
 mySpecies$addSNPs(LODthres = 10, nComp = 10)
@@ -84,6 +83,12 @@ mySpecies$orderLG(mapfun = "haldane", weight = "LOD2", ndim = 30)
 
 ## ----computeMap---------------------------------------------------------------
 mySpecies$computeMap(chrom = NULL, nThreads = 2, rfthres = 0.1)
+
+## ----computeMap2--------------------------------------------------------------
+## remove SNP 173
+mySpecies$removeSNP(c(592))
+## Recompute linkage map
+mySpecies$computeMap(chrom = c(2), nThreads = 3, rfthres=0.1)
 
 ## ----plotLG-------------------------------------------------------------------
 mySpecies$plotLM(LG = NULL, fun = "haldane", col = c(rep("red",3),rep("blue",3)))

@@ -314,7 +314,8 @@ makeBC <- function(RAobj, pedfile, family=NULL, MNIF=1, inferSNPs=FALSE,
     
     SNPfilt$DEPTH = is.na(config)
     SNPfilt$DEPTH[SNPfilt$MAF | SNPfilt$MISS | SNPfilt$MAXDEPTH] = NA
-    SNPfilt$PVALUE = !SNPfilt$DEPTH
+    SNPfilt$PVALUE = FALSE
+    SNPfilt$PVALUE[which(SNPfilt$DEPTH | is.na(SNPfilt$DEPTH))] = NA
     
     #### Segregation test to determine if the SNPs have been miss-classified
     seg_Dis <- sapply(1:nSnps,function(x){

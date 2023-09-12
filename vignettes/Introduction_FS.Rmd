@@ -212,7 +212,7 @@ For our simulated data, we had four MI linkage groups (one more than the number 
 mySpecies$createLG(parent = "paternal", LODthres = 10, nComp = 10)
 ```
 
-Note: the `parent` argument is set to `"paternal"` which means that we are only recreating the PI linkage groups. With a LOD threshold of 10, the number of PI linkage groups becomes four. Again, we examine the heatmap.
+Note: the `parent` argument is set to `"paternal"` which means that we are only recreating the PI linkage groups. With a LOD threshold of 10, the number of PI linkage groups is now three. Again, we examine the heatmap.
 ```{r plotLG_pat2}
 mySpecies$plotLG(parent = "both", interactive = F)
 ```
@@ -240,12 +240,12 @@ Since linkage groups 3 and 7 are from different parental lines, the `mergeTo` ar
 
 **Note:** At this stage there is no undo functionality in GUSMap. So, once you have removed a SNP or linkage group, or merge two linkage groups, you cannot reverse what you have done. However, in the case where you want to undo edits to your linkage group, then the best thing is to recreate the linkage groups using the `$createLG` function and proceed as you were doing before (and hence it helps to save you code in a script).
 
-In many cases, small linkage groups can have no obvious linkage with any other linkage groups and so may be spurious. In this case, a linkage group can be remove using the `$removeSNPs` function. For example, say we wanted to remove what was linkage group 3 (with two SNPs) instead of merging with what was linkage group 7, then we could remove the linkage group using 
+In many cases, small linkage groups can have no obvious linkage with any other linkage groups and so may be spurious. In this case, a linkage group can be remove using the `$removeSNPs` function. For example, say we wanted to remove what was linkage group 3 (with two SNPs) instead of merging with what was linkage group 7, then we could have remove the linkage group using 
 ```{r removeLG, eval=FALSE}
 mySpecies$removeLG(LG = 3)
 ```
 
-Alternatively, one could have also remove the SNPs in the linkage group.
+Alternatively, one could also have removed all the SNPs in the linkage group.
 ```{r removeSNP, eval=FALSE}
 mySpecies$removeSNP(snps = c(526,527))
 ```
@@ -300,7 +300,7 @@ These plots are helpful for examining how well the algorithm has ordered the SNP
 ?`$orderLG`
 ```
 
-One other important point is that `$orderLG` function only orders the linakge groups in the set of combined linkage groups created from the `$addBIsnps` function.
+One other important point is that `$orderLG` function only orders the linkage groups in the set of combined linkage groups created from the `$addBIsnps` function.
 
 At this stage, it is again a good idea to examine the linkage groups using the `$plotLG` function and discard any SNPs which appear to be problematic. Problematic SNPs are SNPs where the recombination fraction values appear to be lower or have a very different pattern than to the SNPs surrounding them. In GUSMap, individual SNPs can be removed from the linkage groups using the `$removeSNP` function. From our analysis, we decided to remove the following SNPs.
 ```{r removeSNP_2}

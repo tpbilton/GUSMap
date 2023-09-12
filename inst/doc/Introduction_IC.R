@@ -80,9 +80,9 @@ mySpecies$computeMap(chrom = NULL, nThreads = 3, rfthres=0.1)
 
 ## ----computeMap2--------------------------------------------------------------
 ## remove SNP 173
-mySpecies$removeSNP(c(173,89))
+mySpecies$removeSNP(c(124,133,89))
 ## Recompute linkage map
-mySpecies$computeMap(chrom = NULL, nThreads = 3, rfthres=0.1, LG=c(1,2))
+mySpecies$computeMap(chrom = c(1,2), nThreads = 3, rfthres=0.1)
 
 ## ----plotLM-------------------------------------------------------------------
 mySpecies$plotLM(LG = NULL, fun = "haldane", col=c("cyan","lightblue","blue"))

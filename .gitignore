@@ -10,3 +10,5 @@ config.log
 src/Makevars
 *.dll
 Meta
+/doc/
+/Meta/
