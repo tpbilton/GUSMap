@@ -10,16 +10,15 @@
         ]
       },
       "locked": {
-        "lastModified": 1706239125,
+        "lastModified": 1708559792,
         "narHash": "sha256-nRCiKzzF+azIgu1QmKFR47sJioj7IxY2+fL7JFcXLHI=",
-        "owner": "tesujimath",
+        "owner": "tpbilton",
         "repo": "GUSbase",
-        "rev": "3db7a46cc30b88e7ac227cb37865d92e322fd75e",
+        "rev": "5cbdaf08b823acd63c8c2c110841fe9831d389b9",
         "type": "github"
       },
       "original": {
-        "owner": "tesujimath",
-        "ref": "nix-flake",
+        "owner": "tpbilton",
         "repo": "GUSbase",
         "type": "github"
       }

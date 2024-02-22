@@ -4,7 +4,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs";
     flake-utils.url = "github:numtide/flake-utils";
     GUSbase = {
-      url = github:tesujimath/GUSbase/nix-flake;
+      url = github:tpbilton/GUSbase;
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "flake-utils";
     };
