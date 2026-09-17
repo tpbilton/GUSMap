@@ -1,7 +1,7 @@
 /*
 ##########################################################################
 # Genotyping Uncertainty with Sequencing data and linkage MAPping (GUSMap)
-# Copyright 2017-2020 Timothy P. Bilton <timothy.bilton@agresearch.co.nz>
+# Copyright 2017-2026 Timothy P. Bilton <timothy.bilton@agresearch.co.nz>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,10 @@
 #########################################################################
  */
 
+#ifdef _OPENMP
+    #include <omp.h>
+#endif
+
 #include <R.h>
 #include <Rinternals.h>
 #include <Rmath.h>
@@ -25,8 +29,6 @@
 #include "probFun.h"
 
 #ifdef _OPENMP
-    #include <omp.h>
-#else
     inline int omp_get_max_threads() { return 1; }
 #endif
 
