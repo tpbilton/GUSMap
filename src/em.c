@@ -17,6 +17,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
  */
+
+#ifdef _OPENMP
+    #include <omp.h>
+#endif
+
 #include <R.h>
 #include <Rinternals.h>
 #include <Rmath.h>
@@ -26,8 +31,6 @@
 #include "probFun.h"
 
 #ifdef _OPENMP
-    #include <omp.h>
-#else
     inline int omp_get_max_threads() { return 1; }
 #endif
 
